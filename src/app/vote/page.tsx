@@ -1,48 +1,60 @@
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getVotingSessionIdFromCookie } from "@/lib/voting/session-cookie";
+import { getEffectiveVotingSessionId } from "@/lib/voting/dev-bypass";
+import { getVotingPageData } from "@/lib/voting/vote-catalog";
+import type { Candidate } from "@/lib/db/types";
+import { ConferenceBanner } from "./conference-banner";
+import { GeoGroupSection } from "./geo-group-section";
 
-export default async function VoteHomePage() {
-  const votingSessionId = await getVotingSessionIdFromCookie();
-  if (!votingSessionId) redirect("/vote/login");
-
-  const supabase = await createSupabaseServerClient();
-  const [{ data: geoGroups, error: geoErr }, { data: candidates, error: candErr }] =
-    await Promise.all([
-      supabase
-        .from("geo_groups")
-        .select("id, code, name, max_votes, sort_order")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("candidates")
-        .select("id, geo_group_id, full_name, photo_url, bio")
-        .eq("is_active", true)
-        .order("created_at", { ascending: true }),
-    ]);
-
-  if (geoErr) throw new Error(geoErr.message);
-  if (candErr) throw new Error(candErr.message);
-
-  return (
-    <main className="mx-auto max-w-4xl p-6">
-      <h1 className="text-2xl font-semibold">Cast your votes</h1>
-      <p className="mt-2 text-sm text-neutral-600">
-        Voting session: <span className="font-mono">{votingSessionId}</span>
-      </p>
-
-      <div className="mt-6 rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">Next: voting UI</h2>
-        <p className="mt-2 text-sm text-neutral-600">
-          Geo groups loaded: {geoGroups?.length ?? 0}, candidates loaded:{" "}
-          {candidates?.length ?? 0}.
-        </p>
-        <p className="mt-2 text-sm text-neutral-600">
-          I’ll now implement the multi-tab selection UI (max {geoGroups?.[0]?.max_votes ?? 3} per
-          group), a review screen, and submission via the `submit_ballot` RPC.
-        </p>
-      </div>
-    </main>
-  );
+function candidatesForGeo(candidates: Candidate[], geoId: number) {
+  return candidates.filter((c) => c.geo_group_id === geoId);
 }
 
+/**
+ * Geo sections from `public.geo_groups`; candidates from `public.candidates` for
+ * `app_settings.active_confcode`, grouped by `geo_group_id`. Conference title from
+ * `public.conference` via the active confcode.
+ */
+export default async function VoteHomePage() {
+  const votingSessionId = await getEffectiveVotingSessionId();
+  if (!votingSessionId) redirect("/vote/login");
+
+  const { geoGroups, conference, activeConfcode, candidates } = await getVotingPageData();
+
+  return (
+    <div className="min-h-dvh bg-white font-sans text-black">
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <ConferenceBanner conference={conference} activeConfcode={activeConfcode} />
+
+        <header className="mb-8 text-center sm:mb-8 sm:text-left">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Cast your votes
+          </h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            Select up to the allowed number of candidates in each region.
+          </p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Session{" "}
+            <span className="font-mono text-neutral-700">{votingSessionId}</span>
+          </p>
+        </header>
+
+        {geoGroups.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center text-sm text-neutral-600">
+            No active geographic regions are configured yet.
+          </div>
+        ) : (
+          <ol className="grid list-none gap-6 p-0">
+            {geoGroups.map((group) => (
+              <li key={group.id}>
+                <GeoGroupSection
+                  group={group}
+                  candidates={candidatesForGeo(candidates, group.id)}
+                />
+              </li>
+            ))}
+          </ol>
+        )}
+      </main>
+    </div>
+  );
+}

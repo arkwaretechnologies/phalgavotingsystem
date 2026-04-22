@@ -20,14 +20,16 @@ export interface Voter {
   created_at: string;
 }
 
+/** Matches `public.geo_groups` (id = bigint identity). */
 export interface GeoGroup {
   id: BigIntId;
-  code: string; // e.g. "SL"
-  name: string; // e.g. "Southern Luzon"
-  is_active: boolean;
-  max_votes: number; // default 3
-  sort_order: number;
-  created_at: string;
+  code: string;
+  name: string;
+  /** DB allows null; treat as 3 when null (matches default in DDL). */
+  max_votes: number | null;
+  is_active: boolean | null;
+  sort_order: number | null;
+  created_at: string | null;
 }
 
 export interface Candidate {
@@ -39,6 +41,22 @@ export interface Candidate {
   is_active: boolean;
   created_at: string;
   confcode: string;
+}
+
+/** `public.conference` — rows keyed by `confcode`. */
+export interface Conference {
+  confcode: string;
+  name: string | null;
+  date_from: string | null;
+  date_to: string | null;
+  venue: string | null;
+}
+
+/** `public.app_settings` single row (id = 1). */
+export interface AppSettings {
+  id: number;
+  active_confcode: string | null;
+  updated_at: string;
 }
 
 export interface VotingSession {

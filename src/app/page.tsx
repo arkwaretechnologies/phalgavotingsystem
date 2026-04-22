@@ -11,7 +11,7 @@ export default function Home() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
-            href="/vote/login"
+            href="/vote"
             className="rounded-xl border bg-black px-4 py-4 text-white transition-colors hover:bg-neutral-800"
           >
             <div className="text-base font-semibold">Voter</div>
@@ -27,6 +27,16 @@ export default function Home() {
             <div className="text-base font-semibold">Admin / Comelec</div>
             <div className="mt-1 text-sm text-neutral-600">
               Check-in voters, manage candidates, view results
+            </div>
+          </Link>
+
+          <Link
+            href="/tablet"
+            className="rounded-xl border bg-white px-4 py-4 text-black transition-colors hover:bg-neutral-50 sm:col-span-2"
+          >
+            <div className="text-base font-semibold">Tablet / Device</div>
+            <div className="mt-1 text-sm text-neutral-600">
+              Pair this device to a tablet record, then run the queue screen
             </div>
           </Link>
         </div>
