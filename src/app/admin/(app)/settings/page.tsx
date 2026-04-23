@@ -1,5 +1,6 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { setActiveConfcode } from "../../settings/actions";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 export default async function AdminSettingsPage() {
   const supabase = createSupabaseServiceRoleClient();
@@ -20,8 +21,12 @@ export default async function AdminSettingsPage() {
         }),
     ]);
 
-  if (settingsErr) throw new Error(settingsErr.message);
-  if (confErr) throw new Error(confErr.message);
+  if (settingsErr || confErr) {
+    // eslint-disable-next-line no-console
+    console.error("admin settings load failed", { settingsErr, confErr });
+    const { message } = toPublicMessage(settingsErr ?? confErr, "Unable to load settings right now.");
+    throw new Error(message);
+  }
 
   return (
     <div className="space-y-6">

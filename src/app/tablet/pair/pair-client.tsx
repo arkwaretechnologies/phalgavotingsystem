@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { claimPairCode } from "./actions";
 import { getOrCreateDeviceId } from "@/lib/tablet/device";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
+import { useUrlToast } from "@/lib/toast/url-toast";
 
 export default function TabletPairClient() {
   const sp = useSearchParams();
@@ -19,6 +20,8 @@ export default function TabletPairClient() {
   useEffect(() => {
     setDeviceId(getOrCreateDeviceId());
   }, []);
+
+  useUrlToast();
 
   const canSubmit = useMemo(() => Boolean(code.trim().length >= 4), [code]);
 
@@ -100,11 +103,7 @@ export default function TabletPairClient() {
         Enter the pairing code from the admin tablets page, or scan the QR code.
       </p>
 
-      {sp.get("error") === "paired" ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          This tablet is already paired. Ask the admin to unpair it, or unpair from the currently paired device.
-        </div>
-      ) : null}
+      {/* toast handles pairing errors */}
 
       <div className="mt-6 rounded-xl border bg-white p-4">
         <div className="flex items-center justify-between gap-3">

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function assignNextSession(formData: FormData) {
   const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
@@ -11,7 +12,12 @@ export async function assignNextSession(formData: FormData) {
 
   const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase.rpc("assign_next_session", { p_tablet_id: tabletId });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("assign_next_session failed", error);
+    const { message } = toPublicMessage(error, "Unable to assign next voter. Please try again.");
+    redirect(`/tablet?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/tablet");
 }
@@ -26,7 +32,12 @@ export async function markTabletVacant(formData: FormData) {
     .from("tablets")
     .update({ status: "vacant", current_session: null, last_active_at: new Date().toISOString() })
     .eq("id", tabletId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("markTabletVacant failed", error);
+    const { message } = toPublicMessage(error, "Unable to update tablet. Please try again.");
+    redirect(`/tablet?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/tablet");
 }
@@ -44,7 +55,12 @@ export async function unpairTabletFromDevice(formData: FormData) {
     p_device_id: deviceId,
     p_by: "device",
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("unpair_tablet(device) failed", error);
+    const { message } = toPublicMessage(error, "Unable to unpair. Ask admin for help.");
+    redirect(`/tablet?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/tablet");
   redirect("/tablet/pair?unpaired=1");

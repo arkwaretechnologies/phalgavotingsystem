@@ -1,5 +1,7 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { importVotersCsv } from "../../voters/actions";
+import { toPublicMessage } from "@/lib/errors/public-message";
+import { UrlToasts } from "@/app/_components/UrlToasts";
 
 export default async function AdminVotersPage({
   searchParams,
@@ -12,10 +14,16 @@ export default async function AdminVotersPage({
 
   const supabase = createSupabaseServiceRoleClient();
   const { count, error } = await supabase.from("voters").select("id", { count: "exact", head: true });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("load voters count failed", error);
+    const { message } = toPublicMessage(error, "Unable to load voters right now.");
+    throw new Error(message);
+  }
 
   return (
     <div className="space-y-6">
+      <UrlToasts clearParams={["imported", "skipped"]} />
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Voters</h1>
         <p className="mt-2 text-sm text-neutral-600">

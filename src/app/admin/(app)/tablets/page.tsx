@@ -2,6 +2,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { createPairCodeForTablet } from "../../tablets/pair-actions";
 import { createTablet } from "../../tablets/tablet-actions";
 import QRCode from "../../tablets/qr";
+import { UrlToasts } from "@/app/_components/UrlToasts";
 
 export default async function AdminTabletsPage({
   searchParams,
@@ -17,12 +18,17 @@ export default async function AdminTabletsPage({
     .from("tablets")
     .select("id, label, status, current_session, last_active_at, created_at")
     .order("id", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("load tablets failed", error);
+    throw new Error("Unable to load tablets right now.");
+  }
 
   const selected = activeTabletId ? (tablets ?? []).find((t) => t.id === activeTabletId) ?? null : null;
 
   return (
     <div className="space-y-6">
+      <UrlToasts clearParams={["tablet"]} />
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Tablets</h1>
         <p className="mt-2 text-sm text-neutral-600">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
 import { VoteLoginForm } from "./vote-login-form";
+import { Suspense } from "react";
 
 export default function VoteLoginPage() {
   if (isVoteLoginBypassed()) redirect("/vote");
@@ -61,7 +62,9 @@ export default function VoteLoginPage() {
             </p>
 
             <div className="mt-8">
-              <VoteLoginForm />
+              <Suspense fallback={<div className="text-sm text-slate-600">Loading…</div>}>
+                <VoteLoginForm />
+              </Suspense>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { createCandidate } from "../../candidates/actions";
 import { CandidatesTable } from "./candidates-table";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 export default async function AdminCandidatesPage() {
   const supabase = createSupabaseServiceRoleClient();
@@ -18,8 +19,12 @@ export default async function AdminCandidatesPage() {
         .maybeSingle(),
     ]);
 
-  if (geoErr) throw new Error(geoErr.message);
-  if (settingsErr) throw new Error(settingsErr.message);
+  if (geoErr || settingsErr) {
+    // eslint-disable-next-line no-console
+    console.error("admin candidates load failed", { geoErr, settingsErr });
+    const { message } = toPublicMessage(geoErr ?? settingsErr, "Unable to load candidates page.");
+    throw new Error(message);
+  }
 
   const activeConfcode = settings?.active_confcode ? String(settings.active_confcode) : null;
   const candidatesQuery = supabase
@@ -31,7 +36,12 @@ export default async function AdminCandidatesPage() {
   const { data: candidates, error: candErr } = activeConfcode
     ? await candidatesQuery.eq("confcode", activeConfcode)
     : await candidatesQuery;
-  if (candErr) throw new Error(candErr.message);
+  if (candErr) {
+    // eslint-disable-next-line no-console
+    console.error("admin candidates list failed", candErr);
+    const { message } = toPublicMessage(candErr, "Unable to load candidates list.");
+    throw new Error(message);
+  }
 
   return (
     <div className="space-y-6">

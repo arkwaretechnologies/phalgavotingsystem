@@ -18,9 +18,11 @@
     "jose": "^6.2.2",
     "next": "16.2.4",
     "papaparse": "^5.5.3",
+    "puppeteer": "^24.42.0",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

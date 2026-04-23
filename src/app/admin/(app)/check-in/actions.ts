@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getAdminSession } from "@/lib/admin/session";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 function genToken6() {
   return Math.floor(Math.random() * 1_000_000)
@@ -33,7 +34,15 @@ export async function checkInVoter(formData: FormData) {
       verified_by: admin.admin_user_id,
     })
     .eq("id", voterId);
-  if (vErr) throw new Error(vErr.message);
+  if (vErr) {
+    // eslint-disable-next-line no-console
+    console.error("check-in verify voter failed", vErr);
+    const { message } = toPublicMessage(vErr, "Unable to verify voter. Please try again.");
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    params.set("error", message);
+    redirect(`/admin/check-in?${params.toString()}`);
+  }
 
   // Create or reuse session (schema has unique(voter_id))
   const { data: existing, error: exErr } = await supabase
@@ -41,7 +50,15 @@ export async function checkInVoter(formData: FormData) {
     .select("id, queue_number, status")
     .eq("voter_id", voterId)
     .maybeSingle();
-  if (exErr) throw new Error(exErr.message);
+  if (exErr) {
+    // eslint-disable-next-line no-console
+    console.error("check-in load existing session failed", exErr);
+    const { message } = toPublicMessage(exErr, "Unable to check session state. Please try again.");
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    params.set("error", message);
+    redirect(`/admin/check-in?${params.toString()}`);
+  }
 
   let sessionId: string;
   let queueNumber: number;
@@ -61,12 +78,29 @@ export async function checkInVoter(formData: FormData) {
       })
       .select("id, queue_number")
       .single();
-    if (insErr) throw new Error(insErr.message);
+    if (insErr) {
+      // eslint-disable-next-line no-console
+      console.error("check-in insert session failed", insErr);
+      const { message } = toPublicMessage(insErr, "Unable to create voting session. Please try again.");
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      params.set("error", message);
+      redirect(`/admin/check-in?${params.toString()}`);
+    }
     sessionId = inserted.id;
     queueNumber = inserted.queue_number;
   } else {
     if (existing.status === "queued" || existing.status === "voting") {
-      throw new Error("Voter already has an active session.");
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      params.set("error", "Voter already has an active session.");
+      redirect(`/admin/check-in?${params.toString()}`);
+    }
+    if (existing.status === "voted") {
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      params.set("error", "Voter already voted and cannot be checked-in again.");
+      redirect(`/admin/check-in?${params.toString()}`);
     }
 
     const { data: updated, error: upErr } = await supabase
@@ -83,7 +117,15 @@ export async function checkInVoter(formData: FormData) {
       .eq("id", existing.id)
       .select("id, queue_number")
       .single();
-    if (upErr) throw new Error(upErr.message);
+    if (upErr) {
+      // eslint-disable-next-line no-console
+      console.error("check-in update session failed", upErr);
+      const { message } = toPublicMessage(upErr, "Unable to re-queue voter. Please try again.");
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      params.set("error", message);
+      redirect(`/admin/check-in?${params.toString()}`);
+    }
     sessionId = updated.id;
     queueNumber = updated.queue_number;
   }
@@ -100,7 +142,15 @@ export async function checkInVoter(formData: FormData) {
       },
       { onConflict: "voter_id" }
     );
-  if (bErr) throw new Error(bErr.message);
+  if (bErr) {
+    // eslint-disable-next-line no-console
+    console.error("check-in upsert ballot failed", bErr);
+    const { message } = toPublicMessage(bErr, "Unable to prepare ballot. Please try again.");
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    params.set("error", message);
+    redirect(`/admin/check-in?${params.toString()}`);
+  }
 
   const params = new URLSearchParams();
   if (q) params.set("q", q);

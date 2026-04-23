@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginWithQueueAndToken } from "./actions";
 import { getBoundTabletId } from "@/lib/tablet/device";
+import { useSearchParams } from "next/navigation";
+import { useUrlToast } from "@/lib/toast/url-toast";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -35,6 +37,11 @@ function SubmitButton() {
 
 export function VoteLoginForm() {
   const [tabletId, setTabletId] = useState<number | null>(null);
+  const sp = useSearchParams();
+  const err = sp.get("error");
+  const msg = sp.get("msg");
+
+  useUrlToast({ clearParams: ["error", "msg"] });
 
   useEffect(() => {
     setTabletId(getBoundTabletId());
@@ -45,6 +52,7 @@ export function VoteLoginForm() {
       action={loginWithQueueAndToken}
       className="vote-login-fade-up vote-login-fade-up-delay-2 space-y-5"
     >
+      {/* legacy inline error removed; toast driven by URL params */}
       <input type="hidden" name="tablet_id" value={tabletId ? String(tabletId) : ""} />
       <div className="space-y-2">
         <label

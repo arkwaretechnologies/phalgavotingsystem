@@ -37,6 +37,11 @@ export function CandidatesTable({
   const confirmActionRef = useRef<null | (() => void)>(null);
 
   const geoOptions = useMemo(() => geoGroups ?? [], [geoGroups]);
+  const geoById = useMemo(() => {
+    const map = new Map<number, GeoGroupRow>();
+    for (const g of geoOptions) map.set(g.id, g);
+    return map;
+  }, [geoOptions]);
 
   function openConfirm(opts: { title: string; message: string; onConfirm: () => void }) {
     setConfirmTitle(opts.title);
@@ -112,7 +117,9 @@ export function CandidatesTable({
                       <div>{c.full_name}</div>
                     </div>
                   </td>
-                  <td className="border-b px-2 py-2 text-neutral-600">{c.geo_group_id ?? "—"}</td>
+                  <td className="border-b px-2 py-2 text-neutral-600">
+                    {c.geo_group_id != null ? geoById.get(c.geo_group_id)?.code ?? "—" : "—"}
+                  </td>
                   <td className="border-b px-2 py-2">{c.is_active ? "Yes" : "No"}</td>
                   <td className="border-b px-2 py-2 text-neutral-600">
                     {new Date(c.created_at).toLocaleString()}

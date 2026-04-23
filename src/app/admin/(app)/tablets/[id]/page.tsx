@@ -4,6 +4,8 @@ import QRCode from "@/app/admin/tablets/qr";
 import { createPairCodeForTablet } from "@/app/admin/tablets/pair-actions";
 import { TabletEditor } from "../tablet-editor";
 import { UnpairCard } from "./unpair-card";
+import { toPublicMessage } from "@/lib/errors/public-message";
+import { UrlToasts } from "@/app/_components/UrlToasts";
 
 export default async function AdminTabletDetailsPage({
   params,
@@ -45,15 +47,19 @@ export default async function AdminTabletDetailsPage({
       .maybeSingle(),
   ]);
 
-  if (tErr) throw new Error(tErr.message);
-  if (qErr) throw new Error(qErr.message);
-  if (pErr) throw new Error(pErr.message);
+  if (tErr || qErr || pErr) {
+    // eslint-disable-next-line no-console
+    console.error("tablet details load failed", { tErr, qErr, pErr });
+    const { message } = toPublicMessage(tErr ?? qErr ?? pErr, "Unable to load tablet details right now.");
+    throw new Error(message);
+  }
   if (!tablet) notFound();
 
   const pairedDeviceId = pairing?.claimed_by_device_id ? String(pairing.claimed_by_device_id) : null;
 
   return (
     <div className="space-y-6">
+      <UrlToasts clearParams={["code"]} />
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

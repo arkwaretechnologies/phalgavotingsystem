@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { AppSettings, Candidate, Conference, GeoGroup } from "@/lib/db/types";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 function numId(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -58,7 +59,12 @@ export async function getActiveGeoGroups(): Promise<GeoGroup[]> {
     .or("is_active.is.null,is_active.eq.true")
     .order("sort_order", { ascending: true, nullsFirst: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("getActiveGeoGroups failed", error);
+    const { message } = toPublicMessage(error, "Unable to load geo groups.");
+    throw new Error(message);
+  }
   return (data ?? []).map((row) => mapGeoGroup(row as Record<string, unknown>));
 }
 
@@ -82,7 +88,12 @@ export async function getVotingPageData(): Promise<{
     .eq("id", 1)
     .maybeSingle();
 
-  if (settingsErr) throw new Error(settingsErr.message);
+  if (settingsErr) {
+    // eslint-disable-next-line no-console
+    console.error("getVotingPageData settings load failed", settingsErr);
+    const { message } = toPublicMessage(settingsErr, "Unable to load app settings.");
+    throw new Error(message);
+  }
 
   const appSettings: AppSettings | null = settingsRow
     ? {
@@ -124,8 +135,12 @@ export async function getVotingPageData(): Promise<{
         .order("full_name", { ascending: true }),
     ]);
 
-  if (confErr) throw new Error(confErr.message);
-  if (candErr) throw new Error(candErr.message);
+  if (confErr || candErr) {
+    // eslint-disable-next-line no-console
+    console.error("getVotingPageData load failed", { confErr, candErr });
+    const { message } = toPublicMessage(confErr ?? candErr, "Unable to load candidates right now.");
+    throw new Error(message);
+  }
 
   const conference: Conference | null = confRow
     ? mapConference(confRow as Record<string, unknown>)

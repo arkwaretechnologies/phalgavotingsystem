@@ -8,8 +8,10 @@ const NAV_ITEMS = [
   { href: "/admin/check-in", label: "Check-in" },
   { href: "/admin/voters", label: "Voters" },
   { href: "/admin/candidates", label: "Candidates" },
+  { href: "/admin/ballots", label: "Ballots" },
   { href: "/admin/tablets", label: "Tablets" },
   { href: "/admin/results", label: "Results" },
+  { href: "/admin/canvass", label: "Canvass" },
   { href: "/admin/settings", label: "Settings" },
 ] as const;
 

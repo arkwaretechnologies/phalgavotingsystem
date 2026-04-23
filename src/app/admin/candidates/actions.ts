@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function createCandidate(formData: FormData) {
   const fullName = String(formData.get("full_name") ?? "").trim();
@@ -30,7 +31,12 @@ export async function createCandidate(formData: FormData) {
         contentType: photoFile.type || "application/octet-stream",
         upsert: false,
       });
-    if (uploadErr) throw new Error(uploadErr.message);
+    if (uploadErr) {
+      // eslint-disable-next-line no-console
+      console.error("candidate photo upload failed", uploadErr);
+      const { message } = toPublicMessage(uploadErr, "Unable to upload photo. Please try again.");
+      redirect(`/admin/candidates?error=${encodeURIComponent(message)}`);
+    }
 
     const { data: publicUrlData } = supabase.storage.from("candidates").getPublicUrl(objectPath);
     photo_url = publicUrlData.publicUrl ?? null;
@@ -54,7 +60,12 @@ export async function createCandidate(formData: FormData) {
     confcode,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("createCandidate failed", error);
+    const { message } = toPublicMessage(error, "Unable to create candidate. Please try again.");
+    redirect(`/admin/candidates?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/admin/candidates");
   redirect("/admin/candidates");
@@ -88,7 +99,12 @@ export async function updateCandidate(formData: FormData) {
         contentType: photoFile.type || "application/octet-stream",
         upsert: false,
       });
-    if (uploadErr) throw new Error(uploadErr.message);
+    if (uploadErr) {
+      // eslint-disable-next-line no-console
+      console.error("candidate photo upload failed", uploadErr);
+      const { message } = toPublicMessage(uploadErr, "Unable to upload photo. Please try again.");
+      redirect(`/admin/candidates?error=${encodeURIComponent(message)}`);
+    }
 
     const { data: publicUrlData } = supabase.storage.from("candidates").getPublicUrl(objectPath);
     photo_url = publicUrlData.publicUrl ?? null;
@@ -111,7 +127,12 @@ export async function updateCandidate(formData: FormData) {
   if (photo_url !== undefined) update.photo_url = photo_url;
 
   const { error } = await supabase.from("candidates").update(update).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("updateCandidate failed", error);
+    const { message } = toPublicMessage(error, "Unable to update candidate. Please try again.");
+    redirect(`/admin/candidates?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/admin/candidates");
   redirect("/admin/candidates");
@@ -123,7 +144,12 @@ export async function deleteCandidate(formData: FormData) {
 
   const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase.from("candidates").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("deleteCandidate failed", error);
+    const { message } = toPublicMessage(error, "Unable to delete candidate. Please try again.");
+    redirect(`/admin/candidates?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath("/admin/candidates");
   redirect("/admin/candidates");

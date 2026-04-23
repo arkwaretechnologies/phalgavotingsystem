@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function adminUnpairTablet(formData: FormData) {
   const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
@@ -15,7 +16,12 @@ export async function adminUnpairTablet(formData: FormData) {
     p_device_id: null,
     p_by: "admin",
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("unpair_tablet(admin) failed", error);
+    const { message } = toPublicMessage(error, "Unable to unpair tablet. Please try again.");
+    redirect(`/admin/tablets/${tabletId}?error=${encodeURIComponent(message)}`);
+  }
 
   revalidatePath(`/admin/tablets/${tabletId}`);
   redirect(`/admin/tablets/${tabletId}`);

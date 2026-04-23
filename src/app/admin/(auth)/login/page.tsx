@@ -1,8 +1,15 @@
 import { adminLogin } from "./actions";
+import { UrlToasts } from "@/app/_components/UrlToasts";
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await searchParams) ?? {};
   return (
     <div>
+      <UrlToasts />
       <h1 className="text-xl font-semibold">Admin / Comelec Login</h1>
       <p className="mt-2 text-sm text-neutral-600">
         Sign in to access the admin panel.

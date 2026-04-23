@@ -1,5 +1,7 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { checkInVoter } from "./actions";
+import { toPublicMessage } from "@/lib/errors/public-message";
+import { UrlToasts } from "@/app/_components/UrlToasts";
 
 type VoterRow = {
   id: string;
@@ -43,12 +45,18 @@ export default async function AdminCheckInPage({
       .order("full_name", { ascending: true })
       .limit(25);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error("check-in search failed", error);
+      const { message } = toPublicMessage(error, "Unable to search voters right now.");
+      throw new Error(message);
+    }
     voters = (data ?? []) as VoterRow[];
   }
 
   return (
     <div className="space-y-6">
+      <UrlToasts clearParams={["checked_in", "voter_id", "queue", "token"]} />
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Voter Check-in</h1>
         <p className="mt-2 text-sm text-neutral-600">

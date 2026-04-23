@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { toPublicMessage } from "@/lib/errors/public-message";
 
 type CsvRow = Record<string, string | undefined>;
 
@@ -74,7 +75,12 @@ export async function importVotersCsv(formData: FormData) {
   for (let i = 0; i < toInsert.length; i += batchSize) {
     const batch = toInsert.slice(i, i + batchSize);
     const { error } = await supabase.from("voters").insert(batch);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error("import voters failed", error);
+      const { message } = toPublicMessage(error, "Unable to import voters. Please check the CSV and try again.");
+      redirect(`/admin/voters?error=${encodeURIComponent(message)}`);
+    }
     inserted += batch.length;
   }
 
