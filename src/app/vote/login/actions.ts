@@ -74,6 +74,23 @@ export async function loginWithQueueAndToken(formData: FormData) {
 
   if (!sessionId) throw new Error("Unable to claim session");
 
+  const { data: settingsRow } = await supabase
+    .from("app_settings")
+    .select("active_confcode")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const rawConf = (settingsRow as { active_confcode?: string | null } | null)?.active_confcode;
+  const confcode =
+    rawConf != null && String(rawConf).trim() !== "" ? String(rawConf).trim() : null;
+
+  const { error: ballotErr } = await supabase
+    .from("ballots")
+    .update({ confcode })
+    .eq("session_id", sessionId);
+
+  if (ballotErr) throw new Error(ballotErr.message);
+
   await setVotingSessionCookie(sessionId);
   redirect("/vote");
 }

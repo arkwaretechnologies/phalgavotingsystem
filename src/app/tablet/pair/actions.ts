@@ -15,7 +15,13 @@ export async function claimPairCode(formData: FormData) {
     p_pair_code: code,
     p_device_id: deviceId,
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message || "Unable to claim code";
+    if (msg.toLowerCase().includes("tablet already paired")) {
+      redirect("/tablet/pair?error=paired");
+    }
+    throw new Error(msg);
+  }
   if (!data) throw new Error("Unable to claim code");
 
   redirect(`/tablet/pair/success?tablet=${encodeURIComponent(String(data))}`);

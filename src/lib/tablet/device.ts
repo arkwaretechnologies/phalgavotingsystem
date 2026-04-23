@@ -44,6 +44,15 @@ export function getOrCreateDeviceId() {
   return id;
 }
 
+export function getDeviceId() {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(DEVICE_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function setBoundTabletId(tabletId: number) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(TABLET_ID_KEY, String(tabletId));

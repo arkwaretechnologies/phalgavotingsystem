@@ -26,7 +26,7 @@ function SubmitButton() {
             Verifying…
           </>
         ) : (
-          "Continue to voting"
+          "Verify and Vote"
         )}
       </span>
     </button>

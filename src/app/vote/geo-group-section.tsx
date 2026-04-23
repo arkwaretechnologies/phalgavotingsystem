@@ -10,7 +10,12 @@ import {
 import { createPortal } from "react-dom";
 import type { Candidate, GeoGroup } from "@/lib/db/types";
 
-type Props = { group: GeoGroup; candidates: Candidate[] };
+type Props = {
+  group: GeoGroup;
+  candidates: Candidate[];
+  slots: (string | null)[];
+  onSlotsChange: (next: (string | null)[]) => void;
+};
 
 const DND_MIME = "application/x-phalga-geo-candidate";
 
@@ -215,11 +220,8 @@ function clearPoolFlipStyles(ul: HTMLUListElement | null) {
   });
 }
 
-export function GeoGroupSection({ group, candidates }: Props) {
-  const maxSlots = Math.min(10, Math.max(1, group.max_votes ?? 3));
-  const [slots, setSlots] = useState<(string | null)[]>(() =>
-    Array.from({ length: maxSlots }, () => null),
-  );
+export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Props) {
+  const maxSlots = slots.length;
   const [flying, setFlying] = useState<FlyingPayload | null>(null);
   const [poolDrag, setPoolDrag] = useState<PoolDragState | null>(null);
   const isSlotDraggingRef = useRef(false);
@@ -341,24 +343,26 @@ export function GeoGroupSection({ group, candidates }: Props) {
     [],
   );
 
-  const completeFly = useCallback((candidateId: string, targetSlot: number) => {
-    setSlots((prev) => {
-      const next = [...prev];
+  const completeFly = useCallback(
+    (candidateId: string, targetSlot: number) => {
+      const next = [...slots];
       if (next[targetSlot] === null) {
         next[targetSlot] = candidateId;
       }
-      return next;
-    });
-    setFlying(null);
-  }, []);
+      onSlotsChange(next);
+      setFlying(null);
+    },
+    [slots, onSlotsChange],
+  );
 
-  const clearSlot = useCallback((index: number) => {
-    setSlots((prev) => {
-      const n = [...prev];
+  const clearSlot = useCallback(
+    (index: number) => {
+      const n = [...slots];
       n[index] = null;
-      return n;
-    });
-  }, []);
+      onSlotsChange(n);
+    },
+    [slots, onSlotsChange],
+  );
 
   const findSlotIndexAt = useCallback(
     (clientX: number, clientY: number) => {
@@ -409,11 +413,9 @@ export function GeoGroupSection({ group, candidates }: Props) {
       const toEl = slotBoxRefs.current[empty];
       const c = byId[candidateId];
       if (reducedMotion || !fromEl || !toEl) {
-        setSlots((prev) => {
-          const n = [...prev];
-          n[empty] = candidateId;
-          return n;
-        });
+        const n = [...slots];
+        n[empty] = candidateId;
+        onSlotsChange(n);
         return;
       }
       setFlying({
@@ -426,7 +428,7 @@ export function GeoGroupSection({ group, candidates }: Props) {
         key: Date.now(),
       });
     },
-    [slots, flying, poolDrag, reducedMotion, byId],
+    [slots, flying, poolDrag, reducedMotion, byId, onSlotsChange],
   );
 
   const onPoolPointerDown = useCallback(
@@ -486,11 +488,9 @@ export function GeoGroupSection({ group, candidates }: Props) {
           } else {
             const slotI = findSlotIndexAt(x, y);
             if (slotI != null) {
-              setSlots((prev) => {
-                const n = prev.map((s) => (s === id ? null : s));
-                n[slotI] = id;
-                return n;
-              });
+              const n = slots.map((s) => (s === id ? null : s));
+              n[slotI] = id;
+              onSlotsChange(n);
             }
           }
           setPoolDrag(null);
@@ -508,6 +508,8 @@ export function GeoGroupSection({ group, candidates }: Props) {
       onTap,
       isOverUnselectStrip,
       findSlotIndexAt,
+      slots,
+      onSlotsChange,
     ],
   );
 
@@ -533,11 +535,9 @@ export function GeoGroupSection({ group, candidates }: Props) {
     }
 
     if (p.from === "slot" && p.slotIndex !== undefined) {
-      setSlots((prev) => {
-        const next = [...prev];
-        [next[p.slotIndex!], next[targetIndex]] = [next[targetIndex], next[p.slotIndex!]];
-        return next;
-      });
+      const next = [...slots];
+      [next[p.slotIndex!], next[targetIndex]] = [next[targetIndex], next[p.slotIndex!]];
+      onSlotsChange(next);
     }
     isSlotDraggingRef.current = false;
   };
@@ -546,11 +546,9 @@ export function GeoGroupSection({ group, candidates }: Props) {
     e.preventDefault();
     const p = parsePayload(e.dataTransfer.getData(DND_MIME));
     if (!p || p.geoId !== group.id || p.from !== "slot" || p.slotIndex === undefined) return;
-    setSlots((prev) => {
-      const next = [...prev];
-      next[p.slotIndex!] = null;
-      return next;
-    });
+    const next = [...slots];
+    next[p.slotIndex!] = null;
+    onSlotsChange(next);
   };
 
   const onDragOver = (e: React.DragEvent) => {

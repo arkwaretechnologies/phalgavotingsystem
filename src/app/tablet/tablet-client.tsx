@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { clearBoundTabletId, getBoundTabletId } from "@/lib/tablet/device";
-import { assignNextSession, markTabletVacant } from "./actions";
+import { clearBoundTabletId, getBoundTabletId, getDeviceId } from "@/lib/tablet/device";
+import { assignNextSession, markTabletVacant, unpairTabletFromDevice } from "./actions";
 
 type TabletRow = {
   id: number;
@@ -21,12 +21,14 @@ type VotingSessionRow = {
 
 export default function TabletClient() {
   const [tabletId, setTabletId] = useState<number | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
   const [tablet, setTablet] = useState<TabletRow | null>(null);
   const [queue, setQueue] = useState<VotingSessionRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTabletId(getBoundTabletId());
+    setDeviceId(getDeviceId());
   }, []);
 
   useEffect(() => {
@@ -99,16 +101,25 @@ export default function TabletClient() {
               ID {tabletId} {tablet?.label ? `• ${tablet.label}` : ""}
             </p>
           </div>
-          <button
-            type="button"
-            className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
-            onClick={() => {
+          <form
+            action={unpairTabletFromDevice}
+            onSubmit={() => {
+              // Clear local storage right before navigation.
               clearBoundTabletId();
               setTabletId(null);
             }}
           >
-            Unpair
-          </button>
+            <input type="hidden" name="tablet_id" value={String(tabletId)} />
+            <input type="hidden" name="device_id" value={deviceId ?? ""} />
+            <button
+              type="submit"
+              className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
+              disabled={!deviceId}
+              title={!deviceId ? "Device id not available" : undefined}
+            >
+              Unpair
+            </button>
+          </form>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border p-3">

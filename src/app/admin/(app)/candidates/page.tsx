@@ -1,30 +1,37 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { createCandidate } from "../../candidates/actions";
+import { CandidatesTable } from "./candidates-table";
 
 export default async function AdminCandidatesPage() {
   const supabase = createSupabaseServiceRoleClient();
 
-  const [{ data: geoGroups, error: geoErr }, { data: candidates, error: candErr }, { data: conferences, error: confErr }] =
+  const [{ data: geoGroups, error: geoErr }, { data: settings, error: settingsErr }] =
     await Promise.all([
       supabase
         .from("geo_groups")
         .select("id, code, name, is_active")
         .order("sort_order", { ascending: true }),
       supabase
-        .from("candidates")
-        .select("id, full_name, geo_group_id, is_active, created_at, confcode, photo_url")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("conference")
-        .select("confcode, name")
-        .eq("is_anc", "Y")
-        .order("name", { ascending: true }),
+        .from("app_settings")
+        .select("id, active_confcode")
+        .eq("id", 1)
+        .maybeSingle(),
     ]);
 
   if (geoErr) throw new Error(geoErr.message);
+  if (settingsErr) throw new Error(settingsErr.message);
+
+  const activeConfcode = settings?.active_confcode ? String(settings.active_confcode) : null;
+  const candidatesQuery = supabase
+    .from("candidates")
+    .select("id, full_name, geo_group_id, is_active, created_at, confcode, photo_url, bio")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const { data: candidates, error: candErr } = activeConfcode
+    ? await candidatesQuery.eq("confcode", activeConfcode)
+    : await candidatesQuery;
   if (candErr) throw new Error(candErr.message);
-  if (confErr) throw new Error(confErr.message);
 
   return (
     <div className="space-y-6">
@@ -37,6 +44,7 @@ export default async function AdminCandidatesPage() {
         <div className="text-sm font-semibold">Add candidate</div>
 
         <form action={createCandidate} className="mt-4 grid gap-4">
+          <input type="hidden" name="confcode" value={activeConfcode ?? ""} />
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium">Full name</span>
@@ -48,25 +56,12 @@ export default async function AdminCandidatesPage() {
               />
             </label>
 
-            <label className="block">
-              <span className="text-sm font-medium">Conference (confcode)</span>
-              <select
-                name="confcode"
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                required
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Select conference…
-                </option>
-                {(conferences ?? []).map((c) => (
-                  <option key={c.confcode} value={c.confcode}>
-                    {c.confcode}
-                    {c.name ? ` — ${c.name}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="rounded-md border bg-neutral-50 px-3 py-2">
+              <div className="text-sm font-medium">Conference (confcode)</div>
+              <div className="mt-1 font-mono text-sm">
+                {activeConfcode ?? "No active confcode set (set it in Settings)"}
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -124,41 +119,23 @@ export default async function AdminCandidatesPage() {
 
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Recent candidates</div>
-        <div className="mt-1 text-xs text-neutral-500">Showing latest 50</div>
-
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0">
-            <thead>
-              <tr className="text-left text-xs text-neutral-500">
-                <th className="border-b px-2 py-2 font-medium">Name</th>
-                <th className="border-b px-2 py-2 font-medium">Geo group</th>
-                <th className="border-b px-2 py-2 font-medium">Confcode</th>
-                <th className="border-b px-2 py-2 font-medium">Active</th>
-                <th className="border-b px-2 py-2 font-medium">Created</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {(candidates ?? []).map((c) => (
-                <tr key={c.id} className="hover:bg-neutral-50">
-                  <td className="border-b px-2 py-2">{c.full_name}</td>
-                  <td className="border-b px-2 py-2 text-neutral-600">{c.geo_group_id ?? "—"}</td>
-                  <td className="border-b px-2 py-2 font-mono text-xs">{c.confcode}</td>
-                  <td className="border-b px-2 py-2">{c.is_active ? "Yes" : "No"}</td>
-                  <td className="border-b px-2 py-2 text-neutral-600">
-                    {new Date(c.created_at).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-              {(candidates ?? []).length === 0 ? (
-                <tr>
-                  <td className="px-2 py-6 text-sm text-neutral-500" colSpan={5}>
-                    No candidates yet.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+        <div className="mt-1 text-xs text-neutral-500">
+          Showing latest 50
+          {activeConfcode ? (
+            <>
+              {" "}
+              for active confcode <span className="font-mono">{activeConfcode}</span>
+            </>
+          ) : (
+            <> (no active confcode set)</>
+          )}
         </div>
+
+        <CandidatesTable
+          candidates={(candidates ?? []) as any}
+          geoGroups={(geoGroups ?? []) as any}
+          activeConfcode={activeConfcode}
+        />
       </div>
     </div>
   );

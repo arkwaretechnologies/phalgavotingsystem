@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import QRCode from "@/app/admin/tablets/qr";
 import { createPairCodeForTablet } from "@/app/admin/tablets/pair-actions";
+import { TabletEditor } from "../tablet-editor";
+import { UnpairCard } from "./unpair-card";
 
 export default async function AdminTabletDetailsPage({
   params,
@@ -19,7 +21,8 @@ export default async function AdminTabletDetailsPage({
 
   const supabase = createSupabaseServiceRoleClient();
 
-  const [{ data: tablet, error: tErr }, { data: queue, error: qErr }] = await Promise.all([
+  const [{ data: tablet, error: tErr }, { data: queue, error: qErr }, { data: pairing, error: pErr }] =
+    await Promise.all([
     supabase
       .from("tablets")
       .select("id, label, status, current_session, last_active_at, created_at")
@@ -31,11 +34,23 @@ export default async function AdminTabletDetailsPage({
       .in("status", ["queued", "voting"])
       .order("queue_number", { ascending: true })
       .limit(20),
+    supabase
+      .from("tablet_pairings")
+      .select("claimed_by_device_id, claimed_at, revoked_at")
+      .eq("tablet_id", tabletId)
+      .not("claimed_at", "is", null)
+      .is("revoked_at", null)
+      .order("claimed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (tErr) throw new Error(tErr.message);
   if (qErr) throw new Error(qErr.message);
+  if (pErr) throw new Error(pErr.message);
   if (!tablet) notFound();
+
+  const pairedDeviceId = pairing?.claimed_by_device_id ? String(pairing.claimed_by_device_id) : null;
 
   return (
     <div className="space-y-6">
@@ -73,6 +88,10 @@ export default async function AdminTabletDetailsPage({
         </div>
       </div>
 
+      <TabletEditor id={tablet.id} label={tablet.label} status={tablet.status} />
+
+      {pairedDeviceId ? <UnpairCard tabletId={tablet.id} pairedDeviceId={pairedDeviceId} /> : null}
+
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Pair device</div>
         <p className="mt-2 text-xs text-neutral-500">
@@ -83,9 +102,19 @@ export default async function AdminTabletDetailsPage({
           <form action={createPairCodeForTablet} className="space-y-2">
             <input type="hidden" name="tablet_id" value={String(tablet.id)} />
             <input type="hidden" name="return_to" value={`/admin/tablets/${tablet.id}`} />
-            <button type="submit" className="rounded-md bg-black px-3 py-2 text-sm text-white">
+            <button
+              type="submit"
+              className="rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-50"
+              disabled={Boolean(pairedDeviceId)}
+              title={pairedDeviceId ? "Unpair this tablet first" : undefined}
+            >
               Generate pairing code
             </button>
+            {pairedDeviceId ? (
+              <p className="text-xs text-neutral-500">
+                Pairing is locked while a device is paired. Unpair first to generate a new code.
+              </p>
+            ) : null}
           </form>
 
           {code ? (
