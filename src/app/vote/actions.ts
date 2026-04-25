@@ -6,6 +6,7 @@ import {
   clearVotingSessionCookie,
   getVotingSessionIdFromCookie,
 } from "@/lib/voting/session-cookie";
+import { sendVoterReceiptEmail } from "@/lib/email/vote-receipt";
 
 export type BallotChoicePayload = {
   geo_group_id: number;
@@ -61,6 +62,14 @@ export async function confirmBallotSubmission(
   }
   if (submitError) {
     return { error: submitError };
+  }
+
+  // Best-effort email receipt. Do not block the happy path if email fails.
+  try {
+    await sendVoterReceiptEmail(sessionId);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("send voter receipt email failed", e);
   }
 
   await clearVotingSessionCookie();
