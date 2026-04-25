@@ -31,7 +31,7 @@ export default async function AdminCanvassPage() {
         {!payload.activeConfcode ? (
           <div className="mt-4 text-sm text-neutral-700">
             No active conference is set. Choose a confcode in{" "}
-            <Link href="/admin/settings" className="underline">
+            <Link href="/admin/settings/conference" className="underline">
               Settings
             </Link>{" "}
             to generate a canvass report.

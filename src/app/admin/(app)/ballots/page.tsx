@@ -45,7 +45,7 @@ export default async function AdminBallotsPage() {
             No active conference is selected. Set <span className="font-mono">active_confcode</span> in Settings.
           </p>
           <div className="mt-4">
-            <Link className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50" href="/admin/settings">
+            <Link className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50" href="/admin/settings/conference">
               Open Settings
             </Link>
           </div>

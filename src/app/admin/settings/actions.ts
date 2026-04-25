@@ -21,7 +21,7 @@ export async function setActiveConfcode(formData: FormData) {
       // eslint-disable-next-line no-console
       console.error("setActiveConfcode validate failed", confErr);
       const { message } = toPublicMessage(confErr, "Unable to validate conference code.");
-      redirect(`/admin/settings?error=${encodeURIComponent(message)}`);
+      redirect(`/admin/settings/conference?error=${encodeURIComponent(message)}`);
     }
     if (!conf) throw new Error("Conference code not found");
   }
@@ -33,10 +33,11 @@ export async function setActiveConfcode(formData: FormData) {
     // eslint-disable-next-line no-console
     console.error("setActiveConfcode upsert failed", error);
     const { message } = toPublicMessage(error, "Unable to save settings. Please try again.");
-    redirect(`/admin/settings?error=${encodeURIComponent(message)}`);
+    redirect(`/admin/settings/conference?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/settings/conference");
   revalidatePath("/vote");
 }
 

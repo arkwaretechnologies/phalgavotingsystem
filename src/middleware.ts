@@ -2,9 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith("/admin")) {
+    requestHeaders.set("x-phalga-path", pathname);
+  }
+
   const response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   });
 
