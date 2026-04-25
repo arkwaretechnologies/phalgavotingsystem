@@ -56,10 +56,10 @@ export function CandidatesTable({
   }
 
   return (
-    <div className="mt-4 overflow-x-auto">
+    <div className="admin-table-wrap mt-4">
       {confirmOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">{confirmTitle}</div>
             <div className="mt-2 text-sm text-neutral-600">{confirmMessage}</div>
             <div className="mt-5 flex items-center justify-end gap-2">
@@ -85,24 +85,24 @@ export function CandidatesTable({
           </div>
         </div>
       ) : null}
-      <table className="min-w-full border-separate border-spacing-0">
+      <table className="admin-table">
         <thead>
-          <tr className="text-left text-xs text-neutral-500">
-            <th className="border-b px-2 py-2 font-medium">Name</th>
-            <th className="border-b px-2 py-2 font-medium">Geo group</th>
-            <th className="border-b px-2 py-2 font-medium">Active</th>
-            <th className="border-b px-2 py-2 font-medium">Created</th>
-            <th className="border-b px-2 py-2 font-medium">Actions</th>
+          <tr>
+            <th>Name</th>
+            <th>Geo group</th>
+            <th>Active</th>
+            <th>Created</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody className="text-sm">
+        <tbody>
           {candidates.map((c) => {
             const isEditing = editingId === c.id;
 
             if (!isEditing) {
               return (
-                <tr key={c.id} className="hover:bg-neutral-50">
-                  <td className="border-b px-2 py-2">
+                <tr key={c.id}>
+                  <td>
                     <div className="flex items-center gap-3">
                       {c.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -117,14 +117,12 @@ export function CandidatesTable({
                       <div>{c.full_name}</div>
                     </div>
                   </td>
-                  <td className="border-b px-2 py-2 text-neutral-600">
+                  <td className="text-neutral-600">
                     {c.geo_group_id != null ? geoById.get(c.geo_group_id)?.code ?? "—" : "—"}
                   </td>
-                  <td className="border-b px-2 py-2">{c.is_active ? "Yes" : "No"}</td>
-                  <td className="border-b px-2 py-2 text-neutral-600">
-                    {new Date(c.created_at).toLocaleString()}
-                  </td>
-                  <td className="border-b px-2 py-2">
+                  <td>{c.is_active ? "Yes" : "No"}</td>
+                  <td className="text-neutral-600">{new Date(c.created_at).toLocaleString()}</td>
+                  <td>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -158,8 +156,8 @@ export function CandidatesTable({
             }
 
             return (
-              <tr key={c.id} className="bg-neutral-50/70">
-                <td className="border-b px-2 py-2" colSpan={5}>
+              <tr key={c.id} className="admin-table-edit-row">
+                <td colSpan={5}>
                   <form
                     action={updateCandidate}
                     className="grid gap-3 sm:grid-cols-5"
@@ -168,7 +166,7 @@ export function CandidatesTable({
                     <input type="hidden" name="confcode" value={activeConfcode ?? ""} />
 
                     <div className="sm:col-span-5">
-                      <div className="text-xs text-neutral-500">Current photo</div>
+                      <div className="text-xs text-neutral-600">Current photo</div>
                       <div className="mt-2 flex items-center gap-3">
                         {c.photo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -180,7 +178,7 @@ export function CandidatesTable({
                         ) : (
                           <div className="h-16 w-16 rounded-lg border bg-white" />
                         )}
-                        <div className="text-xs text-neutral-500">
+                        <div className="text-xs text-neutral-600">
                           Uploading a new file will replace the stored URL in{" "}
                           <span className="font-mono">photo_url</span>.
                         </div>
@@ -188,7 +186,7 @@ export function CandidatesTable({
                     </div>
 
                     <label className="block sm:col-span-2">
-                      <span className="text-xs text-neutral-500">Full name</span>
+                      <span className="text-xs text-neutral-600">Full name</span>
                       <input
                         name="full_name"
                         defaultValue={c.full_name}
@@ -198,13 +196,19 @@ export function CandidatesTable({
                     </label>
 
                     <label className="block">
-                      <span className="text-xs text-neutral-500">Geo group</span>
+                      <span className="text-xs text-neutral-600">Geo group</span>
                       <select
                         name="geo_group_id"
-                        defaultValue={c.geo_group_id == null ? "null" : String(c.geo_group_id)}
-                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        defaultValue={c.geo_group_id == null ? "" : String(c.geo_group_id)}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                        required
+                        disabled={geoOptions.length === 0}
                       >
-                        <option value="null">(Unassigned)</option>
+                        {c.geo_group_id == null ? (
+                          <option value="" disabled>
+                            {geoOptions.length ? "Select geo group…" : "No geo groups"}
+                          </option>
+                        ) : null}
                         {geoOptions.map((g) => (
                           <option key={g.id} value={String(g.id)}>
                             {g.code} — {g.name}
@@ -225,7 +229,7 @@ export function CandidatesTable({
                     </label>
 
                     <label className="block sm:col-span-3">
-                      <span className="text-xs text-neutral-500">Bio</span>
+                      <span className="text-xs text-neutral-600">Bio</span>
                       <input
                         name="bio"
                         defaultValue={c.bio ?? ""}
@@ -235,7 +239,7 @@ export function CandidatesTable({
                     </label>
 
                     <label className="block sm:col-span-2">
-                      <span className="text-xs text-neutral-500">Replace photo (optional)</span>
+                      <span className="text-xs text-neutral-600">Replace photo (optional)</span>
                       <input
                         name="photo_file"
                         type="file"
@@ -276,7 +280,7 @@ export function CandidatesTable({
 
           {candidates.length === 0 ? (
             <tr>
-              <td className="px-2 py-6 text-sm text-neutral-500" colSpan={5}>
+              <td className="admin-table-empty" colSpan={5}>
                 No candidates yet.
               </td>
             </tr>

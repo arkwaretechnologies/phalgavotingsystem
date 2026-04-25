@@ -82,7 +82,7 @@ export default async function AdminBallotDetailsPage({
   return (
     <div className="space-y-6">
       <UrlToasts />
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold">Ballot</h1>
@@ -97,42 +97,42 @@ export default async function AdminBallotDetailsPage({
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border p-3">
-            <div className="text-xs text-neutral-500">Confcode</div>
+            <div className="text-xs text-neutral-600">Confcode</div>
             <div className="mt-1 font-mono text-xs">{b.confcode ?? "—"}</div>
           </div>
           <div className="rounded-xl border p-3">
-            <div className="text-xs text-neutral-500">Voter</div>
+            <div className="text-xs text-neutral-600">Voter</div>
             <div className="mt-1 font-mono text-xs">{b.voter_id ?? "—"}</div>
           </div>
           <div className="rounded-xl border p-3">
-            <div className="text-xs text-neutral-500">Submitted</div>
+            <div className="text-xs text-neutral-600">Submitted</div>
             <div className="mt-1 text-sm font-semibold">{b.is_submitted ? "Yes" : "No"}</div>
-            <div className="mt-1 text-xs text-neutral-500">
+            <div className="mt-1 text-xs text-neutral-600">
               {b.submitted_at ? new Date(b.submitted_at).toLocaleString() : ""}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Ballot choices</div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0">
+        <div className="admin-table-wrap mt-3">
+          <table className="admin-table">
             <thead>
-              <tr className="text-left text-xs text-neutral-500">
-                <th className="border-b px-2 py-2 font-medium">Geo group</th>
-                <th className="border-b px-2 py-2 font-medium">Candidate</th>
-                <th className="border-b px-2 py-2 font-medium">Chosen at</th>
+              <tr>
+                <th>Geo group</th>
+                <th>Candidate</th>
+                <th>Chosen at</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-neutral-50">
-                  <td className="border-b px-2 py-2 text-neutral-700">
+                <tr key={r.id}>
+                  <td className="text-neutral-800">
                     <div className="font-mono text-xs">{r.geo_group_code ?? r.geo_group_id}</div>
-                    <div className="text-xs text-neutral-500">{r.geo_group_name ?? ""}</div>
+                    <div className="text-xs text-neutral-600">{r.geo_group_name ?? ""}</div>
                   </td>
-                  <td className="border-b px-2 py-2">
+                  <td>
                     <div className="flex items-center gap-3">
                       {r.candidate_photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -146,11 +146,11 @@ export default async function AdminBallotDetailsPage({
                       )}
                       <div>
                         <div>{r.candidate_full_name ?? r.candidate_id}</div>
-                        <div className="font-mono text-xs text-neutral-500">{r.candidate_id}</div>
+                        <div className="font-mono text-xs text-neutral-600">{r.candidate_id}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="border-b px-2 py-2 text-neutral-600">
+                  <td className="text-neutral-600">
                     {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
                   </td>
                 </tr>
@@ -158,7 +158,7 @@ export default async function AdminBallotDetailsPage({
 
               {rows.length === 0 ? (
                 <tr>
-                  <td className="px-2 py-6 text-sm text-neutral-500" colSpan={3}>
+                  <td className="admin-table-empty" colSpan={3}>
                     No choices recorded for this ballot.
                   </td>
                 </tr>

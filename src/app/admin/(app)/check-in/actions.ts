@@ -47,7 +47,7 @@ export async function checkInVoter(formData: FormData) {
   // Create or reuse session (schema has unique(voter_id))
   const { data: existing, error: exErr } = await supabase
     .from("voting_sessions")
-    .select("id, queue_number, status")
+    .select("id, queue_number, status, session_end, created_at")
     .eq("voter_id", voterId)
     .maybeSingle();
   if (exErr) {
@@ -97,9 +97,17 @@ export async function checkInVoter(formData: FormData) {
       redirect(`/admin/check-in?${params.toString()}`);
     }
     if (existing.status === "voted") {
+      const whenRaw = (existing as { session_end?: string | null; created_at?: string | null }).session_end
+        ?? (existing as { created_at?: string | null }).created_at
+        ?? null;
+      const whenText = whenRaw ? new Date(whenRaw).toLocaleString() : "unknown time";
+      const qn = (existing as { queue_number?: number | null }).queue_number;
       const params = new URLSearchParams();
       if (q) params.set("q", q);
-      params.set("error", "Voter already voted and cannot be checked-in again.");
+      params.set(
+        "error",
+        `Voter already voted (Queue #${qn ?? "—"}) at ${whenText} and cannot be checked-in again.`,
+      );
       redirect(`/admin/check-in?${params.toString()}`);
     }
 

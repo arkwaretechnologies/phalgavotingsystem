@@ -118,10 +118,20 @@ export function renderCanvassReportHtml(model: CanvassReportModel): string {
     .stats { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #333; }
     .stat b { color: #111; }
     h2 { font-size: 13px; margin: 18px 0 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border-bottom: 1px solid #e5e5e5; padding: 8px 6px; vertical-align: top; }
-    th { text-align: left; color: #555; font-weight: 600; }
-    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; line-height: 1.35; }
+    th, td { border-bottom: 1px solid #e8e8e8; padding: 10px 10px; vertical-align: middle; }
+    thead th {
+      background: linear-gradient(to bottom, #fafafa, #f2f2f3);
+      color: #52525b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    tbody tr:hover { background: #f8f8f8; }
+    tbody tr:last-child td { border-bottom: none; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
     .sectionTitle { margin-top: 18px; font-size: 13px; font-weight: 700; }
     .subtotal { margin-top: 6px; font-size: 12px; color: #444; }
     .signatures { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

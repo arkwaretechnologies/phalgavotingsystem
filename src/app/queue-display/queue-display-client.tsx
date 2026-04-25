@@ -314,7 +314,7 @@ export default function QueueDisplayClient() {
             {sortedQueue.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-16 text-center backdrop-blur-sm">
                 <p className="text-lg text-slate-300">No queue numbers at the moment</p>
-                <p className="mt-2 text-sm text-slate-500">Check back after voters check in</p>
+                <p className="mt-2 text-sm text-zinc-400">Check back after voters check in</p>
               </div>
             ) : (
               <div className="flex w-full max-w-xl flex-col items-center">
@@ -344,7 +344,7 @@ export default function QueueDisplayClient() {
             >
               <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Next in line</h2>
               {nextInLine.length === 0 ? (
-                <p className="mt-4 text-sm leading-relaxed text-slate-500">
+                <p className="mt-4 text-sm leading-relaxed text-zinc-400">
                   You’re the only one in the queue right now.
                 </p>
               ) : (

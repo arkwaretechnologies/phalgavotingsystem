@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AdminResultsPayload, AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
 
 type GeoSection = {
@@ -71,15 +71,12 @@ function IconArrowsCollapse({ className }: { className?: string }) {
   );
 }
 
-/** Column / row counts so the geo grid tends to fit one viewport without scrolling the page. */
-function gridDims(sectionCount: number) {
-  if (sectionCount <= 0) return { cols: 1, rows: 1 };
-  if (sectionCount === 1) return { cols: 1, rows: 1 };
-  if (sectionCount === 2) return { cols: 2, rows: 1 };
-  if (sectionCount <= 4) return { cols: 2, rows: Math.ceil(sectionCount / 2) };
-  if (sectionCount <= 6) return { cols: 3, rows: Math.ceil(sectionCount / 3) };
-  if (sectionCount <= 9) return { cols: 3, rows: Math.ceil(sectionCount / 3) };
-  return { cols: 4, rows: Math.ceil(sectionCount / 4) };
+/** Geo cards are laid out in a fixed four-column grid (rows grow as needed). */
+const LIVE_TALLY_GRID_COLS = 4;
+
+function liveTallyGridRows(sectionCount: number) {
+  if (sectionCount <= 0) return 1;
+  return Math.ceil(sectionCount / LIVE_TALLY_GRID_COLS);
 }
 
 function buildGeoSections(payload: AdminResultsPayload): GeoSection[] {
@@ -193,7 +190,7 @@ export function LiveTalliesBoard() {
   }, []);
 
   const sections = useMemo(() => (payload ? buildGeoSections(payload) : []), [payload]);
-  const { cols: gridCols, rows: gridRows } = useMemo(() => gridDims(sections.length), [sections.length]);
+  const gridRows = useMemo(() => liveTallyGridRows(sections.length), [sections.length]);
 
   if (error) {
     return (
@@ -251,7 +248,7 @@ export function LiveTalliesBoard() {
             ) : (
               <span className="font-mono text-slate-300">{payload.activeConfcode}</span>
             )}
-            <span className="mx-1.5 text-slate-600">·</span>
+            <span className="mx-1.5 text-zinc-400">·</span>
             <span className="tabular-nums">{new Date(payload.fetchedAt).toLocaleString()}</span>
           </p>
         </div>
@@ -285,13 +282,13 @@ export function LiveTalliesBoard() {
         className="mt-2 min-h-0 flex-1 gap-2 sm:gap-3"
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${LIVE_TALLY_GRID_COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
           gridAutoFlow: "row",
         }}
       >
         {sections.length === 0 ? (
-          <p className="col-span-full self-center text-center text-sm text-slate-400">
+          <p className="col-span-4 self-center text-center text-sm text-slate-400">
             No candidates to display for this conference.
           </p>
         ) : (
@@ -313,6 +310,58 @@ function barWidthPercent(voteCount: number, totalVoters: number): number {
   return Math.min(100, (voteCount / totalVoters) * 100);
 }
 
+/** Vote count descending; name breaks ties (stable ordering for the numbered list). */
+function rowsRankedByVotes(rows: AdminResultsTallyRow[]) {
+  return [...rows].sort((a, b) => b.vote_count - a.vote_count || a.full_name.localeCompare(b.full_name));
+}
+
+function CandidateRow({
+  rank,
+  r,
+  totalVoters,
+}: {
+  rank: number;
+  r: AdminResultsTallyRow;
+  totalVoters: number;
+}) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 sm:gap-3.5">
+      <span
+        className="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] px-1.5 text-sm font-bold tabular-nums text-zinc-200 ring-1 ring-white/10 sm:h-10 sm:min-w-10 sm:text-base"
+        aria-label={`Rank ${rank}`}
+      >
+        {rank}
+      </span>
+      {r.photo_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={r.photo_url}
+          alt=""
+          className="h-16 w-16 shrink-0 rounded-xl border border-white/15 object-cover shadow-md shadow-black/20 sm:h-[4.5rem] sm:w-[4.5rem] md:h-20 md:w-20"
+        />
+      ) : (
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-slate-800 text-lg font-semibold text-zinc-400 shadow-md shadow-black/20 sm:h-[4.5rem] sm:w-[4.5rem] sm:text-xl md:h-20 md:w-20 md:text-2xl">
+          {r.full_name.slice(0, 1).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs font-medium text-white sm:text-sm">{r.full_name}</div>
+        <div className="mt-0.5 flex items-center gap-2">
+          <span className="text-base font-bold tabular-nums text-sky-300 sm:text-lg">{r.vote_count}</span>
+          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-800 sm:h-2">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-400 transition-[width] duration-700 ease-out"
+              style={{
+                width: `${barWidthPercent(r.vote_count, totalVoters)}%`,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GeoTallyCard({
   section,
   totalVoters,
@@ -320,53 +369,69 @@ function GeoTallyCard({
   section: GeoSection;
   totalVoters: number;
 }) {
+  const ranked = useMemo(() => rowsRankedByVotes(section.rows), [section.rows]);
+  const prevRankByIdRef = useRef<Map<string, number>>(new Map());
+  const [overtakeHighlightIds, setOvertakeHighlightIds] = useState<readonly string[]>([]);
+
+  useEffect(() => {
+    const nextRanks = new Map<string, number>();
+    ranked.forEach((r, i) => nextRanks.set(r.candidate_id, i + 1));
+
+    if (ranked.length === 0) {
+      prevRankByIdRef.current = new Map();
+      setOvertakeHighlightIds([]);
+      return;
+    }
+
+    const prev = prevRankByIdRef.current;
+    const movers: string[] = [];
+    if (prev.size > 0) {
+      for (const [id, newRank] of nextRanks) {
+        const oldRank = prev.get(id);
+        if (oldRank !== undefined && newRank < oldRank) {
+          movers.push(id);
+        }
+      }
+    }
+
+    prevRankByIdRef.current = nextRanks;
+
+    if (movers.length === 0) return;
+
+    setOvertakeHighlightIds(movers);
+    const t = window.setTimeout(() => setOvertakeHighlightIds([]), 6000);
+    return () => window.clearTimeout(t);
+  }, [ranked]);
+
   return (
     <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/60 shadow-lg shadow-black/30 backdrop-blur-md sm:rounded-2xl">
       <div className="shrink-0 border-b border-white/10 bg-slate-900/80 px-2 py-1.5 sm:px-3 sm:py-2">
         <h2 className="truncate text-sm font-semibold text-white sm:text-base">{section.title}</h2>
-        <p className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500 sm:text-xs">
+        <p className="truncate text-[10px] font-medium uppercase tracking-wider text-zinc-400 sm:text-xs">
           {section.subtitle}
         </p>
       </div>
-      <ul className="min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto overscroll-contain">
-        {section.rows.length === 0 ? (
-          <li className="px-2 py-4 text-center text-xs text-slate-500 sm:px-3 sm:text-sm">
-            No candidates in this geo.
-          </li>
-        ) : null}
-        {section.rows.map((r) => (
-          <li key={r.candidate_id} className="px-2 py-1.5 sm:px-3 sm:py-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {r.photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={r.photo_url}
-                  alt=""
-                  className="h-9 w-9 shrink-0 rounded-lg border border-white/10 object-cover sm:h-10 sm:w-10"
-                />
-              ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-xs font-semibold text-slate-500 sm:h-10 sm:w-10 sm:text-sm">
-                  {r.full_name.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-medium text-white sm:text-sm">{r.full_name}</div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <span className="text-base font-bold tabular-nums text-sky-300 sm:text-lg">{r.vote_count}</span>
-                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-800 sm:h-2">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-400 transition-[width] duration-700 ease-out"
-                      style={{
-                        width: `${barWidthPercent(r.vote_count, totalVoters)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+
+      {section.rows.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center px-3 py-8 text-center text-xs text-zinc-400 sm:text-sm">
+          No candidates in this geo.
+        </div>
+      ) : (
+        <div className="live-tally-rest-list min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-white/5">
+          {ranked.map((r, i) => (
+            <div
+              key={r.candidate_id}
+              className={
+                overtakeHighlightIds.includes(r.candidate_id)
+                  ? "live-tally-row--overtake px-2 py-2 sm:px-3 sm:py-2.5"
+                  : "px-2 py-2 sm:px-3 sm:py-2.5"
+              }
+            >
+              <CandidateRow rank={i + 1} r={r} totalVoters={totalVoters} />
             </div>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -77,7 +77,7 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold">Results</h1>
@@ -85,13 +85,13 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
               Live vote totals for each candidate in the active conference. This view refreshes every few seconds.
             </p>
             {payload.activeConfcode ? (
-              <p className="mt-2 text-xs text-neutral-500">
+              <p className="mt-2 text-xs text-neutral-600">
                 Conference{" "}
                 <span className="font-mono text-neutral-700">{payload.activeConfcode}</span>
                 {payload.conferenceName ? (
                   <>
                     {" "}
-                    <span className="text-neutral-400">·</span> {payload.conferenceName}
+                    <span className="text-neutral-500">·</span> {payload.conferenceName}
                   </>
                 ) : null}
               </p>
@@ -126,35 +126,35 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
           </div>
         ) : null}
 
-        <p className="mt-3 text-xs text-neutral-400">
+        <p className="mt-3 text-xs text-neutral-500">
           Last updated {new Date(payload.fetchedAt).toLocaleString()} · Total votes recorded:{" "}
           <span className="font-medium text-neutral-600">{totalVotes}</span>
         </p>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Candidate report</div>
-        <p className="mt-1 text-xs text-neutral-500">
+        <p className="mt-1 text-xs text-neutral-600">
           One row per candidate; counts include only submitted ballots.
         </p>
 
         {!payload.activeConfcode ? null : sortedRows.length === 0 ? (
           <p className="mt-4 text-sm text-neutral-600">No candidates found for this conference.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-0 text-sm">
+          <div className="admin-table-wrap mt-4">
+            <table className="admin-table">
               <thead>
-                <tr className="text-left text-xs text-neutral-500">
-                  <th className="border-b px-2 py-2 font-medium">Candidate</th>
-                  <th className="border-b px-2 py-2 font-medium">Geo</th>
-                  <th className="border-b px-2 py-2 font-medium">Votes</th>
-                  <th className="border-b px-2 py-2 font-medium">Active</th>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Geo</th>
+                  <th className="text-right">Votes</th>
+                  <th>Active</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedRows.map((r) => (
-                  <tr key={r.candidate_id} className="hover:bg-neutral-50">
-                    <td className="border-b px-2 py-2">
+                  <tr key={r.candidate_id}>
+                    <td>
                       <div className="flex items-center gap-3">
                         {r.photo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -169,13 +169,11 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
                         <span className="font-medium text-neutral-900">{r.full_name}</span>
                       </div>
                     </td>
-                    <td className="border-b px-2 py-2 text-neutral-600">{geoLabel(r.geo_group_id)}</td>
-                    <td className="border-b px-2 py-2 tabular-nums font-semibold text-neutral-900">
+                    <td className="text-neutral-600">{geoLabel(r.geo_group_id)}</td>
+                    <td className="text-right tabular-nums font-semibold text-neutral-900">
                       {r.vote_count}
                     </td>
-                    <td className="border-b px-2 py-2 text-neutral-600">
-                      {r.is_active === false ? "No" : "Yes"}
-                    </td>
+                    <td className="text-neutral-600">{r.is_active === false ? "No" : "Yes"}</td>
                   </tr>
                 ))}
               </tbody>

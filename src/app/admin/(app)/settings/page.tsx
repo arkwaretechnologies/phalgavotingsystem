@@ -30,7 +30,7 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Settings</h1>
         <p className="mt-2 text-sm text-neutral-600">
           Select which conference is currently active for voting. Voter screens will only fetch
@@ -38,7 +38,7 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Active confcode</div>
         <form
           action={setActiveConfcode}
@@ -66,7 +66,7 @@ export default async function AdminSettingsPage() {
           </button>
         </form>
 
-        <div className="mt-3 text-xs text-neutral-500">
+        <div className="mt-3 text-xs text-neutral-600">
           Current: <span className="font-mono">{settings?.active_confcode ?? "(none)"}</span>
         </div>
       </div>

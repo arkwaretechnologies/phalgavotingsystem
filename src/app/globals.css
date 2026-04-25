@@ -2,20 +2,66 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #0a0a0a;
+  /* PhALGA – deep black = secondary (accents, primary buttons) */
+  --ph-deep-black: #050203;
+  --ph-surface: #0c0a0b;
+  --ph-surface-mid: #121010;
+  --ph-surface-elevated: #181516;
+  --ph-border: rgba(0, 0, 0, 0.08);
+  --ph-border-strong: rgba(0, 0, 0, 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ph-deep-black: var(--ph-deep-black);
+  --color-ph-surface: var(--ph-surface);
+  --color-ph-surface-mid: var(--ph-surface-mid);
+  --color-ph-surface-elevated: var(--ph-surface-elevated);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Deep black — buttons + sidebar (solid, no gradients) */
+.ph-glossy-black {
+  color: #fff;
+  background-color: var(--ph-deep-black);
+  border: 1px solid var(--ph-deep-black);
+}
+.ph-glossy-black:hover {
+  background-color: var(--ph-deep-black);
+  border-color: var(--ph-deep-black);
+}
+
+/* Admin sidebar: inactive row → solid deep black on hover */
+.nav-sidebar-inactive {
+  color: #52525b;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s, transform 0.2s;
+}
+@media (hover: hover) {
+  .nav-sidebar-inactive:hover {
+    color: #fff;
+    background-color: var(--ph-deep-black);
+    border-color: var(--ph-deep-black);
+  }
+}
+.nav-sidebar-active {
+  color: #fff;
+  background-color: var(--ph-deep-black);
+  border: 1px solid var(--ph-deep-black);
 }
 
 /* /vote/login — entrance + ambient motion (no extra JS deps) */
@@ -117,3 +163,269 @@ body {
 .queue-display-banner {
   animation: queue-display-banner-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* —— PhALGA admin + marketing shell: gradients, cards, nav —— */
+@keyframes admin-surface-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2%, -1%) scale(1.02);
+  }
+}
+
+@keyframes admin-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-surface-blob {
+  animation: admin-surface-drift 22s ease-in-out infinite;
+}
+
+.admin-hero-fade {
+  animation: admin-hero-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.admin-hero-fade-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.admin-hero-fade-delay-2 {
+  animation-delay: 0.16s;
+}
+
+.admin-hero-fade-delay-3 {
+  animation-delay: 0.24s;
+}
+
+.admin-card-in {
+  animation: admin-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.admin-card-in:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.admin-card-in:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.admin-card-in:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.admin-card-in:nth-child(4) {
+  animation-delay: 0.16s;
+}
+.admin-card-in:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.admin-card-in:nth-child(6) {
+  animation-delay: 0.24s;
+}
+.admin-card-in:nth-child(7) {
+  animation-delay: 0.28s;
+}
+.admin-card-in:nth-child(8) {
+  animation-delay: 0.32s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-blob,
+  .admin-hero-fade,
+  .admin-hero-fade-delay-1,
+  .admin-hero-fade-delay-2,
+  .admin-hero-fade-delay-3,
+  .admin-card-in {
+    animation: none !important;
+  }
+
+  .admin-hero-fade,
+  .admin-hero-fade-delay-1,
+  .admin-hero-fade-delay-2,
+  .admin-hero-fade-delay-3,
+  .admin-card-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* —— Admin / tablet data tables (shared) —— */
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--ph-border-strong);
+  background-color: #fff;
+}
+
+.admin-table {
+  /* Let columns size from content; wrapper scrolls horizontally. width:100% alone
+     squeezes many columns until text overlaps and looks "merged". */
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  table-layout: auto;
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, #fafafa, #f4f4f5);
+  border-bottom: 1px solid var(--ph-border-strong);
+  color: #52525b;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  padding: 0.65rem 0.875rem;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.admin-table thead th.text-right {
+  text-align: right;
+}
+
+.admin-table tbody td.text-right {
+  text-align: right;
+}
+
+.admin-table tbody td {
+  border-bottom: 1px solid var(--ph-border);
+  color: #171717;
+  padding: 0.65rem 0.875rem;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.admin-table tbody tr:hover {
+  background-color: rgba(245, 245, 245, 0.92);
+}
+
+.admin-table tbody tr.admin-table-edit-row {
+  background-color: rgba(250, 250, 250, 0.98);
+}
+
+.admin-table tbody tr.admin-table-edit-row:hover {
+  background-color: rgba(245, 245, 245, 0.98);
+}
+
+.admin-table tbody tr.admin-table-edit-row td {
+  border-bottom-color: var(--ph-border-strong);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  vertical-align: top;
+}
+
+.admin-table td.admin-table-empty {
+  border-bottom: none;
+  color: #52525b;
+  font-size: 0.875rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+/* Live tallies board — scrollbar hiding on shell */
+.live-tallies-shell {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.live-tallies-shell::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.live-tallies-shell * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.live-tallies-shell *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Candidate moved up in rank after refresh (any position, not only #1) */
+@keyframes live-tally-overtake-row {
+  0% {
+    background-color: rgba(14, 165, 233, 0.24);
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 189, 248, 0.65),
+      0 0 0 0 rgba(56, 189, 248, 0.35);
+    transform: translate3d(0, 22px, 0) scale(0.97);
+  }
+  18% {
+    background-color: rgba(99, 102, 241, 0.18);
+    box-shadow:
+      inset 0 0 0 1px rgba(165, 180, 252, 0.55),
+      0 0 36px -4px rgba(56, 189, 248, 0.5);
+    transform: translate3d(0, 0, 0) scale(1.03);
+  }
+  40% {
+    background-color: rgba(14, 165, 233, 0.12);
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 189, 248, 0.4),
+      0 0 28px -6px rgba(56, 189, 248, 0.35);
+    transform: translate3d(0, 0, 0) scale(1.01);
+  }
+  70% {
+    background-color: rgba(14, 165, 233, 0.05);
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 189, 248, 0.22),
+      0 0 16px -8px rgba(56, 189, 248, 0.2);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow:
+      inset 0 0 0 1px transparent,
+      0 0 0 0 transparent;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.live-tally-row--overtake {
+  margin-left: 0.125rem;
+  margin-right: 0.125rem;
+  border-radius: 0.75rem;
+  animation: live-tally-overtake-row 5.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-tally-row--overtake {
+    animation: none;
+  }
+}
+

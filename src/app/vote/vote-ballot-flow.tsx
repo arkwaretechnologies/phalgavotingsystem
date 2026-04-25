@@ -157,10 +157,10 @@ export function VoteBallotFlow({
               className="mb-10 rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/30"
               aria-labelledby="review-heading"
             >
-              <h3 id="review-heading" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <h3 id="review-heading" className="text-lg font-semibold text-white dark:text-slate-100">
                 Summary
               </h3>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              <p className="mt-1 text-sm text-neutral-600 dark:text-slate-400">
                 {totalPicks} {totalPicks === 1 ? "choice" : "choices"} across{" "}
                 {summaryRows.filter((r) => r.names.length > 0).length}{" "}
                 {summaryRows.filter((r) => r.names.length > 0).length === 1 ? "region" : "regions"}.
@@ -168,14 +168,14 @@ export function VoteBallotFlow({
               <ul className="mt-5 space-y-5">
                 {summaryRows.map(({ group, names }) => (
                   <li key={group.id}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600 dark:text-slate-400">
                       {group.code ? `${group.code} · ` : ""}
                       {group.name}
                     </p>
                     {names.length === 0 ? (
-                      <p className="mt-1 text-sm text-slate-500">No selection</p>
+                      <p className="mt-1 text-sm text-neutral-600">No selection</p>
                     ) : (
-                      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100">
+                      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white dark:text-slate-100">
                         {names.map((n) => (
                           <li key={n}>{n}</li>
                         ))}
@@ -205,7 +205,7 @@ export function VoteBallotFlow({
                 <button
                   type="button"
                   onClick={() => setStep("edit")}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 dark:border-white/15 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-slate-50 dark:border-white/15 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                 >
                   Back to edit
                 </button>

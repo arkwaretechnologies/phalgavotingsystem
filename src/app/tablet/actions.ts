@@ -62,6 +62,16 @@ export async function unpairTabletFromDevice(formData: FormData) {
     redirect(`/tablet?error=${encodeURIComponent(message)}`);
   }
 
+  // Ensure tablet status reflects unpaired/offline state.
+  const { error: tErr } = await supabase
+    .from("tablets")
+    .update({ status: "offline", current_session: null, last_active_at: new Date().toISOString() })
+    .eq("id", tabletId);
+  if (tErr) {
+    // eslint-disable-next-line no-console
+    console.error("set tablet offline after unpair(device) failed", tErr);
+  }
+
   revalidatePath("/tablet");
   redirect("/tablet/pair?unpaired=1");
 }

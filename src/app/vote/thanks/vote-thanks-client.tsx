@@ -70,13 +70,13 @@ export function VoteThanksClient() {
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16 text-center sm:px-6">
       <div className="space-y-3">
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
           Thank you for casting your votes
         </h1>
         <p className="text-base leading-relaxed text-neutral-700">
           Please proceed to Comelec personnel to complete your voting transaction.
         </p>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-neutral-600">
           If you used a voting tablet, you may leave it at the designated area—staff will ready it for
           the next voter.
         </p>
@@ -84,7 +84,7 @@ export function VoteThanksClient() {
 
       <p className="text-sm font-medium text-neutral-600" aria-live="polite">
         Returning to queue login in{" "}
-        <span className="tabular-nums font-semibold text-neutral-900">{secondsLeft}</span>{" "}
+        <span className="tabular-nums font-semibold text-white">{secondsLeft}</span>{" "}
         {secondsLeft === 1 ? "second" : "seconds"}…
       </p>
 
@@ -97,7 +97,7 @@ export function VoteThanksClient() {
         </Link>
       </div>
 
-      <p className="text-xs text-neutral-400">
+      <p className="text-xs text-neutral-500">
         Your ballot is saved. The voting station tablet (if any) is released for the next voter when
         your ballot was submitted.
       </p>

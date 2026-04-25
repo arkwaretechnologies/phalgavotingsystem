@@ -10,7 +10,7 @@ export default async function AdminCanvassPage() {
   return (
     <div className="space-y-6">
       <UrlToasts />
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold">Canvass</h1>
@@ -37,17 +37,17 @@ export default async function AdminCanvassPage() {
             to generate a canvass report.
           </div>
         ) : (
-          <p className="mt-2 text-xs text-neutral-500">
+          <p className="mt-2 text-xs text-neutral-600">
             Active confcode: <span className="font-mono">{payload.activeConfcode}</span>
           </p>
         )}
       </div>
 
       {model ? (
-        <div className="rounded-2xl border bg-white p-0 shadow-sm">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-0 shadow-sm">
           <div className="border-b px-6 py-4">
             <div className="text-sm font-semibold">Preview</div>
-            <div className="mt-1 text-xs text-neutral-500">
+            <div className="mt-1 text-xs text-neutral-600">
               This preview matches the PDF output.
             </div>
           </div>

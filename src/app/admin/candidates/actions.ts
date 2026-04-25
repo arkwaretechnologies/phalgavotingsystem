@@ -10,7 +10,6 @@ export async function createCandidate(formData: FormData) {
   const confcode = String(formData.get("confcode") ?? "").trim();
   const photoFile = formData.get("photo_file");
   const bioRaw = String(formData.get("bio") ?? "").trim();
-  const isActiveRaw = String(formData.get("is_active") ?? "on");
   const geoGroupIdRaw = String(formData.get("geo_group_id") ?? "").trim();
 
   if (!fullName) throw new Error("Full name is required");
@@ -43,12 +42,14 @@ export async function createCandidate(formData: FormData) {
   }
 
   const bio = bioRaw ? bioRaw : null;
-  const is_active = isActiveRaw === "on" || isActiveRaw === "true";
+  const is_active = formData.get("is_active") === "on";
   const geo_group_id =
-    geoGroupIdRaw && geoGroupIdRaw !== "null" ? Number(geoGroupIdRaw) : null;
+    geoGroupIdRaw && geoGroupIdRaw !== "null" && geoGroupIdRaw !== ""
+      ? Number(geoGroupIdRaw)
+      : null;
 
-  if (geo_group_id !== null && (!Number.isFinite(geo_group_id) || geo_group_id <= 0)) {
-    throw new Error("Invalid geo group");
+  if (geo_group_id == null || !Number.isFinite(geo_group_id) || geo_group_id <= 0) {
+    redirect(`/admin/candidates?error=${encodeURIComponent("Geo group is required.")}`);
   }
 
   const { error } = await supabase.from("candidates").insert({
@@ -113,9 +114,11 @@ export async function updateCandidate(formData: FormData) {
   const bio = bioRaw ? bioRaw : null;
   const is_active = isActiveRaw === "on" || isActiveRaw === "true";
   const geo_group_id =
-    geoGroupIdRaw && geoGroupIdRaw !== "null" ? Number(geoGroupIdRaw) : null;
-  if (geo_group_id !== null && (!Number.isFinite(geo_group_id) || geo_group_id <= 0)) {
-    throw new Error("Invalid geo group");
+    geoGroupIdRaw && geoGroupIdRaw !== "null" && geoGroupIdRaw !== ""
+      ? Number(geoGroupIdRaw)
+      : null;
+  if (geo_group_id == null || !Number.isFinite(geo_group_id) || geo_group_id <= 0) {
+    redirect(`/admin/candidates?error=${encodeURIComponent("Geo group is required.")}`);
   }
 
   const update: Record<string, unknown> = {

@@ -67,7 +67,7 @@ export default async function AdminQueueingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold">Queueing</h1>
@@ -75,7 +75,7 @@ export default async function AdminQueueingPage() {
               Verified voters waiting in line with an active <span className="font-mono">queued</span> session,
               ordered by queue number.
             </p>
-            <p className="mt-2 text-xs text-neutral-500">
+            <p className="mt-2 text-xs text-neutral-600">
               Showing <span className="font-semibold">{rows.length}</span> in queue
             </p>
           </div>
@@ -83,32 +83,32 @@ export default async function AdminQueueingPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         {rows.length === 0 ? (
           <p className="text-sm text-neutral-600">No verified voters are currently queued.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-0">
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
-                <tr className="text-left text-xs text-neutral-500">
-                  <th className="border-b px-2 py-2 font-medium">Queue #</th>
-                  <th className="border-b px-2 py-2 font-medium">Name</th>
-                  <th className="border-b px-2 py-2 font-medium">Position</th>
-                  <th className="border-b px-2 py-2 font-medium">LGU / Province</th>
-                  <th className="border-b px-2 py-2 font-medium">Checked in</th>
+                <tr>
+                  <th>Queue #</th>
+                  <th>Name</th>
+                  <th>Position</th>
+                  <th>LGU / Province</th>
+                  <th>Checked in</th>
                 </tr>
               </thead>
-              <tbody className="text-sm">
+              <tbody>
                 {rows.map(({ session, voter }) => (
-                  <tr key={session.id} className="hover:bg-neutral-50">
-                    <td className="border-b px-2 py-2 font-mono font-semibold">{session.queue_number}</td>
-                    <td className="border-b px-2 py-2">{voter.full_name}</td>
-                    <td className="border-b px-2 py-2 text-neutral-600">{voter.position ?? "—"}</td>
-                    <td className="border-b px-2 py-2 text-neutral-600">
+                  <tr key={session.id}>
+                    <td className="font-mono font-semibold tabular-nums">{session.queue_number}</td>
+                    <td>{voter.full_name}</td>
+                    <td className="text-neutral-600">{voter.position ?? "—"}</td>
+                    <td className="text-neutral-600">
                       {voter.lgu ?? "—"}
                       {voter.province ? ` / ${voter.province}` : ""}
                     </td>
-                    <td className="border-b px-2 py-2 text-neutral-600">
+                    <td className="text-neutral-600">
                       {session.created_at
                         ? new Date(session.created_at).toLocaleString(undefined, {
                             dateStyle: "short",

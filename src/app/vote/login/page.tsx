@@ -30,12 +30,12 @@ export default function VoteLoginPage() {
         <div className="vote-login-fade-up mb-6 flex items-center justify-between gap-4 text-sm">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            className="inline-flex items-center gap-1.5 text-neutral-600 transition-colors hover:text-white dark:text-slate-400 dark:hover:text-white"
           >
             <span aria-hidden className="text-lg leading-none">←</span>
             <span>Home</span>
           </Link>
-          <span className="rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+          <span className="rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-neutral-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
             Voter
           </span>
         </div>
@@ -53,23 +53,23 @@ export default function VoteLoginPage() {
           />
 
           <div className="relative">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-white dark:text-white sm:text-3xl">
               Sign in to vote
             </h1>
-            <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <p className="mt-2 text-pretty text-sm leading-relaxed text-neutral-600 dark:text-slate-400">
               Enter the queue number you were assigned and the six-digit code from
               your QR or from Comelec personnel, then continue to the ballot.
             </p>
 
             <div className="mt-8">
-              <Suspense fallback={<div className="text-sm text-slate-600">Loading…</div>}>
+              <Suspense fallback={<div className="text-sm text-neutral-600">Loading…</div>}>
                 <VoteLoginForm />
               </Suspense>
             </div>
           </div>
         </div>
 
-        <p className="vote-login-fade-up vote-login-fade-up-delay-3 mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
+        <p className="vote-login-fade-up vote-login-fade-up-delay-3 mt-6 text-center text-xs text-neutral-600 dark:text-neutral-600">
           PhALGA Automated Online Voting System
         </p>
       </div>

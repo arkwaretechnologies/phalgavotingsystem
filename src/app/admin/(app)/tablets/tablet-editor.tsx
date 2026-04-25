@@ -30,10 +30,10 @@ export function TabletEditor({
   }
 
   return (
-    <div className="rounded-2xl border bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
       {confirmOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">{confirmTitle}</div>
             <div className="mt-2 text-sm text-neutral-600">{confirmMessage}</div>
             <div className="mt-5 flex items-center justify-end gap-2">

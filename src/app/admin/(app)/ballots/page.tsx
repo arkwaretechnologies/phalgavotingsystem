@@ -39,7 +39,7 @@ export default async function AdminBallotsPage() {
     return (
       <div className="space-y-6">
         <UrlToasts />
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
           <h1 className="text-xl font-semibold">Ballots</h1>
           <p className="mt-2 text-sm text-neutral-600">
             No active conference is selected. Set <span className="font-mono">active_confcode</span> in Settings.
@@ -73,41 +73,39 @@ export default async function AdminBallotsPage() {
   return (
     <div className="space-y-6">
       <UrlToasts />
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Ballots</h1>
         <p className="mt-2 text-sm text-neutral-600">
           Showing ballots for active confcode <span className="font-mono">{activeConfcode}</span>.
         </p>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Recent ballots</div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0">
+        <div className="admin-table-wrap mt-3">
+          <table className="admin-table">
             <thead>
-              <tr className="text-left text-xs text-neutral-500">
-                <th className="border-b px-2 py-2 font-medium">Created</th>
-                <th className="border-b px-2 py-2 font-medium">Ballot</th>
-                <th className="border-b px-2 py-2 font-medium">Voter</th>
-                <th className="border-b px-2 py-2 font-medium">Submitted</th>
-                <th className="border-b px-2 py-2 font-medium">Actions</th>
+              <tr>
+                <th>Created</th>
+                <th>Ballot</th>
+                <th>Voter</th>
+                <th>Submitted</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody>
               {rows.map((b) => (
-                <tr key={b.id} className="hover:bg-neutral-50">
-                  <td className="border-b px-2 py-2 text-neutral-600">
+                <tr key={b.id}>
+                  <td className="text-neutral-600">
                     {b.created_at ? new Date(b.created_at).toLocaleString() : "—"}
                   </td>
-                  <td className="border-b px-2 py-2 font-mono text-xs">{b.id}</td>
-                  <td className="border-b px-2 py-2 font-mono text-xs text-neutral-600">
-                    {b.voter_id ?? "—"}
-                  </td>
-                  <td className="border-b px-2 py-2">
+                  <td className="font-mono text-xs">{b.id}</td>
+                  <td className="font-mono text-xs text-neutral-600">{b.voter_id ?? "—"}</td>
+                  <td>
                     {b.is_submitted ? (
                       <div>
                         <div className="text-sm font-semibold">Yes</div>
-                        <div className="text-xs text-neutral-500">
+                        <div className="text-xs text-neutral-600">
                           {b.submitted_at ? new Date(b.submitted_at).toLocaleString() : ""}
                         </div>
                       </div>
@@ -115,7 +113,7 @@ export default async function AdminBallotsPage() {
                       "No"
                     )}
                   </td>
-                  <td className="border-b px-2 py-2">
+                  <td>
                     <Link
                       className="inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
                       href={`/admin/ballots/${b.id}`}
@@ -128,7 +126,7 @@ export default async function AdminBallotsPage() {
 
               {rows.length === 0 ? (
                 <tr>
-                  <td className="px-2 py-6 text-sm text-neutral-500" colSpan={5}>
+                  <td className="admin-table-empty" colSpan={5}>
                     No ballots found for this confcode.
                   </td>
                 </tr>

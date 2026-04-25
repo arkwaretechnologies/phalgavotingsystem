@@ -117,7 +117,7 @@ export default function TabletPairClient() {
 
       {/* toast handles pairing errors */}
 
-      <div className="mt-6 rounded-xl border bg-white p-4">
+      <div className="mt-6 rounded-xl border border-neutral-200/80 bg-white p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm font-semibold">Scan QR</div>
           {isScanning ? (
@@ -142,7 +142,7 @@ export default function TabletPairClient() {
         {scannerError ? (
           <p className="mt-2 text-xs text-red-600">{scannerError}</p>
         ) : (
-          <p className="mt-2 text-xs text-neutral-500">
+          <p className="mt-2 text-xs text-neutral-600">
             Allow camera access when prompted. After scan, the code will auto-fill below.
           </p>
         )}
@@ -178,7 +178,7 @@ export default function TabletPairClient() {
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-neutral-500">
+      <p className="mt-4 text-xs text-neutral-600">
         Device id:{" "}
         <span className="font-mono" suppressHydrationWarning>
           {deviceId ?? "…"}

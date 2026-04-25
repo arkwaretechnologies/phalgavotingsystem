@@ -45,15 +45,15 @@ export function ConferenceBanner({ conference, activeConfcode }: Props) {
 
   return (
     <div className="mb-8 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
-      <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+      <p className="text-xs font-medium uppercase tracking-wider text-neutral-600 dark:text-slate-400">
         Conference
       </p>
-      <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-white sm:text-2xl dark:text-white">
         {title}
       </h1>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-slate-300">
         {when ? <span>{when}</span> : null}
-        {where ? <span className="text-slate-500 dark:text-slate-400">{where}</span> : null}
+        {where ? <span className="text-neutral-600 dark:text-slate-400">{where}</span> : null}
       </div>
     </div>
   );

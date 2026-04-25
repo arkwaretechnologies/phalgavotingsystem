@@ -47,14 +47,14 @@ export default async function AdminTabletsPage({
   return (
     <div className="space-y-6">
       <UrlToasts clearParams={["tablet"]} />
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold">Tablets</h1>
         <p className="mt-2 text-sm text-neutral-600">
           Pair physical devices to tablet records and monitor their status.
         </p>
       </div>
 
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="text-sm font-semibold">Status board</div>
           <form action={createTablet} className="flex items-center gap-2">
@@ -70,37 +70,39 @@ export default async function AdminTabletsPage({
           </form>
         </div>
 
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0">
+        <div className="admin-table-wrap mt-3">
+          <table className="admin-table">
             <thead>
-              <tr className="text-left text-xs text-neutral-500">
-                <th className="border-b px-2 py-2 font-medium">Label</th>
-                <th className="border-b px-2 py-2 font-medium">Status</th>
-                <th className="border-b px-2 py-2 font-medium">Session</th>
-                <th className="border-b px-2 py-2 font-medium">Details</th>
+              <tr>
+                <th>Label</th>
+                <th>Status</th>
+                <th>Session</th>
+                <th>Details</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody>
               {(tablets ?? []).map((t) => (
-                <tr key={t.id} className="hover:bg-neutral-50">
-                  <td className="border-b px-2 py-2">{t.label}</td>
-                  <td className="border-b px-2 py-2">
-                    {pairedByTabletId.has(t.id) ? t.status : "offline"}
-                  </td>
-                  <td className="border-b px-2 py-2 font-mono text-xs">{t.current_session ?? "—"}</td>
-                  <td className="border-b px-2 py-2">
-                    <a
-                      className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
-                      href={`/admin/tablets/${t.id}`}
-                    >
-                      Open
-                    </a>
+                <tr key={t.id}>
+                  <td>{t.label}</td>
+                  <td>{pairedByTabletId.has(t.id) ? t.status : "offline"}</td>
+                  <td className="font-mono text-xs">{t.current_session ?? "—"}</td>
+                  <td>
+                    {pairedByTabletId.has(t.id) ? (
+                      <a
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
+                        href={`/admin/tablets/${t.id}`}
+                      >
+                        Open
+                      </a>
+                    ) : (
+                      <span className="text-xs text-neutral-400">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
               {(tablets ?? []).length === 0 ? (
                 <tr>
-                  <td className="px-2 py-6 text-sm text-neutral-500" colSpan={4}>
+                  <td className="admin-table-empty" colSpan={4}>
                     No tablets found.
                   </td>
                 </tr>
