@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminPageKey } from "@/lib/admin/admin-page-keys";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -107,24 +108,53 @@ function Icon({
 }
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard", icon: "dashboard" as const },
-  { href: "/admin/check-in", label: "Check-in", icon: "check" as const },
-  { href: "/admin/queueing", label: "Queueing", icon: "queue" as const },
-  { href: "/admin/voters", label: "Voters", icon: "users" as const },
-  { href: "/admin/candidates", label: "Candidates", icon: "candidate" as const },
-  { href: "/admin/ballots", label: "Ballots", icon: "ballot" as const },
-  { href: "/admin/tablets", label: "Tablets", icon: "tablet" as const },
-  { href: "/admin/results", label: "Results", icon: "chart" as const },
-  { href: "/admin/canvass", label: "Canvass", icon: "doc" as const },
-  { href: "/admin/settings", label: "Settings", icon: "settings" as const },
+  { pageKey: "dashboard" as const, href: "/admin", label: "Dashboard", icon: "dashboard" as const },
+  { pageKey: "check_in" as const, href: "/admin/check-in", label: "Check-in", icon: "check" as const },
+  { pageKey: "queueing" as const, href: "/admin/queueing", label: "Queueing", icon: "queue" as const },
+  { pageKey: "voters" as const, href: "/admin/voters", label: "Voters", icon: "users" as const },
+  { pageKey: "candidates" as const, href: "/admin/candidates", label: "Candidates", icon: "candidate" as const },
+  { pageKey: "ballots" as const, href: "/admin/ballots", label: "Ballots", icon: "ballot" as const },
+  { pageKey: "tablets" as const, href: "/admin/tablets", label: "Tablets", icon: "tablet" as const },
+  { pageKey: "results" as const, href: "/admin/results", label: "Results", icon: "chart" as const },
+  { pageKey: "canvass" as const, href: "/admin/canvass", label: "Canvass", icon: "doc" as const },
+  { pageKey: "settings" as const, href: "/admin/settings/conference", label: "Settings", icon: "settings" as const },
 ] as const;
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+function settingsSubClass(active: boolean) {
+  return [
+    "ml-1.5 block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
+    active
+      ? "border-black bg-white/90 font-medium text-neutral-900 shadow-sm ring-1 ring-neutral-200/80"
+      : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100/80 hover:text-neutral-900",
+  ].join(" ");
+}
+
+export default function AdminShell({
+  children,
+  allowedPageKeys,
+  isSuperAdmin,
+}: {
+  children: React.ReactNode;
+  allowedPageKeys: AdminPageKey[];
+  isSuperAdmin: boolean;
+}) {
   const pathname = usePathname();
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin" || pathname === "/admin/";
-    return pathname === href || pathname.startsWith(`${href}/`);
+  const allow = new Set(allowedPageKeys);
+  const visibleNav = NAV_ITEMS.filter((item) => allow.has(item.pageKey));
+  const isActive = (item: (typeof NAV_ITEMS)[number]) => {
+    if (item.pageKey === "settings") {
+      return pathname.startsWith("/admin/settings");
+    }
+    if (item.href === "/admin") return pathname === "/admin" || pathname === "/admin/";
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
+
+  const confPath = "/admin/settings/conference";
+  const settingsRootActive =
+    pathname === confPath || pathname === "/admin/settings" || pathname === "/admin/settings/";
+  const usersPathActive = pathname.startsWith("/admin/settings/users");
+  const rolesPathActive = pathname.startsWith("/admin/settings/roles");
+  const confSubActive = settingsRootActive && !usersPathActive && !rolesPathActive;
 
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden bg-neutral-100 text-neutral-900">
@@ -145,8 +175,57 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </Link>
 
             <nav className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300/90">
-              {NAV_ITEMS.map((item) => {
-                const active = isActive(item.href);
+              {visibleNav.map((item) => {
+                if (item.pageKey === "settings") {
+                  const parentActive = pathname.startsWith("/admin/settings");
+                  return (
+                    <div key="settings" className="space-y-1">
+                      <Link
+                        href={confPath}
+                        className={[
+                          "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
+                          parentActive ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={
+                            parentActive
+                              ? "text-white"
+                              : "text-neutral-500 transition group-hover:text-white"
+                          }
+                        >
+                          <Icon name="settings" />
+                        </span>
+                        <span className="min-w-0 truncate">{item.label}</span>
+                        {parentActive ? (
+                          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                        ) : null}
+                      </Link>
+                      <div className="space-y-0.5 pb-0.5" role="group" aria-label="Settings submenu">
+                        <Link href={confPath} className={settingsSubClass(confSubActive)}>
+                          Conference
+                        </Link>
+                        {isSuperAdmin ? (
+                          <>
+                            <Link
+                              href="/admin/settings/users"
+                              className={settingsSubClass(usersPathActive)}
+                            >
+                              Users
+                            </Link>
+                            <Link
+                              href="/admin/settings/roles"
+                              className={settingsSubClass(rolesPathActive)}
+                            >
+                              Role management
+                            </Link>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                }
+                const active = isActive(item);
                 return (
                   <Link
                     key={item.href}

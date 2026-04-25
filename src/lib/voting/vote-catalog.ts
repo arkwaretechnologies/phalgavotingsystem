@@ -69,6 +69,58 @@ export async function getActiveGeoGroups(): Promise<GeoGroup[]> {
 }
 
 /**
+ * Active confcode from `app_settings` and matching `conference` row.
+ * For headers/login only — does not load candidates or geo groups.
+ */
+export async function getVotingActiveConference(): Promise<{
+  activeConfcode: string | null;
+  conference: Conference | null;
+}> {
+  const supabase = createSupabaseServiceRoleClient();
+
+  const { data: settingsRow, error: settingsErr } = await supabase
+    .from("app_settings")
+    .select("active_confcode")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (settingsErr) {
+    // eslint-disable-next-line no-console
+    console.error("getVotingActiveConference settings load failed", settingsErr);
+    const { message } = toPublicMessage(settingsErr, "Unable to load app settings.");
+    throw new Error(message);
+  }
+
+  const activeConfcode = (
+    (settingsRow as { active_confcode?: string | null } | null)?.active_confcode ?? ""
+  )
+    .trim() || null;
+
+  if (!activeConfcode) {
+    return { activeConfcode: null, conference: null };
+  }
+
+  const { data: confRow, error: confErr } = await supabase
+    .from("conference")
+    .select("confcode, name, date_from, date_to, venue")
+    .eq("confcode", activeConfcode)
+    .maybeSingle();
+
+  if (confErr) {
+    // eslint-disable-next-line no-console
+    console.error("getVotingActiveConference conference load failed", confErr);
+    const { message } = toPublicMessage(confErr, "Unable to load conference.");
+    throw new Error(message);
+  }
+
+  const conference: Conference | null = confRow
+    ? mapConference(confRow as Record<string, unknown>)
+    : null;
+
+  return { activeConfcode, conference };
+}
+
+/**
  * `app_settings` row (id 1) + `conference` row for `active_confcode`, and candidates
  * for that confcode. Candidates are filtered to active rows (`is_active` is null or true).
  */

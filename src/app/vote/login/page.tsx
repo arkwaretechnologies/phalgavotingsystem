@@ -1,11 +1,14 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
+import { getVotingActiveConference } from "@/lib/voting/vote-catalog";
+import { ConferenceBanner } from "../conference-banner";
 import { VoteLoginForm } from "./vote-login-form";
 import { Suspense } from "react";
 
-export default function VoteLoginPage() {
+export default async function VoteLoginPage() {
   if (isVoteLoginBypassed()) redirect("/vote");
+
+  const { conference, activeConfcode } = await getVotingActiveConference();
 
   return (
     <main className="relative isolate min-h-dvh overflow-x-hidden font-sans">
@@ -27,17 +30,14 @@ export default function VoteLoginPage() {
       </div>
 
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4 py-12 sm:px-6">
-        <div className="vote-login-fade-up mb-6 flex items-center justify-between gap-4 text-sm">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-neutral-600 transition-colors hover:text-white dark:text-slate-400 dark:hover:text-white"
-          >
-            <span aria-hidden className="text-lg leading-none">←</span>
-            <span>Home</span>
-          </Link>
+        <div className="vote-login-fade-up mb-6 flex items-center justify-end gap-4 text-sm">
           <span className="rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-neutral-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
             Voter
           </span>
+        </div>
+
+        <div className="vote-login-fade-up">
+          <ConferenceBanner conference={conference} activeConfcode={activeConfcode} />
         </div>
 
         <div
@@ -53,7 +53,7 @@ export default function VoteLoginPage() {
           />
 
           <div className="relative">
-            <h1 className="text-2xl font-bold tracking-tight text-white dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-3xl">
               Sign in to vote
             </h1>
             <p className="mt-2 text-pretty text-sm leading-relaxed text-neutral-600 dark:text-slate-400">

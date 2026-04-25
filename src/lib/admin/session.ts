@@ -5,7 +5,7 @@ import { SignJWT, jwtVerify } from "jose";
 
 const COOKIE_NAME = "phalga_admin_session";
 
-type AdminSessionPayload = {
+export type AdminSessionPayload = {
   admin_user_id: number;
   role: "super_admin" | "admin" | "personnel";
   full_name?: string | null;

@@ -48,7 +48,7 @@ export function ConferenceBanner({ conference, activeConfcode }: Props) {
       <p className="text-xs font-medium uppercase tracking-wider text-neutral-600 dark:text-slate-400">
         Conference
       </p>
-      <h1 className="mt-1 text-xl font-bold tracking-tight text-white sm:text-2xl dark:text-white">
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl dark:text-white">
         {title}
       </h1>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-slate-300">

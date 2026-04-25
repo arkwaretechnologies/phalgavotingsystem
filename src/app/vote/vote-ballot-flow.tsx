@@ -157,7 +157,10 @@ export function VoteBallotFlow({
               className="mb-10 rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/30"
               aria-labelledby="review-heading"
             >
-              <h3 id="review-heading" className="text-lg font-semibold text-white dark:text-slate-100">
+              <h3
+                id="review-heading"
+                className="text-lg font-semibold text-neutral-900 dark:text-slate-100"
+              >
                 Summary
               </h3>
               <p className="mt-1 text-sm text-neutral-600 dark:text-slate-400">
@@ -173,9 +176,9 @@ export function VoteBallotFlow({
                       {group.name}
                     </p>
                     {names.length === 0 ? (
-                      <p className="mt-1 text-sm text-neutral-600">No selection</p>
+                      <p className="mt-1 text-sm text-neutral-600 dark:text-slate-400">No selection</p>
                     ) : (
-                      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white dark:text-slate-100">
+                      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-neutral-900 dark:text-slate-100">
                         {names.map((n) => (
                           <li key={n}>{n}</li>
                         ))}
