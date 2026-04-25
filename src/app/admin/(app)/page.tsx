@@ -37,6 +37,11 @@ export default function AdminDashboardPage() {
           href="/admin/check-in"
         />
         <Card
+          title="Queueing"
+          description="View verified voters waiting with queued status"
+          href="/admin/queueing"
+        />
+        <Card
           title="Voters"
           description="Import voter list via CSV"
           href="/admin/voters"

@@ -9,6 +9,8 @@ import { useUrlToast } from "@/lib/toast/url-toast";
 
 export default function TabletPairClient() {
   const sp = useSearchParams();
+  const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
+  // Start with null so server + first client render match (avoid hydration mismatch).
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [scannerError, setScannerError] = useState<string | null>(null);
@@ -18,7 +20,17 @@ export default function TabletPairClient() {
   const controlsRef = useRef<IScannerControls | null>(null);
 
   useEffect(() => {
-    setDeviceId(getOrCreateDeviceId());
+    // In some managed/kiosk setups, localStorage can be blocked. Show a clear message.
+    try {
+      setDeviceId(getOrCreateDeviceId());
+      setDeviceIdError(null);
+    } catch (e) {
+      setDeviceIdError(
+        e instanceof Error
+          ? e.message
+          : "Unable to access local storage to create a device id.",
+      );
+    }
   }, []);
 
   useUrlToast();
@@ -167,8 +179,14 @@ export default function TabletPairClient() {
       </form>
 
       <p className="mt-4 text-xs text-neutral-500">
-        Device id: <span className="font-mono">{deviceId ?? "…"}</span>
+        Device id:{" "}
+        <span className="font-mono" suppressHydrationWarning>
+          {deviceId ?? "…"}
+        </span>
       </p>
+      {deviceIdError ? (
+        <p className="mt-2 text-xs text-rose-700">{deviceIdError}</p>
+      ) : null}
     </main>
   );
 }

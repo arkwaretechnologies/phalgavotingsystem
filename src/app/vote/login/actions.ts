@@ -35,6 +35,21 @@ export async function loginWithQueueAndToken(formData: FormData) {
     });
     if (!error && data) {
       sessionId = String(data);
+      // Phone / QR-on-own-device: voter is no longer waiting in the physical queue. Ensure the session is
+      // not still `queued` so lobby + admin queue boards stay accurate (some `claim_session` DB versions
+      // may not transition status for phone).
+      if (votedVia === "phone") {
+        const { error: phoneQueueErr } = await supabase
+          .from("voting_sessions")
+          .update({
+            status: "voting",
+            voted_via: "phone",
+            session_start: new Date().toISOString(),
+            tablet_id: null,
+          })
+          .eq("id", sessionId);
+        if (phoneQueueErr) throw phoneQueueErr;
+      }
     } else if (error?.message?.includes("schema cache") || error?.message?.includes("Could not find the function")) {
       // Fallback for DBs that haven't applied the RPC migration yet.
       const { data: session, error: sErr } = await supabase

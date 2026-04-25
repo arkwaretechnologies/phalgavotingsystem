@@ -14,14 +14,32 @@ export default async function AdminTabletsPage({
   const activeTabletId = activeTabletIdRaw ? Number(activeTabletIdRaw) : null;
 
   const supabase = createSupabaseServiceRoleClient();
-  const { data: tablets, error } = await supabase
-    .from("tablets")
-    .select("id, label, status, current_session, last_active_at, created_at")
-    .order("id", { ascending: true });
-  if (error) {
+  const [{ data: tablets, error }, { data: pairings, error: pErr }] = await Promise.all([
+    supabase
+      .from("tablets")
+      .select("id, label, status, current_session, last_active_at, created_at")
+      .order("id", { ascending: true }),
+    supabase
+      .from("tablet_pairings")
+      .select("tablet_id, claimed_by_device_id, claimed_at, revoked_at")
+      .not("claimed_at", "is", null)
+      .is("revoked_at", null),
+  ]);
+
+  if (error || pErr) {
     // eslint-disable-next-line no-console
-    console.error("load tablets failed", error);
+    console.error("load tablets failed", { error, pErr });
     throw new Error("Unable to load tablets right now.");
+  }
+
+  const pairedByTabletId = new Map<number, string>();
+  for (const r of (pairings ?? []) as Array<{
+    tablet_id: number;
+    claimed_by_device_id: string | null;
+  }>) {
+    if (r.tablet_id && r.claimed_by_device_id) {
+      pairedByTabletId.set(Number(r.tablet_id), String(r.claimed_by_device_id));
+    }
   }
 
   const selected = activeTabletId ? (tablets ?? []).find((t) => t.id === activeTabletId) ?? null : null;
@@ -66,7 +84,9 @@ export default async function AdminTabletsPage({
               {(tablets ?? []).map((t) => (
                 <tr key={t.id} className="hover:bg-neutral-50">
                   <td className="border-b px-2 py-2">{t.label}</td>
-                  <td className="border-b px-2 py-2">{t.status}</td>
+                  <td className="border-b px-2 py-2">
+                    {pairedByTabletId.has(t.id) ? t.status : "offline"}
+                  </td>
                   <td className="border-b px-2 py-2 font-mono text-xs">{t.current_session ?? "—"}</td>
                   <td className="border-b px-2 py-2">
                     <a

@@ -18,9 +18,12 @@ export async function claimPairCode(formData: FormData) {
   if (error) {
     const msg = error.message || "Unable to claim code";
     if (msg.toLowerCase().includes("tablet already paired")) {
-      redirect("/tablet/pair?error=paired");
+      redirect("/tablet/pair?toast=error&message=Tablet%20already%20paired.");
     }
-    throw new Error(msg);
+    if (msg.toLowerCase().includes("expired") || msg.toLowerCase().includes("code already expired")) {
+      redirect("/tablet/pair?toast=error&message=Pairing%20code%20already%20expired.");
+    }
+    redirect(`/tablet/pair?toast=error&message=${encodeURIComponent(msg)}`);
   }
   if (!data) throw new Error("Unable to claim code");
 

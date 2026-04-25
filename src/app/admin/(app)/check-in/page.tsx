@@ -2,6 +2,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { checkInVoter } from "./actions";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { UrlToasts } from "@/app/_components/UrlToasts";
+import { ThermalReceiptPrintActions } from "./thermal-receipt-print";
 
 type VoterRow = {
   id: string;
@@ -105,6 +106,10 @@ export default async function AdminCheckInPage({
             <p className="mt-2 text-xs text-neutral-500">
               Next: display QR that encodes queue number + token for the voter.
             </p>
+
+            {checkedQueue && checkedToken && checkedVoterId ? (
+              <ThermalReceiptPrintActions queue={checkedQueue} token={checkedToken} voterId={checkedVoterId} />
+            ) : null}
           </div>
         ) : null}
         {q.length < 2 ? (

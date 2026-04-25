@@ -94,4 +94,26 @@ body {
     opacity: 1;
     transform: none;
   }
+
+  .queue-display-banner {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* /queue-display — vacant-station callout */
+@keyframes queue-display-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.queue-display-banner {
+  animation: queue-display-banner-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
