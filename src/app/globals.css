@@ -273,11 +273,15 @@ body {
   border-radius: 12px;
   box-shadow: inset 0 0 0 1px var(--ph-border-strong);
   background-color: #fff;
+  /* Lets wide tables shrink inside flex layouts so horizontal scroll works */
+  max-width: 100%;
+  min-width: 0;
 }
 
 .admin-table {
   /* Let columns size from content; wrapper scrolls horizontally. width:100% alone
      squeezes many columns until text overlaps and looks "merged". */
+  display: table;
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
@@ -285,6 +289,56 @@ body {
   font-size: 0.875rem;
   line-height: 1.4;
   table-layout: auto;
+}
+
+.admin-table thead {
+  display: table-header-group;
+}
+
+.admin-table tbody {
+  display: table-row-group;
+}
+
+.admin-table tr {
+  display: table-row;
+}
+
+.admin-table th,
+.admin-table td {
+  display: table-cell;
+  box-sizing: border-box;
+}
+
+/* Fixed layout + floor width: prevents columns crushing together (check-in, tablets). */
+.admin-table.admin-table--checkin {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 58rem;
+}
+
+.admin-table.admin-table--checkin tbody td {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.admin-table.admin-table--checkin tbody td:last-child {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  vertical-align: middle;
+}
+
+.admin-table.admin-table--tight {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 34rem;
+}
+
+.admin-table.admin-table--tight tbody td {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  vertical-align: top;
 }
 
 .admin-table thead th {

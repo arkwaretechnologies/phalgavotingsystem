@@ -215,7 +215,17 @@ export default async function AdminCheckInPage({
           <p className="mt-2 text-sm text-neutral-600">No matching voters found.</p>
         ) : (
           <div className="admin-table-wrap mt-4">
-            <table className="admin-table">
+            <table className="admin-table admin-table--checkin">
+              <colgroup>
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "26%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "6%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "6%" }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Name</th>
@@ -239,7 +249,7 @@ export default async function AdminCheckInPage({
 
                   return (
                     <tr key={v.id}>
-                      <td className="whitespace-nowrap">{v.full_name}</td>
+                      <td className="font-medium text-neutral-900">{v.full_name}</td>
                       <td className="text-neutral-600">{v.position ?? "—"}</td>
                       <td className="text-neutral-600">
                         {v.lgu ?? "—"}

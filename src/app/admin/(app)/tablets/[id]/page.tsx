@@ -142,7 +142,7 @@ export default async function AdminTabletDetailsPage({
       <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Queue (top 20)</div>
         <div className="admin-table-wrap mt-3">
-          <table className="admin-table">
+          <table className="admin-table admin-table--tight">
             <thead>
               <tr>
                 <th>Queue #</th>

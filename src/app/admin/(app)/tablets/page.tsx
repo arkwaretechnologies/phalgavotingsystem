@@ -71,7 +71,7 @@ export default async function AdminTabletsPage({
         </div>
 
         <div className="admin-table-wrap mt-3">
-          <table className="admin-table">
+          <table className="admin-table admin-table--tight">
             <thead>
               <tr>
                 <th>Label</th>
