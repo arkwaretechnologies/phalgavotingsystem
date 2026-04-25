@@ -1,7 +1,7 @@
 "use client";
 
 import QRCode from "qrcode";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 function escapeHtml(s: string) {
   return s
@@ -172,11 +172,6 @@ export function ThermalReceiptPrintActions({
   const printingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
-  const voteLoginUrl = useMemo(() => {
-    // Current domain + /vote/login (as requested)
-    return `${window.location.origin}/vote/login`;
-  }, []);
-
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {error ? <div className="w-full text-xs text-rose-700">{error}</div> : null}
@@ -188,6 +183,7 @@ export function ThermalReceiptPrintActions({
           printingRef.current = true;
           setError(null);
           try {
+            const voteLoginUrl = `${window.location.origin}/vote/login`;
             const qr = await QRCode.toDataURL(voteLoginUrl, {
               errorCorrectionLevel: "M",
               margin: 1,
@@ -219,6 +215,7 @@ export function ThermalReceiptPrintActions({
           printingRef.current = true;
           setError(null);
           try {
+            const voteLoginUrl = `${window.location.origin}/vote/login`;
             const qr = await QRCode.toDataURL(voteLoginUrl, {
               errorCorrectionLevel: "M",
               margin: 1,

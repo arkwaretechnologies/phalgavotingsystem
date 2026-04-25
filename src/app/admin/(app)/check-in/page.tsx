@@ -13,6 +13,7 @@ type VoterRow = {
   email: string | null;
   phone: string | null;
   is_verified: boolean | null;
+  voting_sessions?: Array<{ queue_number: number | null; token: string | null; status: string | null }> | null;
 };
 
 export default async function AdminCheckInPage({
@@ -27,8 +28,30 @@ export default async function AdminCheckInPage({
   const checkedVoterId = String(Array.isArray(sp.voter_id) ? sp.voter_id[0] : sp.voter_id ?? "");
   const checkedQueue = String(Array.isArray(sp.queue) ? sp.queue[0] : sp.queue ?? "");
   const checkedToken = String(Array.isArray(sp.token) ? sp.token[0] : sp.token ?? "");
+  const showForVoterId = String(
+    Array.isArray(sp.show_voter_id) ? sp.show_voter_id[0] : sp.show_voter_id ?? "",
+  ).trim();
 
   const supabase = createSupabaseServiceRoleClient();
+
+  // "Show Queue No" path: load latest active session for voter and render the same panel.
+  let showQueue = "";
+  let showToken = "";
+  if (!checkedIn && showForVoterId) {
+    const { data: sRow, error: sErr } = await supabase
+      .from("voting_sessions")
+      .select("queue_number, token, status")
+      .eq("voter_id", showForVoterId)
+      .maybeSingle();
+
+    if (sErr) {
+      // eslint-disable-next-line no-console
+      console.error("load voter session for show queue failed", sErr);
+    } else if (sRow && (sRow.status === "queued" || sRow.status === "voting")) {
+      showQueue = String(sRow.queue_number ?? "");
+      showToken = String(sRow.token ?? "");
+    }
+  }
 
   let voters: VoterRow[] = [];
   if (q.length >= 2) {
@@ -41,7 +64,9 @@ export default async function AdminCheckInPage({
 
     const { data, error } = await supabase
       .from("voters")
-      .select("id, full_name, position, lgu, province, email, phone, is_verified")
+      .select(
+        "id, full_name, position, lgu, province, email, phone, is_verified, voting_sessions(queue_number, token, status)",
+      )
       .or(or)
       .order("full_name", { ascending: true })
       .limit(25);
@@ -52,7 +77,7 @@ export default async function AdminCheckInPage({
       const { message } = toPublicMessage(error, "Unable to search voters right now.");
       throw new Error(message);
     }
-    voters = (data ?? []) as VoterRow[];
+    voters = (data ?? []) as unknown as VoterRow[];
   }
 
   return (
@@ -86,29 +111,33 @@ export default async function AdminCheckInPage({
 
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Results</div>
-        {checkedIn ? (
+        {checkedIn || (showForVoterId && showQueue && showToken) ? (
           <div className="mt-3 rounded-xl border bg-neutral-50 p-4">
             <div className="text-sm font-semibold">Check-in generated</div>
             <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
               <div>
                 <div className="text-xs text-neutral-500">Voter</div>
-                <div className="font-mono text-xs">{checkedVoterId}</div>
+                <div className="font-mono text-xs">{checkedIn ? checkedVoterId : showForVoterId}</div>
               </div>
               <div>
                 <div className="text-xs text-neutral-500">Queue #</div>
-                <div className="font-mono text-lg">{checkedQueue || "—"}</div>
+                <div className="font-mono text-lg">{(checkedIn ? checkedQueue : showQueue) || "—"}</div>
               </div>
               <div>
                 <div className="text-xs text-neutral-500">Token</div>
-                <div className="font-mono text-lg tracking-widest">{checkedToken || "—"}</div>
+                <div className="font-mono text-lg tracking-widest">{(checkedIn ? checkedToken : showToken) || "—"}</div>
               </div>
             </div>
             <p className="mt-2 text-xs text-neutral-500">
               Next: display QR that encodes queue number + token for the voter.
             </p>
 
-            {checkedQueue && checkedToken && checkedVoterId ? (
-              <ThermalReceiptPrintActions queue={checkedQueue} token={checkedToken} voterId={checkedVoterId} />
+            {(checkedIn ? checkedQueue && checkedToken && checkedVoterId : showQueue && showToken && showForVoterId) ? (
+              <ThermalReceiptPrintActions
+                queue={checkedIn ? checkedQueue : showQueue}
+                token={checkedIn ? checkedToken : showToken}
+                voterId={checkedIn ? checkedVoterId : showForVoterId}
+              />
             ) : null}
           </div>
         ) : null}
@@ -127,11 +156,20 @@ export default async function AdminCheckInPage({
                   <th className="border-b px-2 py-2 font-medium">Email</th>
                   <th className="border-b px-2 py-2 font-medium">Phone</th>
                   <th className="border-b px-2 py-2 font-medium">Verified</th>
-                  <th className="border-b px-2 py-2 font-medium">Action</th>
+                  <th className="border-b px-2 py-2 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {voters.map((v) => (
+                  (() => {
+                    const showUrl = (() => {
+                      const params = new URLSearchParams();
+                      if (q) params.set("q", q);
+                      params.set("show_voter_id", v.id);
+                      return `/admin/check-in?${params.toString()}`;
+                    })();
+
+                    return (
                   <tr key={v.id} className="hover:bg-neutral-50">
                     <td className="border-b px-2 py-2">{v.full_name}</td>
                     <td className="border-b px-2 py-2 text-neutral-600">{v.position ?? "—"}</td>
@@ -142,19 +180,30 @@ export default async function AdminCheckInPage({
                     <td className="border-b px-2 py-2 text-neutral-600">{v.email ?? "—"}</td>
                     <td className="border-b px-2 py-2 text-neutral-600">{v.phone ?? "—"}</td>
                     <td className="border-b px-2 py-2">{v.is_verified ? "Yes" : "No"}</td>
-                    <td className="border-b px-2 py-2">
-                      <form action={checkInVoter}>
-                        <input type="hidden" name="voter_id" value={v.id} />
-                        <input type="hidden" name="q" value={q} />
-                        <button
-                          type="submit"
-                          className="rounded-md bg-black px-2 py-1 text-xs text-white hover:bg-neutral-800"
+                    <td className="border-b px-2 py-2 text-right">
+                      {v.is_verified ? (
+                        <a
+                          href={showUrl}
+                          className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-black px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800"
                         >
-                          Check-in
-                        </button>
-                      </form>
+                          Show Queue No
+                        </a>
+                      ) : (
+                        <form action={checkInVoter}>
+                          <input type="hidden" name="voter_id" value={v.id} />
+                          <input type="hidden" name="q" value={q} />
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-black px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800"
+                          >
+                            Check-in
+                          </button>
+                        </form>
+                      )}
                     </td>
                   </tr>
+                    );
+                  })()
                 ))}
               </tbody>
             </table>
