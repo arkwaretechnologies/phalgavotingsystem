@@ -1,10 +1,11 @@
-import { redirect } from "next/navigation";
+import { isSystemSuperSession } from "@/lib/admin/admin-roles";
+import { getNavAllowedPageKeysForSession } from "@/lib/admin/role-presets";
 import {
   assertAdminPathAccessForSession,
-  getNavAllowedPageKeysForSession,
   getPathnameFromHeaders,
 } from "@/lib/admin/path-access";
 import { getAdminSession } from "@/lib/admin/session";
+import { redirect } from "next/navigation";
 import AdminShell from "../_components/AdminShell";
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +20,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   const allowedPageKeys = await getNavAllowedPageKeysForSession(session);
 
   return (
-    <AdminShell allowedPageKeys={allowedPageKeys} isSuperAdmin={session.role === "super_admin"}>
+    <AdminShell allowedPageKeys={allowedPageKeys} isSystemSuper={isSystemSuperSession(session)}>
       {children}
     </AdminShell>
   );

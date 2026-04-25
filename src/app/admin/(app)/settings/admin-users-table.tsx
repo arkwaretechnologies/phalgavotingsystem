@@ -8,17 +8,24 @@ type AdminUserRow = {
   id: number;
   username: string | null;
   full_name: string | null;
-  role: string | null;
+  role_id: number | null;
+  role_label: string;
   created_at: string | null;
 };
 
-const ROLES = [
-  { value: "super_admin", label: "Super admin" },
-  { value: "admin", label: "Admin" },
-  { value: "personnel", label: "Personnel" },
-] as const;
+type RoleOption = { id: number; label: string; slug: string };
 
-export function AdminUsersTable({ users, currentUserId }: { users: AdminUserRow[]; currentUserId: number }) {
+export function AdminUsersTable({
+  users,
+  roleOptions,
+  defaultAddRoleId,
+  currentUserId,
+}: {
+  users: AdminUserRow[];
+  roleOptions: RoleOption[];
+  defaultAddRoleId: number;
+  currentUserId: number;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
@@ -92,9 +99,14 @@ export function AdminUsersTable({ users, currentUserId }: { users: AdminUserRow[
               </label>
               <label className="block text-sm">
                 <span className="font-medium">Role</span>
-                <select name="role" className="mt-1 w-full rounded-md border px-3 py-2 text-sm" defaultValue="personnel">
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
+                <select
+                  name="role_id"
+                  className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={String(defaultAddRoleId)}
+                  required
+                >
+                  {roleOptions.map((r) => (
+                    <option key={r.id} value={r.id}>
                       {r.label}
                     </option>
                   ))}
@@ -168,12 +180,13 @@ export function AdminUsersTable({ users, currentUserId }: { users: AdminUserRow[
               <label className="block text-sm">
                 <span className="font-medium">Role</span>
                 <select
-                  name="role"
+                  name="role_id"
                   className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                  defaultValue={editing.role ?? "personnel"}
+                  defaultValue={editing.role_id != null ? String(editing.role_id) : ""}
+                  required
                 >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
+                  {roleOptions.map((r) => (
+                    <option key={r.id} value={r.id}>
                       {r.label}
                     </option>
                   ))}
@@ -267,7 +280,7 @@ export function AdminUsersTable({ users, currentUserId }: { users: AdminUserRow[
                 <td>{u.full_name}</td>
                 <td>
                   <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-800">
-                    {u.role}
+                    {u.role_label}
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-sm text-neutral-600">

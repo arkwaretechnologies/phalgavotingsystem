@@ -1,37 +1,72 @@
 import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { toPublicMessage } from "@/lib/errors/public-message";
 import type { AdminPageKey } from "./admin-page-keys";
 import { allAdminPageKeys, isAdminPageKey } from "./admin-page-keys";
+import { logSupabaseError } from "./admin-roles-helpers";
 import type { AdminSessionPayload } from "./session";
 
 const ALL = allAdminPageKeys();
 
-export type AdminUserRole = AdminSessionPayload["role"];
+export { SYSTEM_SUPER_SLUG } from "./role-types";
+export type { AdminUserRole, AdminRoleWithPreset } from "./role-types";
 
 /**
- * Fetches allowed page keys for a role. On missing row, returns all keys (fail-open).
- * `getAllowedPageKeysForRole` is used for nav + access; DB stores arrays for each role.
+ * Page keys a role may access. Full-access roles ignore `role_pages` / legacy presets.
  */
-export async function getAllowedPageKeysForRole(role: AdminUserRole): Promise<AdminPageKey[]> {
-  if (role === "super_admin") {
+export async function getAllowedPageKeysForRoleId(roleId: number): Promise<AdminPageKey[]> {
+  const supabase = createSupabaseServiceRoleClient();
+  const { data: roleRow, error: roleErr } = await supabase
+    .from("roles")
+    .select("is_full_access")
+    .eq("role_id", roleId)
+    .maybeSingle();
+  if (roleErr) {
+    logSupabaseError("getAllowedPageKeysForRoleId: roles", roleErr);
+  } else if (roleRow && (roleRow as { is_full_access?: boolean }).is_full_access) {
+    return ALL;
+  } else if (roleRow) {
+    const { data: pageRows, error } = await supabase
+      .from("role_pages")
+      .select("page_key")
+      .eq("role_id", roleId);
+    if (error) {
+      logSupabaseError("getAllowedPageKeysForRoleId: role_pages", error);
+      return ALL;
+    }
+    if (pageRows?.length) {
+      const out: AdminPageKey[] = [];
+      for (const p of pageRows) {
+        const k = (p as { page_key: string }).page_key;
+        if (isAdminPageKey(k)) out.push(k);
+      }
+      return out.length > 0 ? out : [];
+    }
     return ALL;
   }
-  const supabase = createSupabaseServiceRoleClient();
-  const { data, error } = await supabase
+
+  const { data: legRole, error: legErr } = await supabase
+    .from("admin_roles")
+    .select("is_full_access")
+    .eq("id", roleId)
+    .maybeSingle();
+  if (legErr) {
+    logSupabaseError("getAllowedPageKeysForRoleId: admin_roles (legacy)", legErr);
+    return ALL;
+  }
+  if (legRole && (legRole as { is_full_access?: boolean }).is_full_access) {
+    return ALL;
+  }
+  const { data: pres, error: presErr } = await supabase
     .from("admin_role_presets")
     .select("allowed_page_keys")
-    .eq("role", role)
+    .eq("role_id", roleId)
     .maybeSingle();
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("getAllowedPageKeysForRole failed", error);
-    const { message } = toPublicMessage(error, "Unable to load role permissions.");
-    throw new Error(message);
+  if (presErr) {
+    logSupabaseError("getAllowedPageKeysForRoleId: admin_role_presets (legacy)", presErr);
+    return ALL;
   }
-  const raw = (data as { allowed_page_keys?: string[] | null } | null)?.allowed_page_keys;
+  const raw = (pres as { allowed_page_keys?: string[] | null } | null)?.allowed_page_keys;
   if (!raw || !Array.isArray(raw)) {
     return ALL;
   }
@@ -45,35 +80,14 @@ export async function getAllowedPageKeysForRole(role: AdminUserRole): Promise<Ad
   return out.length > 0 ? out : [];
 }
 
-export async function getAllRolePresetsMap(): Promise<Record<AdminUserRole, AdminPageKey[]>> {
-  const supabase = createSupabaseServiceRoleClient();
-  const { data, error } = await supabase
-    .from("admin_role_presets")
-    .select("role, allowed_page_keys")
-    .in("role", ["super_admin", "admin", "personnel"]);
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("getAllRolePresetsMap failed", error);
-    const { message } = toPublicMessage(error, "Unable to load role presets.");
-    throw new Error(message);
+export async function getNavAllowedPageKeysForSession(
+  session: AdminSessionPayload
+): Promise<AdminPageKey[]> {
+  if (session.is_full_access) {
+    return ALL;
   }
-
-  const base: Record<AdminUserRole, AdminPageKey[]> = {
-    super_admin: ALL,
-    admin: ALL,
-    personnel: ALL,
-  };
-
-  for (const row of data ?? []) {
-    const r = (row as { role?: string; allowed_page_keys?: string[] | null }).role;
-    const keys = (row as { allowed_page_keys?: string[] | null }).allowed_page_keys;
-    if (r === "super_admin" || r === "admin" || r === "personnel") {
-      if (keys && Array.isArray(keys) && keys.length > 0) {
-        const parsed = keys.filter((k): k is AdminPageKey => isAdminPageKey(k));
-        base[r] = parsed.length > 0 ? parsed : ALL;
-      }
-    }
-  }
-  return base;
+  const allowed = await getAllowedPageKeysForRoleId(session.admin_role_id);
+  const all = allAdminPageKeys();
+  return all.filter((k) => allowed.includes(k));
 }
+

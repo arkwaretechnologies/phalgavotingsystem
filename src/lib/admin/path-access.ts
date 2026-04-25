@@ -2,16 +2,16 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { isSystemSuperSession } from "./admin-roles";
 import type { AdminPageKey } from "./admin-page-keys";
-import { allAdminPageKeys } from "./admin-page-keys";
-import { getAllowedPageKeysForRole } from "./role-presets";
+import { getAllowedPageKeysForRoleId } from "./role-presets";
 import type { AdminSessionPayload } from "./session";
 
 const PATH_HEADER = "x-phalga-path";
 
 /**
  * Resolves a pathname to a controllable page key, or `null` if unknown (deny).
- * User management routes use separate super_admin checks, not the preset list.
+ * User/role management routes use `isSystemSuperSession`, not presets.
  */
 export function pathnameToPageKey(pathname: string): AdminPageKey | "settings_users" | "settings_roles" | null {
   const p = pathname.replace(/\/$/, "") || "/";
@@ -37,8 +37,8 @@ export async function getPathnameFromHeaders(): Promise<string | null> {
 }
 
 /**
- * `super_admin` always has every page. `settings_users` and `settings_roles` require `super_admin`.
- * Other roles: compare against `admin_role_presets`.
+ * `is_system` super (slug `super_admin`) is required for user/role settings.
+ * `is_full_access` grants every top-level page; other roles use `role_pages`.
  */
 export async function assertAdminPathAccessForSession(
   session: AdminSessionPayload,
@@ -46,7 +46,7 @@ export async function assertAdminPathAccessForSession(
 ): Promise<void> {
   const key = pathnameToPageKey(pathname);
   if (key === "settings_users" || key === "settings_roles") {
-    if (session.role !== "super_admin") {
+    if (!isSystemSuperSession(session)) {
       redirect("/admin/settings/conference?error=" + encodeURIComponent("You do not have access to that page."));
     }
     return;
@@ -55,22 +55,10 @@ export async function assertAdminPathAccessForSession(
     redirect("/admin?error=" + encodeURIComponent("You do not have access to that page."));
     return;
   }
-  if (session.role === "super_admin") return;
+  if (session.is_full_access) return;
 
-  const allowed = await getAllowedPageKeysForRole(session.role);
+  const allowed = await getAllowedPageKeysForRoleId(session.admin_role_id);
   if (!allowed.includes(key)) {
     redirect("/admin?error=" + encodeURIComponent("You do not have access to that page."));
   }
-}
-
-/**
- * For sidebar: allowed nav keys (subset of `AdminPageKey`, always full for super_admin).
- */
-export async function getNavAllowedPageKeysForSession(session: AdminSessionPayload): Promise<AdminPageKey[]> {
-  if (session.role === "super_admin") {
-    return allAdminPageKeys();
-  }
-  const allowed = await getAllowedPageKeysForRole(session.role);
-  const all = allAdminPageKeys();
-  return all.filter((k) => allowed.includes(k));
 }

@@ -1,5 +1,5 @@
 /**
- * Page keys for admin area access control. Must match `admin_role_presets.allowed_page_keys`
+ * Page keys for admin area access control. Must match `role_pages.page_key` values
  * and the pathname mapping in `path-access.ts`.
  */
 export const ADMIN_PAGE_KEY_ORDER = [

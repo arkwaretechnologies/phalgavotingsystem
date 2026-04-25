@@ -132,11 +132,12 @@ function settingsSubClass(active: boolean) {
 export default function AdminShell({
   children,
   allowedPageKeys,
-  isSuperAdmin,
+  isSystemSuper,
 }: {
   children: React.ReactNode;
   allowedPageKeys: AdminPageKey[];
-  isSuperAdmin: boolean;
+  /** `super_admin` system role: user + role management submenu */
+  isSystemSuper: boolean;
 }) {
   const pathname = usePathname();
   const allow = new Set(allowedPageKeys);
@@ -205,7 +206,7 @@ export default function AdminShell({
                         <Link href={confPath} className={settingsSubClass(confSubActive)}>
                           Conference
                         </Link>
-                        {isSuperAdmin ? (
+                        {isSystemSuper ? (
                           <>
                             <Link
                               href="/admin/settings/users"
@@ -220,7 +221,18 @@ export default function AdminShell({
                               Role management
                             </Link>
                           </>
-                        ) : null}
+                        ) : (
+                          <p className="ml-1.5 mt-1.5 text-[11px] leading-snug text-neutral-500">
+                            <span className="font-medium text-neutral-600">Users</span> and{" "}
+                            <span className="font-medium text-neutral-600">Role management</span> are
+                            only shown when you sign in with the{" "}
+                            <span className="font-medium">Super admin</span> role (
+                            <span className="font-mono">super_admin</span> in the database). If your
+                            account was set to another role, ask an admin to set your{" "}
+                            <span className="font-mono">admin_users.role_id</span> to that role, then
+                            log out and sign in again.
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
