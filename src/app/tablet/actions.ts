@@ -62,6 +62,14 @@ export async function unpairTabletFromDevice(formData: FormData) {
     redirect(`/tablet?error=${encodeURIComponent(message)}`);
   }
 
+  // If your DB uses a separate table-to-session pairing table, ensure the session is detached on unpair.
+  // This is best-effort so older DBs without `table_pairings` don't break unpair.
+  const { error: tpErr } = await supabase.from("table_pairings").delete().eq("tablet_id", tabletId);
+  if (tpErr) {
+    // eslint-disable-next-line no-console
+    console.error("delete table_pairings after unpair(device) failed", tpErr);
+  }
+
   // Ensure tablet status reflects unpaired/offline state.
   const { error: tErr } = await supabase
     .from("tablets")

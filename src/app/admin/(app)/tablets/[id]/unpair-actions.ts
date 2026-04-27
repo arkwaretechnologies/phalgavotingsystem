@@ -23,6 +23,13 @@ export async function adminUnpairTablet(formData: FormData) {
     redirect(`/admin/tablets/${tabletId}?error=${encodeURIComponent(message)}`);
   }
 
+  // Best-effort detach any session pairing row on unpair.
+  const { error: tpErr } = await supabase.from("table_pairings").delete().eq("tablet_id", tabletId);
+  if (tpErr) {
+    // eslint-disable-next-line no-console
+    console.error("delete table_pairings after unpair(admin) failed", tpErr);
+  }
+
   // Ensure tablet status reflects unpaired/offline state.
   const { error: tErr } = await supabase
     .from("tablets")

@@ -87,16 +87,12 @@ export default async function AdminTabletsPage({
                   <td>{pairedByTabletId.has(t.id) ? t.status : "offline"}</td>
                   <td className="font-mono text-xs">{t.current_session ?? "—"}</td>
                   <td>
-                    {pairedByTabletId.has(t.id) ? (
-                      <a
-                        className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
-                        href={`/admin/tablets/${t.id}`}
-                      >
-                        Open
-                      </a>
-                    ) : (
-                      <span className="text-xs text-neutral-400">—</span>
-                    )}
+                    <a
+                      className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
+                      href={`/admin/tablets/${t.id}`}
+                    >
+                      Open
+                    </a>
                   </td>
                 </tr>
               ))}
