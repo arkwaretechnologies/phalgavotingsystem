@@ -3,6 +3,7 @@
 import type { AdminPageKey } from "@/lib/admin/admin-page-keys";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 function Icon({
   name,
@@ -140,6 +141,7 @@ export default function AdminShell({
   isSystemSuper: boolean;
 }) {
   const pathname = usePathname();
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const allow = new Set(allowedPageKeys);
   const visibleNav = NAV_ITEMS.filter((item) => allow.has(item.pageKey));
   const isActive = (item: (typeof NAV_ITEMS)[number]) => {
@@ -160,20 +162,76 @@ export default function AdminShell({
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden bg-neutral-100 text-neutral-900">
       <div className="flex min-h-dvh w-full flex-col lg:flex-row">
-        <aside className="border-b border-neutral-200/80 bg-white shadow-sm backdrop-blur-sm lg:sticky lg:top-0 lg:flex lg:h-dvh lg:max-h-dvh lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
+        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-200/80 bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
+          <Link href="/admin" className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-bold text-white">
+              P
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold leading-tight">PhALGA Admin</span>
+              <span className="block truncate text-xs text-neutral-500">Election control</span>
+            </span>
+          </Link>
+          <button
+            type="button"
+            aria-label="Open admin navigation"
+            aria-expanded={isMobileNavOpen}
+            aria-controls="admin-sidebar"
+            onClick={() => setIsMobileNavOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-800 shadow-sm transition active:scale-95"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        </header>
+
+        <button
+          type="button"
+          aria-label="Close admin navigation"
+          onClick={() => setIsMobileNavOpen(false)}
+          className={[
+            "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ease-out lg:hidden motion-reduce:transition-none",
+            isMobileNavOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          ].join(" ")}
+        />
+
+        <aside
+          id="admin-sidebar"
+          className={[
+            "fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] transform-gpu flex-col border-r border-neutral-200/80 bg-white shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform motion-reduce:transition-none",
+            isMobileNavOpen
+              ? "translate-x-0"
+              : "pointer-events-none -translate-x-[105%]",
+            "lg:pointer-events-auto lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-h-dvh lg:w-72 lg:shrink-0 lg:translate-x-0 lg:shadow-sm",
+          ].join(" ")}
+        >
           <div className="flex max-h-full min-h-0 flex-col p-4 lg:overflow-hidden">
-            <Link
-              href="/admin"
-              className="ph-glossy-black group flex shrink-0 items-start gap-3 rounded-2xl p-3.5 transition duration-200 hover:scale-[1.01] active:scale-[0.99]"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-                <span className="text-lg font-bold tracking-tight">P</span>
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold leading-tight">PhALGA Admin</div>
-                <div className="mt-0.5 text-xs text-white/75">Election control</div>
-              </div>
-            </Link>
+            <div className="flex shrink-0 items-start gap-2">
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="ph-glossy-black group flex min-w-0 flex-1 items-start gap-3 rounded-2xl p-3.5 transition duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+                  <span className="text-lg font-bold tracking-tight">P</span>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold leading-tight">PhALGA Admin</div>
+                  <div className="mt-0.5 text-xs text-white/75">Election control</div>
+                </div>
+              </Link>
+              <button
+                type="button"
+                aria-label="Close admin navigation"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition active:scale-95 lg:hidden"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
             <nav className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300/90">
               {visibleNav.map((item) => {
@@ -183,6 +241,7 @@ export default function AdminShell({
                     <div key="settings" className="space-y-1">
                       <Link
                         href={confPath}
+                        onClick={() => setIsMobileNavOpen(false)}
                         className={[
                           "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
                           parentActive ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
@@ -203,19 +262,25 @@ export default function AdminShell({
                         ) : null}
                       </Link>
                       <div className="space-y-0.5 pb-0.5" role="group" aria-label="Settings submenu">
-                        <Link href={confPath} className={settingsSubClass(confSubActive)}>
+                        <Link
+                          href={confPath}
+                          onClick={() => setIsMobileNavOpen(false)}
+                          className={settingsSubClass(confSubActive)}
+                        >
                           Conference
                         </Link>
                         {isSystemSuper ? (
                           <>
                             <Link
                               href="/admin/settings/users"
+                              onClick={() => setIsMobileNavOpen(false)}
                               className={settingsSubClass(usersPathActive)}
                             >
                               Users
                             </Link>
                             <Link
                               href="/admin/settings/roles"
+                              onClick={() => setIsMobileNavOpen(false)}
                               className={settingsSubClass(rolesPathActive)}
                             >
                               Role management
@@ -242,6 +307,7 @@ export default function AdminShell({
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setIsMobileNavOpen(false)}
                     className={[
                       "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
                       active ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
@@ -266,6 +332,7 @@ export default function AdminShell({
             <div className="mt-4 shrink-0 space-y-1.5 border-t border-neutral-200/80 pt-4">
               <Link
                 href="/admin/logout"
+                onClick={() => setIsMobileNavOpen(false)}
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-500 transition duration-200 hover:translate-x-0.5 hover:text-rose-600"
               >
                 <Icon name="logout" className="h-4 w-4 text-rose-500/80" />
@@ -273,6 +340,7 @@ export default function AdminShell({
               </Link>
               <Link
                 href="/"
+                onClick={() => setIsMobileNavOpen(false)}
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-500 transition duration-200 hover:translate-x-0.5 hover:text-neutral-800"
               >
                 <Icon name="home" className="h-4 w-4 text-neutral-400" />
@@ -282,7 +350,7 @@ export default function AdminShell({
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 border-t border-neutral-200/60 bg-white p-4 sm:p-6 lg:border-l lg:border-t-0 lg:p-8">
+        <main className="min-w-0 flex-1 bg-white p-4 sm:p-6 lg:border-l lg:border-t-0 lg:p-8">
           {children}
         </main>
       </div>
