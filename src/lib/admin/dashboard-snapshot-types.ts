@@ -9,6 +9,13 @@ export type DashboardSnapshot = {
   fetchedAt: string;
   activeConfcode: string | null;
   conferenceName: string | null;
+  votingWindow: {
+    start: string | null;
+    end: string | null;
+    status: "open" | "not_started" | "closed";
+    /** ms until end (open) or start (not_started). null if unbounded/unknown. */
+    msRemaining: number | null;
+  };
   totalVoters: number;
   votedVoters: number;
   geoTopThree: DashboardGeoTopThree[];

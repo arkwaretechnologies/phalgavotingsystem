@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getVotingSessionIdFromCookie } from "@/lib/voting/session-cookie";
 import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
+import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
 
 /**
  * `/vote` is only for an active `voting` session. Otherwise send the voter to login
@@ -11,6 +12,12 @@ import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
  */
 export async function ensureVotingSessionInProgress(): Promise<void> {
   if (isVoteLoginBypassed()) return;
+
+  const window = await getVotingWindow();
+  const status = getVotingWindowStatus(window);
+  if (status.kind !== "open") {
+    redirect(`/vote/login?error=closed&msg=${encodeURIComponent("Voting is currently closed.")}`);
+  }
 
   const sessionId = await getVotingSessionIdFromCookie();
   if (!sessionId) redirect("/vote/login");

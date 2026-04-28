@@ -56,6 +56,8 @@ export interface Conference {
 export interface AppSettings {
   id: number;
   active_confcode: string | null;
+  vote_start_date_time?: string | null;
+  vote_end_date_time?: string | null;
   updated_at: string;
 }
 

@@ -2,10 +2,18 @@ import Link from "next/link";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import { buildCanvassReportModel, renderCanvassReportHtml } from "@/lib/admin/canvass-report";
 import { UrlToasts } from "@/app/_components/UrlToasts";
+import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
+import { hasFinalTallyGrant } from "@/lib/admin/final-tally-grant";
+import { FinalTallyForm } from "./final-tally-form";
 
 export default async function AdminCanvassPage() {
+  const status = await getAppSettingsStatus();
+  const isClosed = status === "closed";
+  const unlocked = await hasFinalTallyGrant();
+  const canViewReport = isClosed || unlocked;
+
   const payload = await getAdminResultsPayload();
-  const model = buildCanvassReportModel(payload);
+  const model = canViewReport ? buildCanvassReportModel(payload) : null;
 
   return (
     <div className="space-y-6">
@@ -19,12 +27,21 @@ export default async function AdminCanvassPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href="/admin/canvass/pdf"
-              className="rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-neutral-800"
-            >
-              Download PDF
-            </Link>
+            {canViewReport ? (
+              <Link
+                href="/admin/canvass/pdf"
+                className="rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-neutral-800"
+              >
+                Download PDF
+              </Link>
+            ) : (
+              <span
+                className="rounded-md bg-neutral-200 px-3 py-2 text-sm text-neutral-600"
+                title="Final tally is locked until the election is closed (or a super admin unlocks it)."
+              >
+                Download PDF (locked)
+              </span>
+            )}
           </div>
         </div>
 
@@ -41,6 +58,16 @@ export default async function AdminCanvassPage() {
             Active confcode: <span className="font-mono">{payload.activeConfcode}</span>
           </p>
         )}
+
+        {!canViewReport ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Canvass report is locked while the election status is not closed.
+            <div className="mt-1 text-xs text-amber-900/80">
+              Current status: <span className="font-mono">{status ?? "—"}</span>
+            </div>
+            <FinalTallyForm />
+          </div>
+        ) : null}
       </div>
 
       {model ? (

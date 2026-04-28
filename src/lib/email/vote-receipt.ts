@@ -49,18 +49,40 @@ function renderVoteReceiptHtml(opts: {
   votedAt: string | null;
   rows: ChoiceRow[];
 }) {
-  const sections = new Map<string, ChoiceRow[]>();
+  const ORDER: Record<string, number> = { NL: 0, SL: 1, VIS: 2, MIN: 3 };
+  const sections = new Map<
+    number,
+    { geo_group_id: number; code: string | null; name: string | null; rows: ChoiceRow[] }
+  >();
   for (const r of opts.rows) {
-    const label = `${r.geo_group_code ?? r.geo_group_id} — ${r.geo_group_name ?? ""}`.trim();
-    const list = sections.get(label) ?? [];
-    list.push(r);
-    sections.set(label, list);
+    const cur = sections.get(r.geo_group_id) ?? {
+      geo_group_id: r.geo_group_id,
+      code: r.geo_group_code ?? null,
+      name: r.geo_group_name ?? null,
+      rows: [],
+    };
+    cur.rows.push(r);
+    // Prefer non-null code/name if later rows include them.
+    if (!cur.code && r.geo_group_code) cur.code = r.geo_group_code;
+    if (!cur.name && r.geo_group_name) cur.name = r.geo_group_name;
+    sections.set(r.geo_group_id, cur);
   }
 
-  const geoBlocks = [...sections.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([label, rows]) => {
-      const items = rows
+  const geoBlocks = [...sections.values()]
+    .sort((a, b) => {
+      const aCode = (a.code ?? "").toUpperCase();
+      const bCode = (b.code ?? "").toUpperCase();
+      const ai = ORDER[aCode] ?? Number.POSITIVE_INFINITY;
+      const bi = ORDER[bCode] ?? Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+      // Fallback: stable-ish ordering
+      const aLabel = `${aCode || a.geo_group_id} — ${a.name ?? ""}`.trim();
+      const bLabel = `${bCode || b.geo_group_id} — ${b.name ?? ""}`.trim();
+      return aLabel.localeCompare(bLabel);
+    })
+    .map((sec) => {
+      const label = `${sec.code ?? sec.geo_group_id} — ${sec.name ?? ""}`.trim();
+      const items = sec.rows
         .map((r) => `<li>${escapeHtml(r.candidate_full_name ?? "—")}</li>`)
         .join("");
       return `

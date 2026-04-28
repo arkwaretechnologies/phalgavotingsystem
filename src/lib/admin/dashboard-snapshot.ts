@@ -4,6 +4,7 @@ import type { AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
 import type { DashboardGeoTopThree, DashboardSnapshot } from "@/lib/admin/dashboard-snapshot-types";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
 
 export type { DashboardGeoTopThree, DashboardSnapshot };
 
@@ -81,6 +82,20 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   const supabase = createSupabaseServiceRoleClient();
   const fetchedAt = new Date().toISOString();
   const activeConfcode = results.activeConfcode;
+
+  const votingWindow = await getVotingWindow();
+  const wStatus = getVotingWindowStatus(votingWindow);
+  const windowSnapshot = {
+    start: votingWindow.start,
+    end: votingWindow.end,
+    status: wStatus.kind,
+    msRemaining:
+      wStatus.kind === "open"
+        ? wStatus.remainingMs
+        : wStatus.kind === "not_started"
+          ? wStatus.startsInMs
+          : null,
+  } as const;
 
   const votedPromise =
     activeConfcode != null
@@ -164,39 +179,31 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   const activeUnknownRes = bundle[12] as { count: number | null; error: { message?: string } | null };
 
   if (votedRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard voted count failed", votedRes.error);
   }
   for (let i = 0; i < sessionResults.length; i++) {
     if (sessionResults[i].error) {
-      // eslint-disable-next-line no-console
       console.error("dashboard session count failed", sessionStatuses[i], sessionResults[i].error);
     }
   }
   for (let i = 0; i < tabletResults.length; i++) {
     if (tabletResults[i].error) {
-      // eslint-disable-next-line no-console
       console.error("dashboard tablet count failed", tabletStatuses[i], tabletResults[i].error);
     }
   }
   if (queuedSessionsRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard queued sessions failed", queuedSessionsRes.error);
   }
   if (votingQueuesRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard voting queues failed", votingQueuesRes.error);
   }
   if (activeTabletRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard active voting tablet count failed", activeTabletRes.error);
   }
   if (activePhoneRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard active voting phone count failed", activePhoneRes.error);
   }
   if (activeUnknownRes.error) {
-    // eslint-disable-next-line no-console
     console.error("dashboard active voting unknown channel failed", activeUnknownRes.error);
   }
 
@@ -273,6 +280,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     fetchedAt,
     activeConfcode: results.activeConfcode,
     conferenceName: results.conferenceName,
+    votingWindow: windowSnapshot,
     totalVoters: results.totalVoters,
     votedVoters,
     geoTopThree,

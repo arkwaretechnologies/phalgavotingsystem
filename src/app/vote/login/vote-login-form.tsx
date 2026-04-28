@@ -41,7 +41,9 @@ export function VoteLoginForm() {
   const err = sp.get("error");
   const msg = sp.get("msg");
 
-  useUrlToast({ clearParams: ["error", "msg"] });
+  void err;
+  void msg;
+  useUrlToast({ keys: { message: "msg" }, clearParams: ["error", "msg"] });
 
   useEffect(() => {
     setTabletId(getBoundTabletId());

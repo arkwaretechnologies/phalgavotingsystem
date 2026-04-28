@@ -4,6 +4,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { setVotingSessionCookie } from "@/lib/voting/session-cookie";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
 
 export async function loginWithQueueAndToken(formData: FormData) {
   const queueNumberRaw = String(formData.get("queue_number") ?? "").trim();
@@ -26,6 +27,14 @@ export async function loginWithQueueAndToken(formData: FormData) {
   const votedVia = tabletId ? "tablet" : "phone";
 
   try {
+    const window = await getVotingWindow();
+    const wStatus = getVotingWindowStatus(window);
+    if (wStatus.kind !== "open") {
+      redirect(
+        `/vote/login?error=closed&msg=${encodeURIComponent("Voting is currently closed.")}`,
+      );
+    }
+
     // Prefer RPC if installed; fall back to direct update if not present.
     let sessionId: string | null = null;
     const { data, error } = await supabase.rpc("claim_session", {
@@ -60,7 +69,14 @@ export async function loginWithQueueAndToken(formData: FormData) {
         .maybeSingle();
       if (sErr) throw sErr;
       if (!session?.id) redirect("/vote/login?error=invalid");
-      if (session.status !== "queued") redirect("/vote/login?error=notqueued");
+      if (session.status !== "queued") {
+        if (session.status === "voted") {
+          redirect(
+            `/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`,
+          );
+        }
+        redirect("/vote/login?error=notqueued");
+      }
 
       const { error: upErr } = await supabase
         .from("voting_sessions")
@@ -92,8 +108,12 @@ export async function loginWithQueueAndToken(formData: FormData) {
       if (msg.includes("invalid") || msg.includes("not found") || msg.includes("queue") || msg.includes("token")) {
         redirect("/vote/login?error=invalid");
       }
-      if (msg.includes("already") || msg.includes("used") || msg.includes("voted")) {
-        redirect("/vote/login?error=used");
+      if (msg.includes("voted")) {
+        redirect(`/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`);
+      }
+      if (msg.includes("already") || msg.includes("used")) {
+        // Keep `error=used` for legacy UI expectations, but always provide a human message.
+        redirect(`/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`);
       }
       throw error;
     }
@@ -121,7 +141,6 @@ export async function loginWithQueueAndToken(formData: FormData) {
     redirect("/vote");
   } catch (e) {
     unstable_rethrow(e);
-    // eslint-disable-next-line no-console
     console.error("vote login failed", e);
     const { message } = toPublicMessage(e, "Unable to sign in right now. Please try again.");
     // Preserve a safe, non-sensitive error path for the UI.

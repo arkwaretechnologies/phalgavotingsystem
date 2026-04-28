@@ -208,6 +208,23 @@ const TABLET_COLORS: Record<string, string> = {
   offline: "#a3a3a3",
 };
 
+function formatHHMMSS(ms: number | null): string {
+  if (ms == null) return "—";
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function formatManila(dt: string | null): string {
+  if (!dt) return "—";
+  const d = new Date(dt);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleString(undefined, { timeZone: "Asia/Manila" });
+}
+
 /** Active `voting` sessions split by `voted_via`. */
 const ACTIVE_CHANNEL_COLORS: Record<string, string> = {
   tablet: "#0369a1",
@@ -250,6 +267,7 @@ function SquareStatCard({
 export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
   const [data, setData] = useState<DashboardSnapshot>(initial);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
   const refresh = useCallback(async () => {
     setPollError(null);
@@ -273,11 +291,44 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
     return () => window.clearInterval(id);
   }, [refresh]);
 
+  // Smooth countdown updates (1s) without refetching.
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const turnoutLabel = data.activeConfcode
     ? `Submitted ballots for ${data.activeConfcode} vs. total names on the voter roll.`
     : "Set an active conference in Settings to tie ballots to a confcode. Turnout uses the full voter roll as the denominator.";
 
   const remaining = Math.max(0, data.totalVoters - data.votedVoters);
+  const fetchedAtMs = useMemo(() => {
+    const d = new Date(data.fetchedAt);
+    return Number.isFinite(d.getTime()) ? d.getTime() : null;
+  }, [data.fetchedAt]);
+
+  const liveWindowMsRemaining = useMemo(() => {
+    const base = data.votingWindow.msRemaining;
+    if (base == null) return null;
+    const anchor = fetchedAtMs ?? nowTick;
+    const elapsed = Math.max(0, nowTick - anchor);
+    return Math.max(0, base - elapsed);
+  }, [data.votingWindow.msRemaining, nowTick, fetchedAtMs]);
+
+  const windowLabel =
+    data.votingWindow.status === "open"
+      ? "Voting ends in"
+      : data.votingWindow.status === "not_started"
+        ? "Voting starts in"
+        : "Voting closed";
+  const windowValue =
+    data.votingWindow.status === "closed"
+      ? "Closed"
+      : data.votingWindow.status === "open" && data.votingWindow.msRemaining == null
+        ? "Open"
+        : data.votingWindow.status === "not_started" && data.votingWindow.msRemaining == null
+          ? "Scheduled"
+          : formatHHMMSS(liveWindowMsRemaining);
 
   const sessionItems = data.sessionStatusCounts.map((s) => ({
     key: s.status,
@@ -380,6 +431,15 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
           title="Stations free"
           value={vacantCount}
           subvalue={`${inUseCount} in use · ${offlineCount} offline`}
+        />
+        <SquareStatCard
+          title={windowLabel}
+          value={windowValue}
+          subvalue={
+            data.votingWindow.start || data.votingWindow.end
+              ? `${data.votingWindow.start ? `Start: ${formatManila(data.votingWindow.start)}` : ""}${data.votingWindow.start && data.votingWindow.end ? " · " : ""}${data.votingWindow.end ? `End: ${formatManila(data.votingWindow.end)}` : ""}`
+              : "No voting window set"
+          }
         />
       </div>
 

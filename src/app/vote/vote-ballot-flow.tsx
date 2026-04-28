@@ -16,8 +16,13 @@ function candidatesForGeo(candidates: Candidate[], geoId: number) {
   return candidates.filter((c) => c.geo_group_id === geoId);
 }
 
+const REQUIRED_PICKS_PER_GEO_GROUP = 3;
+
 export function maxSlotsForGroup(g: GeoGroup): number {
-  return Math.min(10, Math.max(1, g.max_votes ?? 3));
+  // Voting rule: exactly 3 candidates per geo group.
+  // Keep this independent of DB `max_votes` so the UI matches enforcement.
+  void g;
+  return REQUIRED_PICKS_PER_GEO_GROUP;
 }
 
 function buildInitialSelections(geoGroups: GeoGroup[]): Record<number, (string | null)[]> {
@@ -92,10 +97,12 @@ export function VoteBallotFlow({
       const pool = candidatesForGeo(candidates, g.id);
       if (pool.length === 0) continue;
       const filled = (selections[g.id] ?? []).filter(Boolean).length;
-      if (filled < 1) return false;
+      if (filled !== REQUIRED_PICKS_PER_GEO_GROUP) return false;
     }
     return geoGroups.some((g) => (selections[g.id] ?? []).some(Boolean));
   }, [geoGroups, candidates, selections]);
+
+  const canSubmit = canGoToReview;
 
   return (
     <div className="min-h-dvh bg-white font-sans text-black">
@@ -108,7 +115,7 @@ export function VoteBallotFlow({
           </h2>
           <p className="mt-2 text-sm text-neutral-600">
             {step === "edit"
-              ? "Select up to the allowed number of candidates in each region."
+              ? `Select exactly ${REQUIRED_PICKS_PER_GEO_GROUP} candidates in each region.`
               : "Confirm everything looks correct. You can go back to change your choices."}
           </p>
         </header>
@@ -135,8 +142,8 @@ export function VoteBallotFlow({
             <div className="mt-10 border-t border-neutral-200 pt-8">
               {!canGoToReview ? (
                 <p className="mb-4 text-center text-sm text-amber-800">
-                  Choose at least one candidate in every region that has nominees, then continue to
-                  review.
+                  Choose exactly {REQUIRED_PICKS_PER_GEO_GROUP} candidates in every region that has
+                  nominees, then continue to review.
                 </p>
               ) : null}
               <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:justify-end">
@@ -204,6 +211,13 @@ export function VoteBallotFlow({
                 </p>
               ) : null}
 
+              {!canSubmit ? (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Your ballot must have exactly {REQUIRED_PICKS_PER_GEO_GROUP} selections per region
+                  before submitting.
+                </p>
+              ) : null}
+
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                 <button
                   type="button"
@@ -214,6 +228,7 @@ export function VoteBallotFlow({
                 </button>
                 <SubmitButton
                   pendingLabel="Submitting…"
+                  disabled={!canSubmit}
                   className="inline-flex min-h-12 min-w-[200px] items-center justify-center rounded-xl bg-emerald-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-60"
                 >
                   Confirm submission

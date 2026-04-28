@@ -3,6 +3,8 @@ import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import { buildCanvassReportModel, renderCanvassReportHtml } from "@/lib/admin/canvass-report";
+import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
+import { hasFinalTallyGrant } from "@/lib/admin/final-tally-grant";
 
 export const runtime = "nodejs";
 
@@ -21,6 +23,13 @@ export async function GET() {
   const session = await getAdminSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const status = await getAppSettingsStatus();
+  const isClosed = status === "closed";
+  const unlocked = await hasFinalTallyGrant();
+  if (!isClosed && !unlocked) {
+    return NextResponse.json({ error: "Canvass report is locked." }, { status: 403 });
   }
 
   const payload = await getAdminResultsPayload();
@@ -66,7 +75,6 @@ export async function GET() {
       },
     });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error("canvass pdf generation failed", e);
     return NextResponse.json({ error: "Unable to generate PDF." }, { status: 500 });
   } finally {

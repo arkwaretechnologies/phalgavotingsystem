@@ -188,7 +188,7 @@ function PoolDragFloat({ drag, candidate }: { drag: PoolDragState; candidate: Ca
             </div>
           )}
         </div>
-        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-1.5 text-center text-xs font-semibold leading-tight text-white dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
+        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-1.5 text-center text-xs font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
           {candidate.full_name}
         </p>
       </div>
@@ -688,7 +688,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                       </div>
                     )}
                   </div>
-                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-2.5 text-center text-xs font-semibold leading-tight text-white dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100 sm:text-sm">
+                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-2.5 text-center text-xs font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100 sm:text-sm">
                     {c.full_name}
                   </p>
                 </div>
@@ -827,7 +827,7 @@ function GeoHeader({
           >
             {code}
           </span>
-          <h2 className="text-lg font-semibold tracking-tight text-white dark:text-slate-100">
+          <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-slate-100">
             {name}
           </h2>
         </div>
