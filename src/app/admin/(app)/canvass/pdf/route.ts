@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
-import { buildCanvassReportModel, renderCanvassReportHtml } from "@/lib/admin/canvass-report";
+import {
+  buildCanvassReportModel,
+  getCanvassReportHeaderDataUrl,
+  renderCanvassReportHtml,
+} from "@/lib/admin/canvass-report";
 import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
 import { hasFinalTallyGrant } from "@/lib/admin/final-tally-grant";
 
@@ -38,7 +42,8 @@ export async function GET() {
     return NextResponse.json({ error: "No active conference set." }, { status: 400 });
   }
 
-  const html = renderCanvassReportHtml(model);
+  const headerDataUrl = await getCanvassReportHeaderDataUrl();
+  const html = renderCanvassReportHtml(model, { headerDataUrl });
   const now = new Date();
   const filename = `Canvass_${fileSafe(model.confcode)}_${tsSafe(now)}.pdf`;
 

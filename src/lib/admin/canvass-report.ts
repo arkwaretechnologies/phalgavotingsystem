@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { AdminResultsPayload, AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
+import path from "node:path";
+import { readFile } from "node:fs/promises";
 
 export type CanvassSignatureBlock = {
   label: string;
@@ -45,6 +47,19 @@ function escapeHtml(s: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+let cachedCanvassHeaderDataUrl: string | null | undefined;
+export async function getCanvassReportHeaderDataUrl() {
+  if (cachedCanvassHeaderDataUrl !== undefined) return cachedCanvassHeaderDataUrl;
+  try {
+    const fp = path.join(process.cwd(), "public", "canvass-report-header.jpg");
+    const bytes = await readFile(fp);
+    cachedCanvassHeaderDataUrl = `data:image/jpeg;base64,${bytes.toString("base64")}`;
+  } catch {
+    cachedCanvassHeaderDataUrl = null;
+  }
+  return cachedCanvassHeaderDataUrl;
 }
 
 export function buildCanvassReportModel(payload: AdminResultsPayload): CanvassReportModel | null {
@@ -96,12 +111,15 @@ export function buildCanvassReportModel(payload: AdminResultsPayload): CanvassRe
     signatures: [
       { label: "Prepared by", lines: 1 },
       { label: "Reviewed by", lines: 1 },
-      { label: "Witnesses", lines: 3 },
+      { label: "Witnesses", lines: 7 },
     ],
   };
 }
 
-export function renderCanvassReportHtml(model: CanvassReportModel): string {
+export function renderCanvassReportHtml(
+  model: CanvassReportModel,
+  opts?: { headerDataUrl?: string | null },
+): string {
   const title = `Canvass Report — ${model.confcode}`;
   const headerSub = model.conferenceName ? `${model.confcode} · ${model.conferenceName}` : model.confcode;
 
@@ -110,6 +128,8 @@ export function renderCanvassReportHtml(model: CanvassReportModel): string {
     * { box-sizing: border-box; }
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #111; margin: 0; }
     .page { padding: 28px; }
+    .reportHeader { width: 100%; margin: 0 0 12px; }
+    .reportHeader img { display: block; width: 100%; height: auto; }
     .header { display: flex; justify-content: space-between; gap: 16px; }
     .h1 { font-size: 18px; font-weight: 700; margin: 0; }
     .sub { margin-top: 4px; color: #444; font-size: 12px; }
@@ -138,6 +158,7 @@ export function renderCanvassReportHtml(model: CanvassReportModel): string {
     .sig { border: 1px solid #ddd; border-radius: 12px; padding: 12px; }
     .sigLabel { font-size: 12px; color: #555; margin-bottom: 10px; }
     .line { border-bottom: 1px solid #111; height: 18px; margin-top: 10px; }
+    .line.witness { height: 40px; margin-top: 12px; }
     .footerNote { margin-top: 18px; font-size: 11px; color: #666; }
     @page { margin: 14mm; }
     @media print {
@@ -180,10 +201,18 @@ export function renderCanvassReportHtml(model: CanvassReportModel): string {
 
   const sigHtml = model.signatures
     .map((s) => {
-      const lines = Array.from({ length: s.lines }).map(() => `<div class="line"></div>`).join("");
+      const isWitness = s.label.trim().toLowerCase() === "witnesses";
+      const lineClass = isWitness ? "line witness" : "line";
+      const lines = Array.from({ length: s.lines })
+        .map(() => `<div class="${lineClass}"></div>`)
+        .join("");
       return `<div class="sig"><div class="sigLabel">${escapeHtml(s.label)}</div>${lines}</div>`;
     })
     .join("");
+
+  const headerImg = opts?.headerDataUrl
+    ? `<div class="reportHeader"><img src="${opts.headerDataUrl}" alt="Canvass report header" /></div>`
+    : "";
 
   return `<!doctype html>
   <html lang="en">
@@ -195,6 +224,7 @@ export function renderCanvassReportHtml(model: CanvassReportModel): string {
     </head>
     <body>
       <div class="page">
+        ${headerImg}
         <div class="header">
           <div>
             <div class="h1">Canvass Report</div>

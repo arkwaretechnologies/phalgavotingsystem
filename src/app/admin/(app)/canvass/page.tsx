@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
-import { buildCanvassReportModel, renderCanvassReportHtml } from "@/lib/admin/canvass-report";
+import {
+  buildCanvassReportModel,
+  getCanvassReportHeaderDataUrl,
+  renderCanvassReportHtml,
+} from "@/lib/admin/canvass-report";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
 import { hasFinalTallyGrant } from "@/lib/admin/final-tally-grant";
@@ -14,6 +18,7 @@ export default async function AdminCanvassPage() {
 
   const payload = await getAdminResultsPayload();
   const model = canViewReport ? buildCanvassReportModel(payload) : null;
+  const headerDataUrl = model ? await getCanvassReportHeaderDataUrl() : null;
 
   return (
     <div className="space-y-6">
@@ -81,7 +86,7 @@ export default async function AdminCanvassPage() {
           <iframe
             title="Canvass report preview"
             className="h-[75vh] w-full rounded-b-2xl"
-            srcDoc={renderCanvassReportHtml(model)}
+            srcDoc={renderCanvassReportHtml(model, { headerDataUrl })}
           />
         </div>
       ) : null}
