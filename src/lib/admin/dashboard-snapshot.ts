@@ -6,6 +6,7 @@ import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 export type { DashboardGeoTopThree, DashboardSnapshot };
 
@@ -120,17 +121,29 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     supabase.from("tablets").select("id", { count: "exact", head: true }).eq("status", status),
   );
 
-  const queuedSessionsPromise = supabase
-    .from("voting_sessions")
-    .select("queue_number, voter_id")
-    .eq("status", "queued")
-    .order("queue_number", { ascending: true });
+  const queuedSessionsPromise = fetchAllRows<{ queue_number: number; voter_id: string | null }>(async (from, to) =>
+    await supabase
+      .from("voting_sessions")
+      .select("queue_number, voter_id")
+      .eq("status", "queued")
+      .order("queue_number", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
+  )
+    .then((data) => ({ data, error: null as any }))
+    .catch((e) => ({ data: null, error: { message: String((e as any)?.message ?? e) } }));
 
-  const votingQueuesPromise = supabase
-    .from("voting_sessions")
-    .select("queue_number")
-    .eq("status", "voting")
-    .order("queue_number", { ascending: true });
+  const votingQueuesPromise = fetchAllRows<{ queue_number: number }>(async (from, to) =>
+    await supabase
+      .from("voting_sessions")
+      .select("queue_number")
+      .eq("status", "voting")
+      .order("queue_number", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
+  )
+    .then((data) => ({ data, error: null as any }))
+    .catch((e) => ({ data: null, error: { message: String((e as any)?.message ?? e) } }));
 
   const activeVotingTabletPromise = supabase
     .from("voting_sessions")

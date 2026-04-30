@@ -83,7 +83,7 @@ function buildReceiptHtml(opts: {
         <div class="bold big kv-value">${escapeHtml(opts.queue)}</div>
       </div>
       <div class="kv">
-        <div class="muted kv-label">Token</div>
+        <div class="muted kv-label">Ballot Code</div>
         <div class="bold big kv-value">${escapeHtml(opts.token)}</div>
       </div>
 

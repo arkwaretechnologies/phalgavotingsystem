@@ -3,6 +3,7 @@ import "server-only";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { AppSettings, Candidate, Conference, GeoGroup } from "@/lib/db/types";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 function numId(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -53,19 +54,17 @@ function mapConference(row: Record<string, unknown>): Conference {
  */
 export async function getActiveGeoGroups(): Promise<GeoGroup[]> {
   const supabase = createSupabaseServiceRoleClient();
-  const { data, error } = await supabase
-    .from("geo_groups")
-    .select("id, code, name, max_votes, is_active, sort_order, created_at")
-    .or("is_active.is.null,is_active.eq.true")
-    .order("sort_order", { ascending: true, nullsFirst: false });
+  const data = await fetchAllRows<Record<string, unknown>>(async (from, to) =>
+    await supabase
+      .from("geo_groups")
+      .select("id, code, name, max_votes, is_active, sort_order, created_at")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(from, to),
+  );
 
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("getActiveGeoGroups failed", error);
-    const { message } = toPublicMessage(error, "Unable to load geo groups.");
-    throw new Error(message);
-  }
-  return (data ?? []).map((row) => mapGeoGroup(row as Record<string, unknown>));
+  return data.map((row) => mapGeoGroup(row as Record<string, unknown>));
 }
 
 /**
@@ -177,14 +176,28 @@ export async function getVotingPageData(): Promise<{
         .select("confcode, name, date_from, date_to, venue")
         .eq("confcode", activeConfcode)
         .maybeSingle(),
-      supabase
-        .from("candidates")
-        .select(
-          "id, geo_group_id, full_name, photo_url, bio, is_active, created_at, confcode",
-        )
-        .eq("confcode", activeConfcode)
-        .or("is_active.is.null,is_active.eq.true")
-        .order("full_name", { ascending: true }),
+      (async () => {
+        try {
+          const data = await fetchAllRows<Record<string, unknown>>(async (from, to) =>
+            await supabase
+              .from("candidates")
+              .select(
+                "id, geo_group_id, full_name, photo_url, bio, is_active, created_at, confcode",
+              )
+              .eq("confcode", activeConfcode)
+              .or("is_active.is.null,is_active.eq.true")
+              .order("full_name", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to),
+          );
+          return { data, error: null as any };
+        } catch (e) {
+          return {
+            data: null,
+            error: { message: String((e as any)?.message ?? e) },
+          };
+        }
+      })(),
     ]);
 
   if (confErr || candErr) {

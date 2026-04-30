@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 /**
  * Public lobby board: verified voters in `queued` sessions + all tablet statuses
@@ -11,12 +12,38 @@ export async function GET() {
 
   const [{ data: sessions, error: sErr }, { data: tablets, error: tErr }, votingWindowRaw] =
     await Promise.all([
-    supabase
-      .from("voting_sessions")
-      .select("queue_number, voter_id, status")
-      .eq("status", "queued")
-      .order("queue_number", { ascending: true }),
-    supabase.from("tablets").select("id, label, status").order("id", { ascending: true }),
+      (async () => {
+        try {
+          const data = await fetchAllRows<{ queue_number: number; voter_id: string | null; status: string | null }>(
+            async (from, to) =>
+              await supabase
+                .from("voting_sessions")
+                .select("queue_number, voter_id, status")
+                .eq("status", "queued")
+                .order("queue_number", { ascending: true })
+                .order("id", { ascending: true })
+                .range(from, to),
+          );
+          return { data, error: null as any };
+        } catch (e) {
+          return { data: null, error: { message: String((e as any)?.message ?? e) } };
+        }
+      })(),
+      (async () => {
+        try {
+          const data = await fetchAllRows<{ id: string; label: string | null; status: string | null }>(
+            async (from, to) =>
+              await supabase
+              .from("tablets")
+              .select("id, label, status")
+              .order("id", { ascending: true })
+              .range(from, to),
+          );
+          return { data, error: null as any };
+        } catch (e) {
+          return { data: null, error: { message: String((e as any)?.message ?? e) } };
+        }
+      })(),
       getVotingWindow(),
     ]);
 

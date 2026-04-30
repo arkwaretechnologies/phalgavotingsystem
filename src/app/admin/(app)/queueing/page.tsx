@@ -1,6 +1,7 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { OpenQueueDisplayButton } from "./open-queue-display-button";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 type VoterBrief = {
   id: string;
@@ -22,11 +23,21 @@ type SessionRow = {
 export default async function AdminQueueingPage() {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { data: sessions, error: sErr } = await supabase
-    .from("voting_sessions")
-    .select("id, queue_number, status, created_at, voter_id")
-    .eq("status", "queued")
-    .order("queue_number", { ascending: true });
+  let sessions: SessionRow[] | null = null;
+  let sErr: { message?: string } | null = null;
+  try {
+    sessions = await fetchAllRows<SessionRow>(async (from, to) =>
+      await supabase
+        .from("voting_sessions")
+        .select("id, queue_number, status, created_at, voter_id")
+        .eq("status", "queued")
+        .order("queue_number", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
+  } catch (e) {
+    sErr = { message: String((e as any)?.message ?? e) };
+  }
 
   if (sErr) {
     // eslint-disable-next-line no-console

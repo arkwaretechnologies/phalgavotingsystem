@@ -33,9 +33,9 @@ function sortRowsForReport(rows: AdminResultsTallyRow[], geoOrder: Map<number, n
     const oa = geoOrder.get(ga) ?? 999;
     const ob = geoOrder.get(gb) ?? 999;
     if (oa !== ob) return oa - ob;
-    const sa = a.sort_order ?? 0;
-    const sb = b.sort_order ?? 0;
-    if (sa !== sb) return sa - sb;
+    const va = Number.isFinite(a.vote_count) ? a.vote_count : 0;
+    const vb = Number.isFinite(b.vote_count) ? b.vote_count : 0;
+    if (va !== vb) return vb - va;
     return a.full_name.localeCompare(b.full_name);
   });
 }

@@ -7,6 +7,7 @@ import type {
 } from "@/lib/admin/results-tallies-types";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 export type { AdminResultsGeoGroup, AdminResultsPayload, AdminResultsTallyRow };
 
@@ -29,17 +30,20 @@ async function fetchTalliesWithoutRpc(
   supabase: ServiceClient,
   activeConfcode: string,
 ): Promise<AdminResultsTallyRow[]> {
-  const { data: candidates, error: cErr } = await supabase
-    .from("candidates")
-    .select("id, geo_group_id, full_name, photo_url, is_active")
-    .eq("confcode", activeConfcode);
-
-  if (cErr) {
-    const { message } = toPublicMessage(cErr, "Unable to load candidates for results.");
+  let cList: Record<string, unknown>[];
+  try {
+    cList = await fetchAllRows<Record<string, unknown>>(async (from, to) =>
+      await supabase
+        .from("candidates")
+        .select("id, geo_group_id, full_name, photo_url, is_active")
+        .eq("confcode", activeConfcode)
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
+  } catch (e) {
+    const { message } = toPublicMessage(e, "Unable to load candidates for results.");
     throw new Error(message);
   }
-
-  const cList = (candidates ?? []) as Record<string, unknown>[];
   if (cList.length === 0) return [];
 
   const counts = new Map<string, number>();
@@ -49,17 +53,21 @@ async function fetchTalliesWithoutRpc(
 
   for (let i = 0; i < candIds.length; i += ID_CHUNK) {
     const chunk = candIds.slice(i, i + ID_CHUNK);
-    const { data: choices, error: chErr } = await supabase
-      .from("ballot_choices")
-      .select("candidate_id, ballot_id")
-      .in("candidate_id", chunk);
-
-    if (chErr) {
-      const { message } = toPublicMessage(chErr, "Unable to load ballot choices for results.");
+    let choiceRows: { candidate_id?: string; ballot_id?: string }[];
+    try {
+      choiceRows = await fetchAllRows<{ candidate_id?: string; ballot_id?: string }>(async (from, to) =>
+        await supabase
+          .from("ballot_choices")
+          .select("candidate_id, ballot_id")
+          .in("candidate_id", chunk)
+          .order("ballot_id", { ascending: true })
+          .order("candidate_id", { ascending: true })
+          .range(from, to),
+      );
+    } catch (e) {
+      const { message } = toPublicMessage(e, "Unable to load ballot choices for results.");
       throw new Error(message);
     }
-
-    const choiceRows = (choices ?? []) as { candidate_id?: string; ballot_id?: string }[];
     const ballotIds = [...new Set(choiceRows.map((x) => String(x.ballot_id ?? "")).filter(Boolean))];
     if (ballotIds.length === 0) continue;
 
@@ -178,11 +186,22 @@ export async function getAdminResultsPayload(): Promise<AdminResultsPayload> {
       .select("name")
       .eq("confcode", activeConfcode)
       .maybeSingle(),
-    supabase
-      .from("geo_groups")
-      .select("id, code, name, sort_order")
-      .or("is_active.is.null,is_active.eq.true")
-      .order("sort_order", { ascending: true, nullsFirst: false }),
+    (async () => {
+      try {
+        const data = await fetchAllRows<Record<string, unknown>>(async (from, to) =>
+          await supabase
+            .from("geo_groups")
+            .select("id, code, name, sort_order")
+            .or("is_active.is.null,is_active.eq.true")
+            .order("sort_order", { ascending: true, nullsFirst: false })
+            .order("id", { ascending: true })
+            .range(from, to),
+        );
+        return { data, error: null as any };
+      } catch (e) {
+        return { data: null, error: { message: String((e as any)?.message ?? e) } };
+      }
+    })(),
     supabase.from("voters").select("id", { count: "exact", head: true }),
     supabase.rpc("get_results_tallies_by_confcode", {
       p_confcode: activeConfcode,
