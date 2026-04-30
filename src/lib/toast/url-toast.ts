@@ -15,6 +15,8 @@ export function useUrlToast(options?: {
   keys?: { kind?: string; message?: string };
   defaultKind?: ToastKind;
   clearParams?: string[];
+  /** How long the toast stays visible (ms). Overrides global Toaster duration for this toast only. */
+  duration?: number;
 }) {
   const sp = useSearchParams();
   const router = useRouter();
@@ -61,9 +63,11 @@ export function useUrlToast(options?: {
       msg = "Device unpaired.";
     }
 
-    if (kind === "success") toast.success(msg);
-    else if (kind === "error") toast.error(msg);
-    else toast(msg);
+    const toastOpts = options?.duration != null ? { duration: options.duration } : undefined;
+
+    if (kind === "success") toast.success(msg, toastOpts);
+    else if (kind === "error") toast.error(msg, toastOpts);
+    else toast(msg, toastOpts);
 
     const next = new URLSearchParams(sp.toString());
     const toClear = new Set([kindKey, messageKey, "error", "msg", "unpaired", ...(options?.clearParams ?? [])]);
@@ -71,6 +75,6 @@ export function useUrlToast(options?: {
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dedupeKey, sp, pathname, router, kindKey, messageKey, defaultKind, options?.clearParams]);
+  }, [dedupeKey, sp, pathname, router, kindKey, messageKey, defaultKind, options?.clearParams, options?.duration]);
 }
 

@@ -188,7 +188,7 @@ function PoolDragFloat({ drag, candidate }: { drag: PoolDragState; candidate: Ca
             </div>
           )}
         </div>
-        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-1.5 text-center text-xs font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
+        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-2 text-center text-sm font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
           {candidate.full_name}
         </p>
       </div>
@@ -620,7 +620,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
 
         <ul
           ref={poolListRef}
-          className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 sm:gap-4"
+          className="m-0 flex list-none flex-wrap content-start gap-4 p-0 sm:gap-5"
         >
           {poolCandidates.map((c) => {
             const isPlacing =
@@ -628,7 +628,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
             return (
             <li
               key={c.id}
-              className="m-0 list-none p-0"
+              className="m-0 w-[calc((100%-1rem)/2)] shrink-0 list-none p-0 sm:w-[17rem]"
               data-pool-candidate={c.id}
             >
               <div
@@ -688,7 +688,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                       </div>
                     )}
                   </div>
-                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-2.5 text-center text-xs font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100 sm:text-sm">
+                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-3 text-center text-sm font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
                     {c.full_name}
                   </p>
                 </div>
@@ -704,7 +704,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
           </p>
           <ol className="m-0 flex list-none flex-wrap gap-2 p-0 sm:gap-3" aria-label="Vote slots">
             {slots.map((id, i) => (
-              <li key={i} className="flex-1 basis-[30%] sm:max-w-[140px]">
+              <li key={i} className="flex-1 basis-[30%] sm:max-w-[172px]">
                 <div
                   data-geo-slot={i}
                   ref={(el) => {
@@ -714,7 +714,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                   onDragOver={onDragOver}
                   onDrop={onDropSlot(i)}
                   className={[
-                    "relative min-h-[112px] rounded-2xl border-2 border-dashed transition",
+                    "relative min-h-[128px] rounded-2xl border-2 border-dashed transition",
                     id
                       ? "border-slate-300/90 bg-slate-50/90 dark:border-white/15 dark:bg-white/[0.04]"
                       : "border-slate-200/90 bg-slate-50/40 dark:border-white/10 dark:bg-white/[0.02]",
@@ -759,14 +759,14 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                               </div>
                             )}
                           </div>
-                          <p className="mt-1 line-clamp-2 px-0.5 text-center text-[10px] font-medium leading-tight text-neutral-800 dark:text-slate-100 sm:text-xs">
+                          <p className="mt-1 line-clamp-2 px-0.5 text-center text-xs font-medium leading-tight text-neutral-800 dark:text-slate-100">
                             {byId[id].full_name}
                           </p>
                         </div>
                       </div>
                     </>
                   ) : (
-                    <div className="flex min-h-[112px] items-center justify-center p-1 text-center">
+                    <div className="flex min-h-[128px] items-center justify-center p-1 text-center">
                       <span className="text-2xl font-light text-slate-300 dark:text-neutral-600">
                         {i + 1}
                       </span>

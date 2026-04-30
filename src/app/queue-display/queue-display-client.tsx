@@ -4,10 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TabletRow = { id: number; label: string; status: string | null };
 
+type VotingWindowPayload = {
+  start: string | null;
+  end: string | null;
+  status: "open" | "not_started" | "closed";
+  msRemaining: number | null;
+};
+
 type Payload = {
   queue_numbers: number[];
   tablets: TabletRow[];
   now: string;
+  votingWindow?: VotingWindowPayload;
   error?: string;
 };
 
@@ -95,6 +103,53 @@ function formatTabletLine(t: TabletRow) {
   return `Tablet ${t.id} (${name})`;
 }
 
+function formatHHMMSS(ms: number | null): string {
+  if (ms == null) return "—";
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function formatManila(dt: string | null): string {
+  if (!dt) return "—";
+  const d = new Date(dt);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleString(undefined, { timeZone: "Asia/Manila" });
+}
+
+function VotingSessionCountdownPane({
+  votingWindow,
+  windowLabel,
+  windowValue,
+}: {
+  votingWindow: VotingWindowPayload | null;
+  windowLabel: string;
+  windowValue: string;
+}) {
+  return (
+    <div
+      className="bg-transparent px-1 py-1 text-center text-white"
+      aria-live="polite"
+      aria-label={
+        votingWindow
+          ? `${windowLabel} ${windowValue}${votingWindow.start ? `. Start ${formatManila(votingWindow.start)}` : ""}`
+          : "Voting schedule loading"
+      }
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-white/80">{windowLabel}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-white sm:text-3xl">{windowValue}</p>
+      {votingWindow?.start ? (
+        <p className="mt-1.5 line-clamp-2 text-[11px] leading-snug text-white/85">
+          Start: {formatManila(votingWindow.start)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export default function QueueDisplayClient() {
   const [queueNumbers, setQueueNumbers] = useState<number[]>([]);
   const [tablets, setTablets] = useState<TabletRow[]>([]);
@@ -103,6 +158,9 @@ export default function QueueDisplayClient() {
   const [banner, setBanner] = useState<{ text: string; key: number } | null>(null);
   const [voiceOn, setVoiceOn] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [votingWindow, setVotingWindow] = useState<VotingWindowPayload | null>(null);
+  const [votingWindowFetchedAtMs, setVotingWindowFetchedAtMs] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const prevStatusRef = useRef<Record<number, string | null>>({});
   const bannerKeyRef = useRef(0);
   const lastAnnouncedServingRef = useRef<number | null>(null);
@@ -130,6 +188,11 @@ export default function QueueDisplayClient() {
       setQueueNumbers(json.queue_numbers ?? []);
       const nextTablets = json.tablets ?? [];
       setTablets(nextTablets);
+      if (json.votingWindow) {
+        setVotingWindow(json.votingWindow);
+        const anchor = new Date(json.now).getTime();
+        setVotingWindowFetchedAtMs(Number.isFinite(anchor) ? anchor : Date.now());
+      }
 
       const prev = prevStatusRef.current;
       const becameVacant: TabletRow[] = [];
@@ -163,6 +226,11 @@ export default function QueueDisplayClient() {
       window.speechSynthesis?.cancel();
     };
   }, [poll]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   /** Some browsers (notably iOS) need a user gesture before speech plays reliably. */
   useEffect(() => {
@@ -217,6 +285,33 @@ export default function QueueDisplayClient() {
   }, [nowServing, voiceOn]);
 
   const vacantNow = tablets.filter((t) => t.status === "vacant");
+
+  const liveWindowMsRemaining = useMemo(() => {
+    if (!votingWindow) return null;
+    const base = votingWindow.msRemaining;
+    if (base == null) return null;
+    const anchor = votingWindowFetchedAtMs ?? nowTick;
+    const elapsed = Math.max(0, nowTick - anchor);
+    return Math.max(0, base - elapsed);
+  }, [votingWindow, votingWindowFetchedAtMs, nowTick]);
+
+  const windowLabel =
+    votingWindow?.status === "open"
+      ? "Voting ends in"
+      : votingWindow?.status === "not_started"
+        ? "Voting starts in"
+        : "Voting closed";
+
+  const windowValue =
+    votingWindow == null
+      ? "—"
+      : votingWindow.status === "closed"
+        ? "Closed"
+        : votingWindow.status === "open" && votingWindow.msRemaining == null
+          ? "Open"
+          : votingWindow.status === "not_started" && votingWindow.msRemaining == null
+            ? "Scheduled"
+            : formatHHMMSS(liveWindowMsRemaining);
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-slate-100">
@@ -308,6 +403,16 @@ export default function QueueDisplayClient() {
           Center shows who is first in line; everyone else is listed on the side
         </p>
 
+        {sortedQueue.length === 0 ? (
+          <div className="mx-auto mt-5 max-w-md">
+            <VotingSessionCountdownPane
+              votingWindow={votingWindow}
+              windowLabel={windowLabel}
+              windowValue={windowValue}
+            />
+          </div>
+        ) : null}
+
         <div className="mt-6 flex min-h-0 flex-1 flex-col gap-8 lg:mt-8 lg:flex-row lg:items-stretch lg:gap-10 xl:gap-14">
           {/* Hero: single “now serving” number */}
           <div className="flex min-h-[280px] flex-1 flex-col items-center justify-center lg:min-h-0">
@@ -336,12 +441,18 @@ export default function QueueDisplayClient() {
             )}
           </div>
 
-          {/* Side: upcoming numbers */}
+          {/* Side: voting window + upcoming numbers */}
           {sortedQueue.length > 0 ? (
-            <aside
-              className="flex w-full shrink-0 flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm sm:p-5 lg:w-[min(100%,280px)] xl:w-[300px]"
-              aria-label="Next in line"
-            >
+            <div className="flex w-full shrink-0 flex-col items-center gap-1 lg:w-[min(100%,280px)] lg:items-stretch xl:w-[300px]">
+              <VotingSessionCountdownPane
+                votingWindow={votingWindow}
+                windowLabel={windowLabel}
+                windowValue={windowValue}
+              />
+              <aside
+                className="flex w-full flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm sm:p-5"
+                aria-label="Next in line"
+              >
               <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Next in line</h2>
               {nextInLine.length === 0 ? (
                 <p className="mt-4 text-sm leading-relaxed text-zinc-400">
@@ -361,7 +472,8 @@ export default function QueueDisplayClient() {
                   ))}
                 </ol>
               )}
-            </aside>
+              </aside>
+            </div>
           ) : null}
         </div>
 

@@ -3,6 +3,7 @@ import "server-only";
 import type { AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
 import type { DashboardGeoTopThree, DashboardSnapshot } from "@/lib/admin/dashboard-snapshot-types";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
+import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
 
@@ -12,7 +13,6 @@ const SESSION_LABELS: Record<string, string> = {
   queued: "Waiting (queued)",
   voting: "Actively voting",
   voted: "Finished (voted)",
-  abandoned: "Abandoned",
 };
 
 const TABLET_LABELS: Record<string, string> = {
@@ -78,10 +78,14 @@ function buildGeoTopThree(
 }
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
-  const results = await getAdminResultsPayload();
+  const [results, votingStatusRaw] = await Promise.all([
+    getAdminResultsPayload(),
+    getAppSettingsStatus(),
+  ]);
   const supabase = createSupabaseServiceRoleClient();
   const fetchedAt = new Date().toISOString();
   const activeConfcode = results.activeConfcode;
+  const electionVotingOpen = votingStatusRaw === "open";
 
   const votingWindow = await getVotingWindow();
   const wStatus = getVotingWindowStatus(votingWindow);
@@ -106,7 +110,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
           .eq("confcode", activeConfcode)
       : Promise.resolve({ count: 0, error: null });
 
-  const sessionStatuses = ["queued", "voting", "voted", "abandoned"] as const;
+  const sessionStatuses = ["queued", "voting", "voted"] as const;
   const sessionPromises = sessionStatuses.map((status) =>
     supabase.from("voting_sessions").select("id", { count: "exact", head: true }).eq("status", status),
   );
@@ -158,25 +162,25 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   ]);
 
   const votedRes = bundle[0] as { count: number | null; error: { message?: string } | null };
-  const sessionResults = bundle.slice(1, 5) as {
+  const sessionResults = bundle.slice(1, 4) as {
     count: number | null;
     error: { message?: string } | null;
   }[];
-  const tabletResults = bundle.slice(5, 8) as {
+  const tabletResults = bundle.slice(4, 7) as {
     count: number | null;
     error: { message?: string } | null;
   }[];
-  const queuedSessionsRes = bundle[8] as {
+  const queuedSessionsRes = bundle[7] as {
     data: unknown;
     error: { message?: string } | null;
   };
-  const votingQueuesRes = bundle[9] as {
+  const votingQueuesRes = bundle[8] as {
     data: unknown;
     error: { message?: string } | null;
   };
-  const activeTabletRes = bundle[10] as { count: number | null; error: { message?: string } | null };
-  const activePhoneRes = bundle[11] as { count: number | null; error: { message?: string } | null };
-  const activeUnknownRes = bundle[12] as { count: number | null; error: { message?: string } | null };
+  const activeTabletRes = bundle[9] as { count: number | null; error: { message?: string } | null };
+  const activePhoneRes = bundle[10] as { count: number | null; error: { message?: string } | null };
+  const activeUnknownRes = bundle[11] as { count: number | null; error: { message?: string } | null };
 
   if (votedRes.error) {
     console.error("dashboard voted count failed", votedRes.error);
@@ -280,6 +284,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     fetchedAt,
     activeConfcode: results.activeConfcode,
     conferenceName: results.conferenceName,
+    electionVotingOpen,
     votingWindow: windowSnapshot,
     totalVoters: results.totalVoters,
     votedVoters,

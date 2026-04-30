@@ -106,7 +106,7 @@ export function VoteBallotFlow({
 
   return (
     <div className="min-h-dvh bg-white font-sans text-black">
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+      <main className="w-full max-w-none px-4 py-8 sm:px-6 lg:px-10 sm:py-10">
         <ConferenceBanner conference={conference} activeConfcode={activeConfcode} />
 
         <header className="mb-8 text-center sm:mb-8 sm:text-left">

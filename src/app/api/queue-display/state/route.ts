@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
 
 /**
  * Public lobby board: verified voters in `queued` sessions + all tablet statuses
@@ -8,14 +9,16 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 export async function GET() {
   const supabase = createSupabaseServiceRoleClient();
 
-  const [{ data: sessions, error: sErr }, { data: tablets, error: tErr }] = await Promise.all([
+  const [{ data: sessions, error: sErr }, { data: tablets, error: tErr }, votingWindowRaw] =
+    await Promise.all([
     supabase
       .from("voting_sessions")
       .select("queue_number, voter_id, status")
       .eq("status", "queued")
       .order("queue_number", { ascending: true }),
     supabase.from("tablets").select("id, label, status").order("id", { ascending: true }),
-  ]);
+      getVotingWindow(),
+    ]);
 
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
   if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 });
@@ -41,11 +44,27 @@ export async function GET() {
     .map((s) => Number(s.queue_number))
     .filter((n) => Number.isFinite(n));
 
+  const wStatus = getVotingWindowStatus(votingWindowRaw);
+  const votingWindow = {
+    start: votingWindowRaw.start,
+    end: votingWindowRaw.end,
+    status: wStatus.kind,
+    msRemaining:
+      wStatus.kind === "open"
+        ? wStatus.remainingMs
+        : wStatus.kind === "not_started"
+          ? wStatus.startsInMs
+          : null,
+  } as const;
+
+  const now = new Date().toISOString();
+
   return NextResponse.json(
     {
       queue_numbers,
       tablets: tablets ?? [],
-      now: new Date().toISOString(),
+      now,
+      votingWindow,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

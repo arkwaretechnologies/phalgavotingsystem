@@ -199,7 +199,6 @@ const SESSION_COLORS: Record<string, string> = {
   queued: "#52525b",
   voting: "#ca8a04",
   voted: "#15803d",
-  abandoned: "#991b1b",
 };
 
 const TABLET_COLORS: Record<string, string> = {
@@ -372,20 +371,32 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Dashboard</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
               You are signed in. Use the shortcuts below or the sidebar to run check-in, manage data, and
-              view live results.
+              open final tallies after voting status is closed.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2.5 sm:justify-end">
-            <a
-              href="/admin/live-tallies"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${dashboardQuickLinkBase} border border-neutral-200/90 bg-white text-neutral-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-neutral-300 hover:bg-neutral-50/90 hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)] active:shadow-[0_1px_2px_rgba(0,0,0,0.06)]`}
-            >
-              <IconChartBars className="shrink-0 text-neutral-600 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:scale-110 motion-safe:group-hover:text-neutral-900" />
-              <span>View live tally</span>
-              <IconOpenNew className="shrink-0 text-neutral-400 transition-all duration-200 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:text-neutral-600" />
-            </a>
+            {data.electionVotingOpen ? (
+              <span
+                className={`${dashboardQuickLinkBase} cursor-not-allowed border border-neutral-200/60 bg-neutral-50 text-neutral-500 opacity-70 shadow-none`}
+                title="Final tallies open in a new tab after voting status is set to closed (e.g. Canvass → Initiate Final Tally)."
+                aria-disabled="true"
+              >
+                <IconChartBars className="shrink-0 text-neutral-400" />
+                <span>View Final Tallies</span>
+                <IconOpenNew className="shrink-0 text-neutral-300" />
+              </span>
+            ) : (
+              <a
+                href="/admin/live-tallies"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${dashboardQuickLinkBase} border border-neutral-200/90 bg-white text-neutral-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-neutral-300 hover:bg-neutral-50/90 hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)] active:shadow-[0_1px_2px_rgba(0,0,0,0.06)]`}
+              >
+                <IconChartBars className="shrink-0 text-neutral-600 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:scale-110 motion-safe:group-hover:text-neutral-900" />
+                <span>View Final Tallies</span>
+                <IconOpenNew className="shrink-0 text-neutral-400 transition-all duration-200 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:text-neutral-600" />
+              </a>
+            )}
             <a
               href="/queue-display"
               target="_blank"
@@ -506,7 +517,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-neutral-900">Sessions by status</h3>
           <p className="mt-1 text-xs text-neutral-600">
-            Queue, active booths, completed, and abandoned sessions
+            Queue, active booths, and completed sessions
           </p>
           <div className="mt-4">
             <HorizontalBars items={sessionItems} colors={SESSION_COLORS} />
@@ -638,34 +649,36 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-neutral-900">Top 3 results per geo</h3>
-        <p className="mt-1 text-xs text-neutral-600">
-          By vote count for the active conference
-          {data.conferenceName ? (
-            <>
-              {" "}
-              <span className="text-neutral-500">·</span> {data.conferenceName}
-            </>
-          ) : null}
-        </p>
-        {!data.activeConfcode ? (
-          <p className="mt-4 text-sm text-amber-900">
-            No active conference — set one under Settings to load candidates and tallies.
+      {!data.electionVotingOpen ? (
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-neutral-900">Top 3 results per geo</h3>
+          <p className="mt-1 text-xs text-neutral-600">
+            By vote count for the active conference
+            {data.conferenceName ? (
+              <>
+                {" "}
+                <span className="text-neutral-500">·</span> {data.conferenceName}
+              </>
+            ) : null}
           </p>
-        ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {data.geoTopThree.map((g) => (
-              <GeoTopThreeCard
-                key={g.geoGroupId}
-                geoCode={g.geoCode}
-                geoName={g.geoName}
-                topThree={g.topThree}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {!data.activeConfcode ? (
+            <p className="mt-4 text-sm text-amber-900">
+              No active conference — set one under Settings to load candidates and tallies.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {data.geoTopThree.map((g) => (
+                <GeoTopThreeCard
+                  key={g.geoGroupId}
+                  geoCode={g.geoCode}
+                  geoName={g.geoName}
+                  topThree={g.topThree}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

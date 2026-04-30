@@ -483,3 +483,25 @@ body {
   }
 }
 
+/* Canvass — slide-up reveal after unlock flow */
+@keyframes canvass-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.canvass-reveal-up {
+  animation: canvass-reveal-up 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvass-reveal-up {
+    animation: none;
+  }
+}
+

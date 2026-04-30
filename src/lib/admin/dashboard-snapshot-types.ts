@@ -16,6 +16,8 @@ export type DashboardSnapshot = {
     /** ms until end (open) or start (not_started). null if unbounded/unknown. */
     msRemaining: number | null;
   };
+  /** `app_settings.voting_status === 'open'` — election not formally closed. */
+  electionVotingOpen: boolean;
   totalVoters: number;
   votedVoters: number;
   geoTopThree: DashboardGeoTopThree[];

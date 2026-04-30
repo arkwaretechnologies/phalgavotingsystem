@@ -8,7 +8,6 @@ import {
   renderCanvassReportHtml,
 } from "@/lib/admin/canvass-report";
 import { getAppSettingsStatus } from "@/lib/admin/app-settings-status";
-import { hasFinalTallyGrant } from "@/lib/admin/final-tally-grant";
 
 export const runtime = "nodejs";
 
@@ -31,8 +30,7 @@ export async function GET() {
 
   const status = await getAppSettingsStatus();
   const isClosed = status === "closed";
-  const unlocked = await hasFinalTallyGrant();
-  if (!isClosed && !unlocked) {
+  if (!isClosed) {
     return NextResponse.json({ error: "Canvass report is locked." }, { status: 403 });
   }
 

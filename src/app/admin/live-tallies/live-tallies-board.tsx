@@ -240,7 +240,7 @@ export function LiveTalliesBoard() {
             PhALGA
           </p>
           <h1 className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">
-            Live vote tallies
+            Final Vote Tallies
           </h1>
           <p className="truncate text-xs text-slate-400 sm:text-sm">
             {payload.conferenceName ? (

@@ -11,7 +11,9 @@ export async function adminLogin(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!username || !password) throw new Error("Username and password are required");
+  if (!username || !password) {
+    redirect(`/admin/login?error=${encodeURIComponent("Username and password are required.")}`);
+  }
 
   const supabase = createSupabaseServiceRoleClient();
   const { data: user, error } = await supabase
@@ -26,10 +28,14 @@ export async function adminLogin(formData: FormData) {
     const { message } = toPublicMessage(error, "Unable to sign in right now. Please try again.");
     redirect(`/admin/login?error=${encodeURIComponent(message)}`);
   }
-  if (!user?.password_hash) throw new Error("Invalid credentials");
+  if (!user?.password_hash) {
+    redirect(`/admin/login?error=${encodeURIComponent("Invalid credentials.")}`);
+  }
 
   const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) throw new Error("Invalid credentials");
+  if (!ok) {
+    redirect(`/admin/login?error=${encodeURIComponent("Invalid credentials.")}`);
+  }
 
   const roleId = Number((user as { role_id?: unknown }).role_id);
   if (!Number.isFinite(roleId) || roleId <= 0) {

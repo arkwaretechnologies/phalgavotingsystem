@@ -20,9 +20,10 @@ export function pathnameToPageKey(pathname: string): AdminPageKey | "settings_us
   if (p.startsWith("/admin/queueing")) return "queueing";
   if (p.startsWith("/admin/voters")) return "voters";
   if (p.startsWith("/admin/candidates")) return "candidates";
-  if (p.startsWith("/admin/ballots")) return "ballots";
+  // Results and Ballots are now tabs inside the Canvass page; their legacy URLs redirect there.
+  if (p.startsWith("/admin/ballots")) return "canvass";
   if (p.startsWith("/admin/tablets")) return "tablets";
-  if (p.startsWith("/admin/results")) return "results";
+  if (p.startsWith("/admin/results")) return "canvass";
   if (p.startsWith("/admin/canvass")) return "canvass";
   if (p.startsWith("/admin/settings/users")) return "settings_users";
   if (p.startsWith("/admin/settings/roles")) return "settings_roles";

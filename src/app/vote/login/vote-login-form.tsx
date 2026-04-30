@@ -43,7 +43,7 @@ export function VoteLoginForm() {
 
   void err;
   void msg;
-  useUrlToast({ keys: { message: "msg" }, clearParams: ["error", "msg"] });
+  useUrlToast({ keys: { message: "msg" }, clearParams: ["error", "msg"], duration: 5000 });
 
   useEffect(() => {
     setTabletId(getBoundTabletId());

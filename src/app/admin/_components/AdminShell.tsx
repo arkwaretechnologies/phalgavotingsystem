@@ -3,7 +3,7 @@
 import type { AdminPageKey } from "@/lib/admin/admin-page-keys";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Icon({
   name,
@@ -114,16 +114,14 @@ const NAV_ITEMS = [
   { pageKey: "queueing" as const, href: "/admin/queueing", label: "Queueing", icon: "queue" as const },
   { pageKey: "voters" as const, href: "/admin/voters", label: "Voters", icon: "users" as const },
   { pageKey: "candidates" as const, href: "/admin/candidates", label: "Candidates", icon: "candidate" as const },
-  { pageKey: "ballots" as const, href: "/admin/ballots", label: "Ballots", icon: "ballot" as const },
   { pageKey: "tablets" as const, href: "/admin/tablets", label: "Tablets", icon: "tablet" as const },
-  { pageKey: "results" as const, href: "/admin/results", label: "Results", icon: "chart" as const },
   { pageKey: "canvass" as const, href: "/admin/canvass", label: "Canvass", icon: "doc" as const },
   { pageKey: "settings" as const, href: "/admin/settings/conference", label: "Settings", icon: "settings" as const },
 ] as const;
 
 function settingsSubClass(active: boolean) {
   return [
-    "ml-1.5 block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
+    "block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
     active
       ? "border-black bg-white/90 font-medium text-neutral-900 shadow-sm ring-1 ring-neutral-200/80"
       : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100/80 hover:text-neutral-900",
@@ -142,6 +140,13 @@ export default function AdminShell({
 }) {
   const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const settingsInPath = pathname.startsWith("/admin/settings");
+  const [settingsExpanded, setSettingsExpanded] = useState(settingsInPath);
+
+  useEffect(() => {
+    if (settingsInPath) setSettingsExpanded(true);
+  }, [settingsInPath]);
+
   const allow = new Set(allowedPageKeys);
   const visibleNav = NAV_ITEMS.filter((item) => allow.has(item.pageKey));
   const isActive = (item: (typeof NAV_ITEMS)[number]) => {
@@ -153,11 +158,14 @@ export default function AdminShell({
   };
 
   const confPath = "/admin/settings/conference";
+  const votingSchedulePath = "/admin/settings/voting-schedule";
   const settingsRootActive =
     pathname === confPath || pathname === "/admin/settings" || pathname === "/admin/settings/";
   const usersPathActive = pathname.startsWith("/admin/settings/users");
   const rolesPathActive = pathname.startsWith("/admin/settings/roles");
-  const confSubActive = settingsRootActive && !usersPathActive && !rolesPathActive;
+  const votingSchedulePathActive = pathname.startsWith(votingSchedulePath);
+  const confSubActive =
+    settingsRootActive && !usersPathActive && !rolesPathActive && !votingSchedulePathActive;
 
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden bg-neutral-100 text-neutral-900">
@@ -239,11 +247,13 @@ export default function AdminShell({
                   const parentActive = pathname.startsWith("/admin/settings");
                   return (
                     <div key="settings" className="space-y-1">
-                      <Link
-                        href={confPath}
-                        onClick={() => setIsMobileNavOpen(false)}
+                      <button
+                        type="button"
+                        aria-expanded={settingsExpanded}
+                        aria-controls="admin-settings-submenu"
+                        onClick={() => setSettingsExpanded((open) => !open)}
                         className={[
-                          "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
+                          "group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium",
                           parentActive ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
                         ].join(" ")}
                       >
@@ -257,48 +267,78 @@ export default function AdminShell({
                           <Icon name="settings" />
                         </span>
                         <span className="min-w-0 truncate">{item.label}</span>
-                        {parentActive ? (
-                          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
-                        ) : null}
-                      </Link>
-                      <div className="space-y-0.5 pb-0.5" role="group" aria-label="Settings submenu">
-                        <Link
-                          href={confPath}
-                          onClick={() => setIsMobileNavOpen(false)}
-                          className={settingsSubClass(confSubActive)}
+                        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                          {parentActive ? (
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                          ) : null}
+                          <svg
+                            className={[
+                              "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
+                              parentActive ? "text-white/90" : "text-neutral-400 group-hover:text-white",
+                              settingsExpanded ? "rotate-180" : "rotate-0",
+                            ].join(" ")}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            aria-hidden
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                          </svg>
+                        </span>
+                      </button>
+                      {settingsExpanded ? (
+                        <div
+                          id="admin-settings-submenu"
+                          className="space-y-0.5 border-l border-neutral-200/90 pb-0.5 pl-3 ml-3"
+                          role="group"
+                          aria-label="Settings submenu"
                         >
-                          Conference
-                        </Link>
-                        {isSystemSuper ? (
-                          <>
-                            <Link
-                              href="/admin/settings/users"
-                              onClick={() => setIsMobileNavOpen(false)}
-                              className={settingsSubClass(usersPathActive)}
-                            >
-                              Users
-                            </Link>
-                            <Link
-                              href="/admin/settings/roles"
-                              onClick={() => setIsMobileNavOpen(false)}
-                              className={settingsSubClass(rolesPathActive)}
-                            >
-                              Role management
-                            </Link>
-                          </>
-                        ) : (
-                          <p className="ml-1.5 mt-1.5 text-[11px] leading-snug text-neutral-500">
-                            <span className="font-medium text-neutral-600">Users</span> and{" "}
-                            <span className="font-medium text-neutral-600">Role management</span> are
-                            only shown when you sign in with the{" "}
-                            <span className="font-medium">Super admin</span> role (
-                            <span className="font-mono">super_admin</span> in the database). If your
-                            account was set to another role, ask an admin to set your{" "}
-                            <span className="font-mono">admin_users.role_id</span> to that role, then
-                            log out and sign in again.
-                          </p>
-                        )}
-                      </div>
+                          <Link
+                            href={confPath}
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={settingsSubClass(confSubActive)}
+                          >
+                            Conference
+                          </Link>
+                          <Link
+                            href={votingSchedulePath}
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={settingsSubClass(votingSchedulePathActive)}
+                          >
+                            Voting schedule
+                          </Link>
+                          {isSystemSuper ? (
+                            <>
+                              <Link
+                                href="/admin/settings/users"
+                                onClick={() => setIsMobileNavOpen(false)}
+                                className={settingsSubClass(usersPathActive)}
+                              >
+                                Users
+                              </Link>
+                              <Link
+                                href="/admin/settings/roles"
+                                onClick={() => setIsMobileNavOpen(false)}
+                                className={settingsSubClass(rolesPathActive)}
+                              >
+                                Role management
+                              </Link>
+                            </>
+                          ) : (
+                            <p className="mt-1.5 text-[11px] leading-snug text-neutral-500">
+                              <span className="font-medium text-neutral-600">Users</span> and{" "}
+                              <span className="font-medium text-neutral-600">Role management</span> are
+                              only shown when you sign in with the{" "}
+                              <span className="font-medium">Super admin</span> role (
+                              <span className="font-mono">super_admin</span> in the database). If your
+                              account was set to another role, ask an admin to set your{" "}
+                              <span className="font-mono">admin_users.role_id</span> to that role, then
+                              log out and sign in again.
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 }

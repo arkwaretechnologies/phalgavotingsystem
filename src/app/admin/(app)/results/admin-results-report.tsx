@@ -20,9 +20,12 @@ function sortRowsForReport(
   });
 }
 
+type GeoFilter = "all" | "unassigned" | number;
+
 export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }) {
   const [payload, setPayload] = useState<AdminResultsPayload>(initial);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [geoFilter, setGeoFilter] = useState<GeoFilter>("all");
 
   const geoOrder = useMemo(() => {
     const m = new Map<number, number>();
@@ -35,10 +38,36 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
     [payload.rows, geoOrder],
   );
 
+  const filteredRows = useMemo(() => {
+    if (geoFilter === "all") return sortedRows;
+    if (geoFilter === "unassigned") return sortedRows.filter((r) => r.geo_group_id == null);
+    return sortedRows.filter((r) => r.geo_group_id === geoFilter);
+  }, [sortedRows, geoFilter]);
+
   const totalVotes = useMemo(
     () => sortedRows.reduce((acc, r) => acc + (Number.isFinite(r.vote_count) ? r.vote_count : 0), 0),
     [sortedRows],
   );
+
+  /** Counts per geo across the *unfiltered* rows so chips always show real totals. */
+  const countsByGeo = useMemo(() => {
+    const m = new Map<number | "unassigned", { rows: number; votes: number }>();
+    let unRows = 0;
+    let unVotes = 0;
+    for (const r of sortedRows) {
+      if (r.geo_group_id == null) {
+        unRows += 1;
+        unVotes += Number.isFinite(r.vote_count) ? r.vote_count : 0;
+        continue;
+      }
+      const cur = m.get(r.geo_group_id) ?? { rows: 0, votes: 0 };
+      cur.rows += 1;
+      cur.votes += Number.isFinite(r.vote_count) ? r.vote_count : 0;
+      m.set(r.geo_group_id, cur);
+    }
+    if (unRows > 0) m.set("unassigned", { rows: unRows, votes: unVotes });
+    return m;
+  }, [sortedRows]);
 
   const geoLabel = useCallback(
     (geoId: number | null) => {
@@ -104,18 +133,11 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => void refresh()}
-              className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
-            >
-              Refresh now
-            </button>
-            <button
-              type="button"
               onClick={openLiveTallies}
               disabled={!payload.activeConfcode}
               className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Live tallies
+              View Final Tallies
             </button>
           </div>
         </div>
@@ -133,13 +155,61 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
       </div>
 
       <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
-        <div className="text-sm font-semibold">Candidate report</div>
-        <p className="mt-1 text-xs text-neutral-600">
-          One row per candidate; counts include only submitted ballots.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold">Candidate report</div>
+            <p className="mt-1 text-xs text-neutral-600">
+              One row per candidate; counts include only submitted ballots.
+            </p>
+          </div>
+          <div className="text-xs text-neutral-500">
+            Showing{" "}
+            <span className="font-medium text-neutral-700">{filteredRows.length}</span> of{" "}
+            <span className="font-medium text-neutral-700">{sortedRows.length}</span> candidates
+          </div>
+        </div>
+
+        {payload.activeConfcode && payload.geoGroups.length > 0 ? (
+          <div
+            className="mt-4 flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter candidates by geo group"
+          >
+            <FilterChip
+              label="All"
+              count={sortedRows.length}
+              active={geoFilter === "all"}
+              onClick={() => setGeoFilter("all")}
+            />
+            {payload.geoGroups.map((g) => {
+              const c = countsByGeo.get(g.id);
+              return (
+                <FilterChip
+                  key={g.id}
+                  label={`${g.code} — ${g.name}`}
+                  count={c?.rows ?? 0}
+                  active={geoFilter === g.id}
+                  onClick={() => setGeoFilter(g.id)}
+                />
+              );
+            })}
+            {countsByGeo.has("unassigned") ? (
+              <FilterChip
+                label="Unassigned"
+                count={countsByGeo.get("unassigned")?.rows ?? 0}
+                active={geoFilter === "unassigned"}
+                onClick={() => setGeoFilter("unassigned")}
+              />
+            ) : null}
+          </div>
+        ) : null}
 
         {!payload.activeConfcode ? null : sortedRows.length === 0 ? (
           <p className="mt-4 text-sm text-neutral-600">No candidates found for this conference.</p>
+        ) : filteredRows.length === 0 ? (
+          <p className="mt-4 text-sm text-neutral-600">
+            No candidates match the selected filter.
+          </p>
         ) : (
           <div className="admin-table-wrap mt-4">
             <table className="admin-table">
@@ -152,7 +222,7 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
                 </tr>
               </thead>
               <tbody>
-                {sortedRows.map((r) => (
+                {filteredRows.map((r) => (
                   <tr key={r.candidate_id}>
                     <td>
                       <div className="flex items-center gap-3">
@@ -182,5 +252,41 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
         )}
       </div>
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+        active
+          ? "border-black bg-black text-white"
+          : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50",
+      ].join(" ")}
+    >
+      <span>{label}</span>
+      <span
+        className={[
+          "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",
+          active ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-600",
+        ].join(" ")}
+      >
+        {count}
+      </span>
+    </button>
   );
 }
