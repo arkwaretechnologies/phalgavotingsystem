@@ -197,7 +197,7 @@ export default async function AdminCheckInPage({
               </div>
             </div>
             <p className="mt-2 text-xs text-neutral-600">
-              Next: display QR that encodes queue number + token for the voter.
+              Next: display QR that encodes queue number + ballot code for the voter.
             </p>
 
             {(checkedIn ? checkedQueue && checkedToken && checkedVoterId : showQueue && showToken && showForVoterId) ? (
@@ -214,17 +214,17 @@ export default async function AdminCheckInPage({
         ) : voters.length === 0 ? (
           <p className="mt-2 text-sm text-neutral-600">No matching voters found.</p>
         ) : (
-          <div className="admin-table-wrap mt-4">
+          <div className="admin-table-wrap admin-table-wrap--checkin mt-4">
             <table className="admin-table admin-table--checkin">
               <colgroup>
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "26%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "10%" }} />
+                <col style={{ width: "17%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "9%" }} />
                 <col style={{ width: "6%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "6%" }} />
+                <col style={{ width: "7%" }} />
+                <col style={{ width: "15%" }} />
               </colgroup>
               <thead>
                 <tr>
@@ -261,23 +261,23 @@ export default async function AdminCheckInPage({
                       <td className="text-neutral-600">{session?.status ?? "—"}</td>
                       <td className="text-right">
                         {isVoted ? (
-                          <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700">
+                          <span className="inline-flex max-w-full items-center justify-center rounded-md bg-neutral-200 px-2.5 py-2 text-center text-xs font-medium text-neutral-700">
                             Vote Casted
                           </span>
                         ) : v.is_verified ? (
                           <a
                             href={showUrl}
-                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-black px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800"
+                            className="inline-flex max-w-full min-w-0 items-center justify-center rounded-md bg-black px-2.5 py-2 text-center text-xs font-medium text-white hover:bg-neutral-800"
                           >
                             Show Queue No
                           </a>
                         ) : (
-                          <form action={checkInVoter} className="inline">
+                          <form action={checkInVoter} className="inline min-w-0 max-w-full">
                             <input type="hidden" name="voter_id" value={v.id} />
                             <input type="hidden" name="q" value={q} />
                             <button
                               type="submit"
-                              className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-black px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800"
+                              className="inline-flex max-w-full min-w-0 items-center justify-center rounded-md bg-black px-2.5 py-2 text-xs font-medium text-white hover:bg-neutral-800"
                             >
                               Check-in
                             </button>

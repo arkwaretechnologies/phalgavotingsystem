@@ -211,7 +211,7 @@ export default function AdminShell({
             isMobileNavOpen
               ? "translate-x-0"
               : "pointer-events-none -translate-x-[105%]",
-            "lg:pointer-events-auto lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-h-dvh lg:w-72 lg:shrink-0 lg:translate-x-0 lg:shadow-sm",
+            "lg:pointer-events-auto lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-h-dvh lg:w-64 lg:shrink-0 lg:translate-x-0 lg:shadow-sm",
           ].join(" ")}
         >
           <div className="flex max-h-full min-h-0 flex-col p-4 lg:overflow-hidden">
@@ -253,21 +253,21 @@ export default function AdminShell({
                         aria-controls="admin-settings-submenu"
                         onClick={() => setSettingsExpanded((open) => !open)}
                         className={[
-                          "group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium",
+                          "group flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium",
                           parentActive ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
                         ].join(" ")}
                       >
                         <span
                           className={
                             parentActive
-                              ? "text-white"
-                              : "text-neutral-500 transition group-hover:text-white"
+                              ? "mt-0.5 text-white"
+                              : "mt-0.5 text-neutral-500 transition group-hover:text-white"
                           }
                         >
                           <Icon name="settings" />
                         </span>
-                        <span className="min-w-0 truncate">{item.label}</span>
-                        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                        <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
+                        <span className="ml-auto flex shrink-0 items-start gap-1.5 pt-0.5">
                           {parentActive ? (
                             <span className="h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
                           ) : null}
@@ -349,20 +349,22 @@ export default function AdminShell({
                     href={item.href}
                     onClick={() => setIsMobileNavOpen(false)}
                     className={[
-                      "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
+                      "group flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
                       active ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
                     ].join(" ")}
                   >
                     <span
                       className={
-                        active ? "text-white" : "text-neutral-500 transition group-hover:text-white"
+                        active
+                          ? "mt-0.5 text-white"
+                          : "mt-0.5 text-neutral-500 transition group-hover:text-white"
                       }
                     >
                       <Icon name={item.icon} />
                     </span>
-                    <span className="min-w-0 truncate">{item.label}</span>
+                    <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
                     {active ? (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                      <span className="ml-auto h-1.5 w-1.5 shrink-0 self-center rounded-full bg-white/90 ring-1 ring-white/30" />
                     ) : null}
                   </Link>
                 );
