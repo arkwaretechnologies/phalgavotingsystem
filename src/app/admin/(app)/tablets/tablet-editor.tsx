@@ -32,7 +32,7 @@ export function TabletEditor({
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
       {confirmOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">{confirmTitle}</div>
             <div className="mt-2 text-sm text-neutral-600">{confirmMessage}</div>
@@ -46,7 +46,7 @@ export function TabletEditor({
               </button>
               <button
                 type="button"
-                className="rounded-md bg-black px-3 py-2 text-sm text-white"
+                className="ph-brand-button rounded-md px-3 py-2 text-sm"
                 onClick={() => {
                   const fn = confirmActionRef.current;
                   closeConfirm();
@@ -88,7 +88,7 @@ export function TabletEditor({
 
           <button
             type="button"
-            className="mt-1 rounded-md bg-black px-4 py-2 text-white"
+            className="ph-brand-button mt-1 rounded-md px-4 py-2"
             onClick={(e) => {
               const form = (e.currentTarget as HTMLButtonElement).form;
               if (!form) return;

@@ -51,7 +51,7 @@ export default async function CandidatesReportPage() {
             <div className="flex flex-wrap items-center gap-2">
               <a
                 href="/admin/reports/candidates/pdf"
-                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-neutral-800"
+                className="ph-brand-button rounded-lg px-4 py-2 text-sm font-medium"
               >
                 Export PDF
               </a>

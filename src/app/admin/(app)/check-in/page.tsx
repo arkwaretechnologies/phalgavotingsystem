@@ -168,7 +168,7 @@ export default async function AdminCheckInPage({
             className="w-full rounded-md border px-3 py-2"
             placeholder="Search by full name / email / phone…"
           />
-          <button type="submit" className="rounded-md bg-black px-4 py-2 text-white">
+          <button type="submit" className="ph-brand-button rounded-md px-4 py-2">
             Search
           </button>
         </form>
@@ -267,7 +267,7 @@ export default async function AdminCheckInPage({
                         ) : v.is_verified ? (
                           <a
                             href={showUrl}
-                            className="inline-flex max-w-full min-w-0 items-center justify-center rounded-md bg-black px-2.5 py-2 text-center text-xs font-medium text-white hover:bg-neutral-800"
+                            className="ph-brand-button inline-flex max-w-full min-w-0 items-center justify-center rounded-md px-2.5 py-2 text-center text-xs font-medium"
                           >
                             Show Queue No
                           </a>
@@ -277,7 +277,7 @@ export default async function AdminCheckInPage({
                             <input type="hidden" name="q" value={q} />
                             <button
                               type="submit"
-                              className="inline-flex max-w-full min-w-0 items-center justify-center rounded-md bg-black px-2.5 py-2 text-xs font-medium text-white hover:bg-neutral-800"
+                              className="ph-brand-button inline-flex max-w-full min-w-0 items-center justify-center rounded-md px-2.5 py-2 text-xs font-medium"
                             >
                               Check-in
                             </button>

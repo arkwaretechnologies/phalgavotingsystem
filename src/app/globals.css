@@ -3,13 +3,49 @@
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
-  /* PhALGA – deep black = secondary (accents, primary buttons) */
-  --ph-deep-black: #050203;
-  --ph-surface: #0c0a0b;
-  --ph-surface-mid: #121010;
-  --ph-surface-elevated: #181516;
-  --ph-border: rgba(0, 0, 0, 0.08);
-  --ph-border-strong: rgba(0, 0, 0, 0.12);
+
+  /* —— Philippine flag palette (official cable colors) —— */
+  --ph-flag-blue: #0038a8;
+  --ph-flag-blue-dark: #002a82;
+  --ph-flag-blue-deep: #001a52;
+  --ph-flag-red: #ce1126;
+  --ph-flag-red-dark: #9c0d1d;
+  --ph-flag-yellow: #fcd116;
+  --ph-flag-yellow-dark: #d8af0d;
+  --ph-flag-white: #ffffff;
+
+  /* Backwards-compat: --ph-deep-black originally meant "primary accent".
+     Remap it to flag blue so every existing .ph-glossy-black, every literal
+     bg-[var(--ph-deep-black)], and every consumer of var(--ph-deep-black)
+     picks up the flag theme automatically. The literal #050203 references
+     scattered through the codebase are migrated separately. */
+  --ph-deep-black: var(--ph-flag-blue);
+  --ph-surface: var(--ph-flag-blue-deep);
+  --ph-surface-mid: #002361;
+  --ph-surface-elevated: #003097;
+  --ph-border: rgba(0, 56, 168, 0.12);
+  --ph-border-strong: rgba(0, 56, 168, 0.2);
+
+  /* Brand aliases (admin uses these via .ph-brand-* utilities). Mapped to
+     flag tokens; gradient blends blue → red for hero/banner accents. */
+  --ph-brand-blue: var(--ph-flag-blue);
+  --ph-brand-violet: var(--ph-flag-blue-dark);
+  --ph-brand-magenta: var(--ph-flag-red);
+  --ph-brand-night: var(--ph-flag-blue-deep);
+  --ph-brand-ink: #001230;
+  --ph-brand-gradient: linear-gradient(
+    135deg,
+    var(--ph-flag-blue-deep) 0%,
+    var(--ph-flag-blue) 55%,
+    var(--ph-flag-red) 100%
+  );
+  --ph-brand-gradient-bright: linear-gradient(
+    120deg,
+    var(--ph-flag-blue) 0%,
+    var(--ph-flag-red) 100%
+  );
+  --ph-brand-shadow: 0 14px 32px -18px rgba(0, 56, 168, 0.55);
+  --ph-brand-shadow-strong: 0 22px 44px -20px rgba(206, 17, 38, 0.45);
 }
 
 @theme inline {
@@ -19,6 +55,17 @@
   --color-ph-surface: var(--ph-surface);
   --color-ph-surface-mid: var(--ph-surface-mid);
   --color-ph-surface-elevated: var(--ph-surface-elevated);
+  --color-ph-flag-blue: var(--ph-flag-blue);
+  --color-ph-flag-blue-dark: var(--ph-flag-blue-dark);
+  --color-ph-flag-blue-deep: var(--ph-flag-blue-deep);
+  --color-ph-flag-red: var(--ph-flag-red);
+  --color-ph-flag-red-dark: var(--ph-flag-red-dark);
+  --color-ph-flag-yellow: var(--ph-flag-yellow);
+  --color-ph-brand-blue: var(--ph-brand-blue);
+  --color-ph-brand-violet: var(--ph-brand-violet);
+  --color-ph-brand-magenta: var(--ph-brand-magenta);
+  --color-ph-brand-night: var(--ph-brand-night);
+  --color-ph-brand-ink: var(--ph-brand-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -33,35 +80,210 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Deep black — buttons + sidebar (solid, no gradients) */
+/* Primary surface — flag blue (PhALGA voter & admin primary) */
 .ph-glossy-black {
   color: #fff;
-  background-color: var(--ph-deep-black);
-  border: 1px solid var(--ph-deep-black);
+  background-color: var(--ph-flag-blue);
+  border: 1px solid var(--ph-flag-blue);
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
-.ph-glossy-black:hover {
-  background-color: var(--ph-deep-black);
-  border-color: var(--ph-deep-black);
+@media (hover: hover) {
+  .ph-glossy-black:hover {
+    background-color: var(--ph-flag-blue-dark);
+    border-color: var(--ph-flag-blue-dark);
+  }
 }
 
-/* Admin sidebar: inactive row → solid deep black on hover */
+/* Admin sidebar lives on a deep-blue panel, so nav rows use translucent
+   white for hover/active to read clearly against the dark background. */
 .nav-sidebar-inactive {
-  color: #52525b;
+  color: rgba(255, 255, 255, 0.78);
   background: transparent;
   border: 1px solid transparent;
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s, transform 0.2s;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s,
+    transform 0.2s, box-shadow 0.2s;
 }
 @media (hover: hover) {
   .nav-sidebar-inactive:hover {
     color: #fff;
-    background-color: var(--ph-deep-black);
-    border-color: var(--ph-deep-black);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.16);
   }
 }
 .nav-sidebar-active {
+  color: #001230;
+  background-color: var(--ph-flag-yellow);
+  border: 1px solid var(--ph-flag-yellow-dark);
+  box-shadow: 0 8px 22px -10px rgba(252, 209, 22, 0.55);
+}
+
+/* —— Brand button: solid flag blue (banner aesthetic) —— */
+.ph-brand-button {
   color: #fff;
-  background-color: var(--ph-deep-black);
-  border: 1px solid var(--ph-deep-black);
+  background-color: var(--ph-flag-blue);
+  border: 1px solid var(--ph-flag-blue);
+  box-shadow: 0 1px 2px rgba(0, 26, 82, 0.25);
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .ph-brand-button:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--ph-flag-blue-dark);
+    border-color: var(--ph-flag-blue-dark);
+    box-shadow: var(--ph-brand-shadow);
+  }
+}
+.ph-brand-button:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--ph-flag-blue-deep);
+  border-color: var(--ph-flag-blue-deep);
+}
+.ph-brand-button:disabled,
+.ph-brand-button[aria-disabled="true"] {
+  filter: saturate(0.45) brightness(0.9);
+  cursor: not-allowed;
+}
+.ph-brand-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--ph-flag-blue);
+}
+
+/* —— Brand danger button: flag red (Delete, Unpair, Cancel) —— */
+.ph-brand-danger {
+  color: #fff;
+  background-color: var(--ph-flag-red);
+  border: 1px solid var(--ph-flag-red);
+  box-shadow: 0 1px 2px rgba(82, 7, 14, 0.25);
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .ph-brand-danger:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--ph-flag-red-dark);
+    border-color: var(--ph-flag-red-dark);
+    box-shadow: var(--ph-brand-shadow-strong);
+  }
+}
+.ph-brand-danger:disabled,
+.ph-brand-danger[aria-disabled="true"] {
+  filter: saturate(0.45) brightness(0.9);
+  cursor: not-allowed;
+}
+
+/* —— Yellow highlight chip (sun) — for badges, "active" small pills —— */
+.ph-brand-highlight {
+  color: #001230;
+  background-color: var(--ph-flag-yellow);
+  border: 1px solid var(--ph-flag-yellow-dark);
+}
+
+/* Compact brand pill for tab/segment "active" states */
+.ph-brand-pill-active {
+  color: #fff;
+  background-color: var(--ph-flag-blue);
+  border-color: var(--ph-flag-blue);
+  box-shadow: var(--ph-brand-shadow);
+}
+
+/* Sidebar logo / shell tile */
+.ph-brand-shell {
+  color: #001230;
+  background-color: var(--ph-flag-yellow);
+  border: 1px solid var(--ph-flag-yellow-dark);
+}
+@media (hover: hover) {
+  .ph-brand-shell:hover {
+    background-color: var(--ph-flag-yellow-dark);
+  }
+}
+
+/* Modal scrim with subtle deep-blue tint */
+.ph-brand-scrim {
+  background-color: rgba(0, 26, 82, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Brand-tinted progress / chart bar fill (blue → red, like the flag) */
+.ph-brand-bar {
+  background-color: var(--ph-flag-blue);
+  background-image: var(--ph-brand-gradient-bright);
+}
+
+/* Inline brand text accent (links, key numbers) */
+.ph-brand-text {
+  color: var(--ph-flag-blue);
+}
+@media (hover: hover) {
+  .ph-brand-text:hover {
+    color: var(--ph-flag-blue-dark);
+  }
+}
+
+/* —— Page banner strips: blue top + red bottom (PH flag stripes) —— */
+.ph-flag-strip-top {
+  height: 0.5rem;
+  background-color: var(--ph-flag-blue);
+}
+.ph-flag-strip-top--thin {
+  height: 0.25rem;
+}
+.ph-flag-strip-bottom {
+  height: 0.5rem;
+  background-color: var(--ph-flag-red);
+}
+.ph-flag-strip-bottom--thin {
+  height: 0.25rem;
+}
+
+/* Decorative tricolor band — blue top, white middle, red bottom with a
+   yellow hairline; used as a hero accent above titles on key pages. */
+.ph-flag-tricolor {
+  background-image: linear-gradient(
+    to bottom,
+    var(--ph-flag-blue) 0,
+    var(--ph-flag-blue) 33.33%,
+    var(--ph-flag-yellow) 33.33%,
+    var(--ph-flag-yellow) 36%,
+    var(--ph-flag-white) 36%,
+    var(--ph-flag-white) 64%,
+    var(--ph-flag-red) 64%,
+    var(--ph-flag-red) 100%
+  );
+}
+
+/* Page-frame wrapper: adds blue top border + red bottom border to any block */
+.ph-flag-page-frame {
+  border-top: 4px solid var(--ph-flag-blue);
+  border-bottom: 4px solid var(--ph-flag-red);
+}
+
+/* Soft hero wash for landing/hero sections (admin dashboard, voter login) */
+.ph-flag-hero-wash {
+  background-image: radial-gradient(
+      ellipse at top left,
+      rgba(0, 56, 168, 0.18) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at bottom right,
+      rgba(206, 17, 38, 0.16) 0%,
+      transparent 60%
+    );
+}
+
+/* —— Admin sidebar surface (used on the <aside> element) —— */
+.ph-admin-sidebar {
+  color: rgba(255, 255, 255, 0.92);
+  background-color: var(--ph-flag-blue-deep);
+  background-image: linear-gradient(
+    180deg,
+    var(--ph-flag-blue-deep) 0%,
+    var(--ph-flag-blue) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* /vote/login — entrance + ambient motion (no extra JS deps) */

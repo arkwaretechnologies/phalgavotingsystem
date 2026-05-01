@@ -114,7 +114,7 @@ export function VotingScheduleForm({ defaults }: { defaults: Defaults }) {
           {clientError}
         </p>
       ) : null}
-      <button type="submit" className="h-10 rounded-md bg-black px-4 text-sm text-white">
+      <button type="submit" className="ph-brand-button h-10 rounded-md px-4 text-sm">
         Save
       </button>
     </form>

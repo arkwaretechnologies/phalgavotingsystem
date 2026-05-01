@@ -5,15 +5,12 @@ const cardClass =
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-dvh min-h-0 flex-1 flex-col overflow-hidden bg-white text-neutral-900">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_90%_50%_at_50%_0%,rgba(5,2,3,0.04),transparent)]"
-        aria-hidden
-      />
+    <div className="ph-flag-hero-wash relative flex min-h-dvh min-h-0 flex-1 flex-col overflow-hidden bg-white text-neutral-900">
+      <div aria-hidden className="ph-flag-strip-top" />
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="admin-hero-fade text-center sm:text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#050203]/70">PhALGA</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ph-flag-blue)]">PhALGA</p>
           <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">Phalga Electronic Voting System</h1>
           <p className="mt-3 max-w-2xl text-pretty text-base text-neutral-600 sm:text-lg">
             Choose your role to continue. Staff sign in to open the control panel, then use the
@@ -46,7 +43,7 @@ export default function Home() {
             <Link href="/vote" className={cardClass}>
               <div className="text-lg font-semibold">Voter</div>
               <div className="mt-1.5 text-sm text-neutral-600">Log in with queue number and 6-digit token</div>
-              <div className="mt-4 text-sm font-medium text-[#050203] transition group-hover:underline">Enter voting flow →</div>
+              <div className="mt-4 text-sm font-medium text-[var(--ph-flag-blue)] transition group-hover:underline">Enter voting flow →</div>
             </Link>
           </div>
 
@@ -57,7 +54,7 @@ export default function Home() {
               <div className="mt-1.5 text-sm text-neutral-600">
                 Pair this device, then run the queue display on the tablet
               </div>
-              <div className="mt-4 text-sm font-medium text-[#050203] transition group-hover:underline">Open device setup →</div>
+              <div className="mt-4 text-sm font-medium text-[var(--ph-flag-blue)] transition group-hover:underline">Open device setup →</div>
             </Link>
           </div>
         </div>
@@ -70,6 +67,8 @@ export default function Home() {
           for quick access.
         </p>
       </main>
+
+      <div aria-hidden className="ph-flag-strip-bottom" />
     </div>
   );
 }

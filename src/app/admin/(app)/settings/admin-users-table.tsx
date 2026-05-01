@@ -62,7 +62,7 @@ export function AdminUsersTable({
       ) : null}
 
       {addOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">Add user</div>
             <form
@@ -124,7 +124,7 @@ export function AdminUsersTable({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-60"
+                  className="ph-brand-button rounded-md px-3 py-2 text-sm disabled:opacity-60"
                 >
                   {pending ? "Saving…" : "Create user"}
                 </button>
@@ -135,7 +135,7 @@ export function AdminUsersTable({
       ) : null}
 
       {editing ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">Edit user</div>
             <p className="mt-1 text-sm text-neutral-600">Leave password blank to keep the current one.</p>
@@ -204,7 +204,7 @@ export function AdminUsersTable({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-60"
+                  className="ph-brand-button rounded-md px-3 py-2 text-sm disabled:opacity-60"
                 >
                   {pending ? "Saving…" : "Save changes"}
                 </button>
@@ -215,7 +215,7 @@ export function AdminUsersTable({
       ) : null}
 
       {confirmOpen && confirmId != null ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">Delete user</div>
             <div className="mt-2 text-sm text-neutral-600">Remove {deleteLabelRef.current} from admin users?</div>
@@ -233,7 +233,7 @@ export function AdminUsersTable({
               </button>
               <button
                 type="button"
-                className="rounded-md bg-rose-600 px-3 py-2 text-sm text-white disabled:opacity-60"
+                className="ph-brand-danger rounded-md px-3 py-2 text-sm disabled:opacity-60"
                 disabled={pending}
                 onClick={() => {
                   const id = confirmId;
@@ -256,7 +256,7 @@ export function AdminUsersTable({
             setFormError(null);
             setAddOpen(true);
           }}
-          className="rounded-md bg-black px-4 py-2 text-sm text-white"
+          className="ph-brand-button rounded-md px-4 py-2 text-sm"
         >
           Add user
         </button>
@@ -290,7 +290,7 @@ export function AdminUsersTable({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      className="text-sm text-neutral-700 underline decoration-neutral-300 hover:text-black"
+                      className="text-sm text-neutral-700 underline decoration-neutral-300 hover:text-[var(--ph-flag-blue)]"
                       onClick={() => {
                         setFormError(null);
                         setEditId(u.id);

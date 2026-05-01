@@ -12,8 +12,10 @@ export default async function LiveTalliesLayout({ children }: { children: React.
   }
 
   return (
-    <div className="live-tallies-shell flex h-dvh flex-col overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+    <div className="live-tallies-shell flex h-dvh flex-col overflow-hidden bg-gradient-to-b from-slate-950 via-[var(--ph-flag-blue-deep)] to-slate-950 text-slate-50">
+      <div aria-hidden className="ph-flag-strip-top--thin ph-flag-strip-top" />
       <div className="min-h-0 flex-1">{children}</div>
+      <div aria-hidden className="ph-flag-strip-bottom--thin ph-flag-strip-bottom" />
     </div>
   );
 }

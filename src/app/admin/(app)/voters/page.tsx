@@ -90,7 +90,7 @@ export default async function AdminVotersPage({
               Current voters in database: <span className="font-mono">{count ?? 0}</span>
             </div>
           </div>
-          <a href="/admin/voters/new" className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-neutral-800">
+          <a href="/admin/voters/new" className="ph-brand-button rounded-md px-4 py-2 text-sm">
             Add voter
           </a>
         </div>
@@ -128,7 +128,7 @@ export default async function AdminVotersPage({
             required
           />
           <div className="flex justify-end">
-            <button type="submit" className="rounded-md bg-black px-4 py-2 text-white">
+            <button type="submit" className="ph-brand-button rounded-md px-4 py-2">
               Import CSV
             </button>
           </div>

@@ -85,7 +85,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
       </div>
 
       {addOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">New role</div>
             <p className="mt-1 text-sm text-neutral-600">
@@ -115,7 +115,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="rounded-md bg-black px-3 py-2 text-sm text-white">
+                <button type="submit" className="ph-brand-button rounded-md px-3 py-2 text-sm">
                   Create
                 </button>
               </div>
@@ -126,7 +126,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
 
       {modalRoleId != null && editing != null && editing.is_full_access ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          className="ph-brand-scrim fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
           onClick={() => setModalRoleId(null)}
         >
           <div
@@ -156,7 +156,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+                className="ph-brand-button rounded-md px-4 py-2 text-sm font-medium"
                 onClick={() => setModalRoleId(null)}
               >
                 Close
@@ -168,7 +168,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
 
       {modalRoleId != null && editing != null && !editing.is_full_access ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          className="ph-brand-scrim fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
           onClick={() => setModalRoleId(null)}
         >
           <div
@@ -229,7 +229,7 @@ export function RolePresetsForm({ roles, loadDegraded }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+                  className="ph-brand-button rounded-md px-4 py-2 text-sm font-medium"
                 >
                   Save permissions
                 </button>

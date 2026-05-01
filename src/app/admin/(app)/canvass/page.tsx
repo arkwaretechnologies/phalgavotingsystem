@@ -137,7 +137,7 @@ export default async function AdminCanvassPage({
               {canViewReport ? (
                 <Link
                   href="/admin/canvass/pdf"
-                  className="rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-neutral-800"
+                  className="ph-brand-button rounded-md px-3 py-2 text-sm"
                 >
                   Download PDF
                 </Link>

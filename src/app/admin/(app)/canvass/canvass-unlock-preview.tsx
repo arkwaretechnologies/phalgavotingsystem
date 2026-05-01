@@ -197,7 +197,7 @@ export function CanvassUnlockPreview({
               setFormError(null);
               setModalOpen(true);
             }}
-            className="pointer-events-auto rounded-md bg-black px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-neutral-800"
+            className="ph-brand-button pointer-events-auto rounded-md px-5 py-2.5 text-sm font-medium"
           >
             Initiate Final Tally
           </button>
@@ -211,7 +211,7 @@ export function CanvassUnlockPreview({
 
       {modalOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+          className="ph-brand-scrim fixed inset-0 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="canvass-unlock-title"
@@ -267,7 +267,7 @@ export function CanvassUnlockPreview({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60"
+                  className="ph-brand-button rounded-md px-4 py-2 text-sm disabled:opacity-60"
                 >
                   {isPending ? "Verifying…" : "Close election & unlock"}
                 </button>

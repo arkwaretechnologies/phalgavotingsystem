@@ -29,7 +29,7 @@ export function CanvassTabsNav({ activeTab }: { activeTab: CanvassTabKey }) {
               className={[
                 "relative inline-flex flex-1 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition",
                 active
-                  ? "bg-black text-white shadow-sm"
+                  ? "ph-brand-pill-active"
                   : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
               ].join(" ")}
             >

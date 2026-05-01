@@ -118,7 +118,7 @@ export default async function AdminEditVoterPage({
             <a href="/admin/voters" className="rounded-md border px-4 py-2 text-sm hover:bg-neutral-50">
               Cancel
             </a>
-            <button type="submit" className="rounded-md bg-black px-4 py-2 text-sm text-white">
+            <button type="submit" className="ph-brand-button rounded-md px-4 py-2 text-sm">
               Save changes
             </button>
           </div>

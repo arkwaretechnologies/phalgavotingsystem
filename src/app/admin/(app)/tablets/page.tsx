@@ -64,7 +64,7 @@ export default async function AdminTabletsPage({
               placeholder="New tablet label"
               required
             />
-            <button type="submit" className="h-9 rounded-md bg-black px-3 text-sm text-white">
+            <button type="submit" className="ph-brand-button h-9 rounded-md px-3 text-sm">
               Add tablet
             </button>
           </form>

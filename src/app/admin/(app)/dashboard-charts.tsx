@@ -5,10 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { DashboardSnapshot } from "@/lib/admin/dashboard-snapshot-types";
 
-const ACCENT = "#050203";
+const ACCENT = "#0038a8";
+const ACCENT_RED = "#ce1126";
 
 const dashboardQuickLinkBase =
-  "group relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold tracking-tight transition-[transform,box-shadow,background-color,border-color,filter] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#050203]/25 focus-visible:ring-offset-2";
+  "group relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold tracking-tight transition-[transform,box-shadow,background-color,border-color,filter] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0038a8]/30 focus-visible:ring-offset-2";
 
 function IconChartBars({ className }: { className?: string }) {
   return (
@@ -174,7 +175,7 @@ function GeoTopThreeCard({
             <li key={`${t.candidateName}-${i}`}>
               <div className="mb-0.5 flex justify-between gap-2 text-xs">
                 <span className="min-w-0 truncate font-medium text-neutral-800">
-                  <span className="mr-1.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#050203] text-[10px] text-white">
+                  <span className="mr-1.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--ph-flag-blue)] text-[10px] text-white">
                     {i + 1}
                   </span>
                   {t.candidateName}
@@ -401,7 +402,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
               href="/queue-display"
               target="_blank"
               rel="noopener noreferrer"
-              className={`${dashboardQuickLinkBase} border border-[#050203] bg-[#050203] text-white shadow-[0_2px_8px_rgba(5,2,3,0.22)] hover:shadow-[0_6px_20px_rgba(5,2,3,0.28)] hover:brightness-[1.06] active:brightness-100 active:shadow-[0_2px_10px_rgba(5,2,3,0.2)]`}
+              className={`${dashboardQuickLinkBase} ph-brand-button`}
             >
               <IconQueueList className="shrink-0 text-white/85 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:scale-110 motion-safe:group-hover:text-white" />
               <span>View queueing</span>
@@ -530,7 +531,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
           <h3 className="text-sm font-semibold text-neutral-900">Queue & active voting</h3>
           <p className="mt-1 text-xs text-neutral-600">
             Verified waiting numbers match the{" "}
-            <Link href="/admin/queueing" className="font-medium text-[#050203] underline-offset-2 hover:underline">
+            <Link href="/admin/queueing" className="font-medium text-[var(--ph-flag-blue)] underline-offset-2 hover:underline">
               Queueing
             </Link>{" "}
             screen.
@@ -639,7 +640,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
           <p className="mt-1 text-xs text-neutral-600">
             <span className="font-semibold tabular-nums text-emerald-800">{vacantCount}</span>{" "}
             station{vacantCount === 1 ? "" : "s"} currently available (vacant).{" "}
-            <Link href="/admin/tablets" className="font-medium text-[#050203] underline-offset-2 hover:underline">
+            <Link href="/admin/tablets" className="font-medium text-[var(--ph-flag-blue)] underline-offset-2 hover:underline">
               Manage tablets
             </Link>
           </p>

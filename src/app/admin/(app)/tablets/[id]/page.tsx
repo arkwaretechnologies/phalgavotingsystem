@@ -116,7 +116,7 @@ export default async function AdminTabletDetailsPage({
             <input type="hidden" name="return_to" value={`/admin/tablets/${tablet.id}`} />
             <button
               type="submit"
-              className="rounded-md bg-black px-3 py-2 text-sm text-white disabled:opacity-50"
+              className="ph-brand-button rounded-md px-3 py-2 text-sm disabled:opacity-50"
               disabled={Boolean(pairedDeviceId)}
               title={pairedDeviceId ? "Unpair this tablet first" : undefined}
             >

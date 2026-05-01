@@ -14,7 +14,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="ph-glossy-black group relative mt-2 w-full rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#050203] active:scale-[0.99] disabled:cursor-wait disabled:opacity-80"
+      className="ph-glossy-black group relative mt-2 w-full rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ph-flag-blue)] active:scale-[0.99] disabled:cursor-wait disabled:opacity-80"
     >
       <span
         className={`inline-flex w-full items-center justify-center gap-2 transition-transform duration-200 ${pending ? "scale-95" : "group-hover:scale-[1.01]"}`}
@@ -66,7 +66,7 @@ export function VoteLoginForm() {
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-neutral-900 shadow-sm transition-all duration-200 placeholder:text-neutral-400 focus:border-[#050203] focus:outline-none focus:ring-4 focus:ring-[#050203]/10"
+          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-neutral-900 shadow-sm transition-all duration-200 placeholder:text-neutral-400 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
           placeholder="e.g. 12"
           required
         />
@@ -84,7 +84,7 @@ export function VoteLoginForm() {
           pattern="[0-9]{6}"
           maxLength={6}
           autoComplete="one-time-code"
-          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-lg tracking-[0.35em] text-neutral-900 shadow-sm transition-all duration-200 placeholder:tracking-normal placeholder:text-neutral-400 focus:border-[#050203] focus:outline-none focus:ring-4 focus:ring-[#050203]/10"
+          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-lg tracking-[0.35em] text-neutral-900 shadow-sm transition-all duration-200 placeholder:tracking-normal placeholder:text-neutral-400 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
           placeholder="••••••"
           required
         />

@@ -348,14 +348,15 @@ export default function QueueDisplayClient() {
             : formatHHMMSS(liveWindowMsRemaining);
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-slate-100">
-      {/* ambient */}
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-br from-slate-950 via-[var(--ph-flag-blue-deep)] to-slate-900 text-slate-100">
+      <div aria-hidden className="ph-flag-strip-top--thin ph-flag-strip-top" />
+      {/* ambient — Philippine flag wash */}
       <div
-        className="pointer-events-none absolute -left-32 top-0 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl"
+        className="pointer-events-none absolute -left-32 top-0 h-96 w-96 rounded-full bg-[var(--ph-flag-blue)]/30 blur-3xl"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl"
+        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-[var(--ph-flag-red)]/25 blur-3xl"
         aria-hidden
       />
 
@@ -365,16 +366,16 @@ export default function QueueDisplayClient() {
           role="status"
           aria-live="polite"
         >
-          <div className="max-w-4xl rounded-2xl border border-emerald-400/40 bg-gradient-to-r from-emerald-600/95 to-teal-600/95 px-8 py-5 text-center shadow-2xl shadow-emerald-900/50 backdrop-blur">
+          <div className="max-w-4xl rounded-2xl border border-[var(--ph-flag-yellow)]/50 bg-gradient-to-r from-[var(--ph-flag-blue)]/95 to-[var(--ph-flag-red)]/95 px-8 py-5 text-center shadow-2xl shadow-[var(--ph-flag-blue-deep)]/60 backdrop-blur">
             <p className="text-lg font-semibold tracking-tight text-white sm:text-2xl">{banner.text}</p>
-            <p className="mt-1 text-sm font-medium text-emerald-100/90">Proceed to the voting station when your number is called</p>
+            <p className="mt-1 text-sm font-medium text-[var(--ph-flag-yellow)]/90">Proceed to the voting station when your number is called</p>
           </div>
         </div>
       ) : null}
 
       <header className="relative z-10 flex items-center justify-between border-b border-white/10 px-6 py-4 sm:px-10">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300/90">PhALGA</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ph-flag-yellow)]">PhALGA</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">Voter queue</h1>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -407,7 +408,7 @@ export default function QueueDisplayClient() {
             className={[
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               voiceOn
-                ? "border-violet-400/50 bg-violet-500/20 text-violet-100 hover:bg-violet-500/30"
+                ? "border-[var(--ph-flag-yellow)]/50 bg-[var(--ph-flag-yellow)]/15 text-[var(--ph-flag-yellow)] hover:bg-[var(--ph-flag-yellow)]/25"
                 : "border-white/15 bg-white/5 text-slate-400 hover:bg-white/10",
             ].join(" ")}
             aria-pressed={voiceOn}
@@ -418,13 +419,13 @@ export default function QueueDisplayClient() {
           <span
             className={[
               "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
-              connected ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200" : "border-white/15 bg-white/5 text-slate-400",
+              connected ? "border-[var(--ph-flag-yellow)]/45 bg-[var(--ph-flag-yellow)]/15 text-[var(--ph-flag-yellow)]" : "border-white/15 bg-white/5 text-slate-400",
             ].join(" ")}
           >
             <span
               className={[
                 "h-2 w-2 rounded-full",
-                connected ? "animate-pulse bg-emerald-400" : "bg-slate-500",
+                connected ? "animate-pulse bg-[var(--ph-flag-yellow)]" : "bg-slate-500",
               ].join(" ")}
             />
             {connected ? "Live" : "Connecting…"}
@@ -459,7 +460,7 @@ export default function QueueDisplayClient() {
                       <li key={`${row.queue_number}-${row.tablet_id ?? "x"}`}>
                         <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/25 text-xs font-bold text-emerald-200">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--ph-flag-yellow)]/30 text-xs font-bold text-[var(--ph-flag-yellow)]">
                               {i + 1}
                             </span>
                             <span className="font-mono text-xl font-semibold tabular-nums text-white">
@@ -467,7 +468,7 @@ export default function QueueDisplayClient() {
                             </span>
                           </div>
                           {station ? (
-                            <p className="pl-11 text-[11px] font-medium leading-snug text-emerald-100/85">{station}</p>
+                            <p className="pl-11 text-[11px] font-medium leading-snug text-[var(--ph-flag-yellow)]/90">{station}</p>
                           ) : (
                             <p className="pl-11 text-[11px] leading-snug text-zinc-500">Ballot in progress</p>
                           )}
@@ -493,13 +494,13 @@ export default function QueueDisplayClient() {
               </div>
             ) : (
               <div className="flex w-full max-w-xl flex-col items-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300/90">Now serving</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--ph-flag-yellow)]">Now serving</p>
                 <div
-                  className="mt-6 flex aspect-square w-full max-w-[min(100%,420px)] flex-col items-center justify-center rounded-[2rem] border-2 border-indigo-400/35 bg-gradient-to-b from-white/[0.14] to-white/[0.04] shadow-[0_0_60px_-12px_rgba(99,102,241,0.45)] backdrop-blur-sm"
+                  className="mt-6 flex aspect-square w-full max-w-[min(100%,420px)] flex-col items-center justify-center rounded-[2rem] border-2 border-[var(--ph-flag-yellow)]/45 bg-gradient-to-b from-white/[0.14] to-white/[0.04] shadow-[0_0_60px_-12px_rgba(252,209,22,0.45)] backdrop-blur-sm"
                   aria-live="assertive"
                   aria-atomic="true"
                 >
-                  <span className="text-sm font-semibold text-indigo-200/80">Queue #</span>
+                  <span className="text-sm font-semibold text-[var(--ph-flag-yellow)]/85">Queue #</span>
                   <span className="mt-2 text-7xl font-black tabular-nums tracking-tight text-white sm:text-8xl lg:text-9xl">
                     {nowServing}
                   </span>
@@ -545,7 +546,7 @@ export default function QueueDisplayClient() {
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                             entry.skipped
                               ? "bg-amber-500/25 text-amber-100"
-                              : "bg-indigo-500/25 text-indigo-200",
+                              : "bg-[var(--ph-flag-blue)]/30 text-sky-100",
                           ].join(" ")}
                         >
                           {i + 1}
@@ -580,7 +581,7 @@ export default function QueueDisplayClient() {
               {vacantNow.map((t) => (
                 <span
                   key={t.id}
-                  className="rounded-full border border-emerald-400/35 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-100"
+                  className="rounded-full border border-[var(--ph-flag-yellow)]/45 bg-[var(--ph-flag-yellow)]/15 px-4 py-2 text-sm font-medium text-[var(--ph-flag-yellow)]"
                 >
                   {formatTabletLine(t)}
                 </span>
@@ -589,6 +590,7 @@ export default function QueueDisplayClient() {
           </footer>
         ) : null}
       </main>
+      <div aria-hidden className="ph-flag-strip-bottom--thin ph-flag-strip-bottom" />
     </div>
   );
 }

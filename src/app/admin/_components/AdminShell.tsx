@@ -124,8 +124,8 @@ function settingsSubClass(active: boolean) {
   return [
     "block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
     active
-      ? "border-black bg-white/90 font-medium text-neutral-900 shadow-sm ring-1 ring-neutral-200/80"
-      : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100/80 hover:text-neutral-900",
+      ? "border-[var(--ph-flag-yellow)] bg-white/15 font-semibold text-white shadow-sm"
+      : "border-transparent text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white",
   ].join(" ");
 }
 
@@ -133,8 +133,8 @@ function reportsSubClass(active: boolean) {
   return [
     "block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
     active
-      ? "border-black bg-white/90 font-medium text-neutral-900 shadow-sm ring-1 ring-neutral-200/80"
-      : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100/80 hover:text-neutral-900",
+      ? "border-[var(--ph-flag-yellow)] bg-white/15 font-semibold text-white shadow-sm"
+      : "border-transparent text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white",
   ].join(" ");
 }
 
@@ -202,14 +202,20 @@ export default function AdminShell({
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden bg-neutral-100 text-neutral-900">
       <div className="flex min-h-dvh w-full flex-col lg:flex-row">
-        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-200/80 bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
+        <header
+          className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 px-4 py-3 text-white shadow-sm lg:hidden"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, var(--ph-flag-blue-deep) 0%, var(--ph-flag-blue) 100%)",
+          }}
+        >
           <Link href="/admin" className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-bold text-white">
+            <span className="ph-brand-shell flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold">
               P
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold leading-tight">PhALGA Admin</span>
-              <span className="block truncate text-xs text-neutral-500">Election control</span>
+              <span className="block truncate text-sm font-semibold leading-tight text-white">PhALGA Admin</span>
+              <span className="block truncate text-xs text-white/70">Election control</span>
             </span>
           </Link>
           <button
@@ -218,7 +224,7 @@ export default function AdminShell({
             aria-expanded={isMobileNavOpen}
             aria-controls="admin-sidebar"
             onClick={() => setIsMobileNavOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-800 shadow-sm transition active:scale-95"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white shadow-sm transition active:scale-95 hover:bg-white/15"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
@@ -231,7 +237,7 @@ export default function AdminShell({
           aria-label="Close admin navigation"
           onClick={() => setIsMobileNavOpen(false)}
           className={[
-            "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ease-out lg:hidden motion-reduce:transition-none",
+            "ph-brand-scrim fixed inset-0 z-40 transition-opacity duration-300 ease-out lg:hidden motion-reduce:transition-none",
             isMobileNavOpen ? "opacity-100" : "pointer-events-none opacity-0",
           ].join(" ")}
         />
@@ -239,7 +245,7 @@ export default function AdminShell({
         <aside
           id="admin-sidebar"
           className={[
-            "fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] transform-gpu flex-col border-r border-neutral-200/80 bg-white shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform motion-reduce:transition-none",
+            "ph-admin-sidebar fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] transform-gpu flex-col border-r shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform motion-reduce:transition-none",
             isMobileNavOpen
               ? "translate-x-0"
               : "pointer-events-none -translate-x-[105%]",
@@ -251,9 +257,9 @@ export default function AdminShell({
               <Link
                 href="/admin"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="ph-glossy-black group flex min-w-0 flex-1 items-start gap-3 rounded-2xl p-3.5 transition duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                className="group flex min-w-0 flex-1 items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3.5 text-white transition duration-200 hover:scale-[1.01] hover:bg-white/10 active:scale-[0.99]"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+                <div className="ph-brand-shell flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                   <span className="text-lg font-bold tracking-tight">P</span>
                 </div>
                 <div className="min-w-0">
@@ -265,7 +271,7 @@ export default function AdminShell({
                 type="button"
                 aria-label="Close admin navigation"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition active:scale-95 lg:hidden"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white shadow-sm transition active:scale-95 hover:bg-white/15 lg:hidden"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -273,7 +279,7 @@ export default function AdminShell({
               </button>
             </div>
 
-            <nav className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300/90">
+            <nav className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30">
               {visibleNav.map((item) => {
                 if (item.pageKey === "settings") {
                   const parentActive = pathname.startsWith("/admin/settings");
@@ -292,8 +298,8 @@ export default function AdminShell({
                         <span
                           className={
                             parentActive
-                              ? "mt-0.5 text-white"
-                              : "mt-0.5 text-neutral-500 transition group-hover:text-white"
+                              ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                              : "mt-0.5 text-white/70 transition group-hover:text-white"
                           }
                         >
                           <Icon name="settings" />
@@ -301,12 +307,12 @@ export default function AdminShell({
                         <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
                         <span className="ml-auto flex shrink-0 items-start gap-1.5 pt-0.5">
                           {parentActive ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--ph-flag-red)] ring-1 ring-black/15" />
                           ) : null}
                           <svg
                             className={[
                               "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
-                              parentActive ? "text-white/90" : "text-neutral-400 group-hover:text-white",
+                              parentActive ? "text-[var(--ph-flag-blue-deep)]/80" : "text-white/55 group-hover:text-white",
                               settingsExpanded ? "rotate-180" : "rotate-0",
                             ].join(" ")}
                             fill="none"
@@ -322,7 +328,7 @@ export default function AdminShell({
                       {settingsExpanded ? (
                         <div
                           id="admin-settings-submenu"
-                          className="space-y-0.5 border-l border-neutral-200/90 pb-0.5 pl-3 ml-3"
+                          className="space-y-0.5 border-l border-white/15 pb-0.5 pl-3 ml-3"
                           role="group"
                           aria-label="Settings submenu"
                         >
@@ -358,9 +364,9 @@ export default function AdminShell({
                               </Link>
                             </>
                           ) : (
-                            <p className="mt-1.5 text-[11px] leading-snug text-neutral-500">
-                              <span className="font-medium text-neutral-600">Users</span> and{" "}
-                              <span className="font-medium text-neutral-600">Role management</span> are
+                            <p className="mt-1.5 text-[11px] leading-snug text-white/65">
+                              <span className="font-medium text-white/85">Users</span> and{" "}
+                              <span className="font-medium text-white/85">Role management</span> are
                               only shown when you sign in with the{" "}
                               <span className="font-medium">Super admin</span> role (
                               <span className="font-mono">super_admin</span> in the database). If your
@@ -391,8 +397,8 @@ export default function AdminShell({
                         <span
                           className={
                             parentActive
-                              ? "mt-0.5 text-white"
-                              : "mt-0.5 text-neutral-500 transition group-hover:text-white"
+                              ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                              : "mt-0.5 text-white/70 transition group-hover:text-white"
                           }
                         >
                           <Icon name="chart" />
@@ -400,12 +406,12 @@ export default function AdminShell({
                         <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
                         <span className="ml-auto flex shrink-0 items-start gap-1.5 pt-0.5">
                           {parentActive ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--ph-flag-red)] ring-1 ring-black/15" />
                           ) : null}
                           <svg
                             className={[
                               "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
-                              parentActive ? "text-white/90" : "text-neutral-400 group-hover:text-white",
+                              parentActive ? "text-[var(--ph-flag-blue-deep)]/80" : "text-white/55 group-hover:text-white",
                               reportsExpanded ? "rotate-180" : "rotate-0",
                             ].join(" ")}
                             fill="none"
@@ -421,7 +427,7 @@ export default function AdminShell({
                       {reportsExpanded ? (
                         <div
                           id="admin-reports-submenu"
-                          className="space-y-0.5 border-l border-neutral-200/90 pb-0.5 pl-3 ml-3"
+                          className="space-y-0.5 border-l border-white/15 pb-0.5 pl-3 ml-3"
                           role="group"
                           aria-label="Reports submenu"
                         >
@@ -472,44 +478,54 @@ export default function AdminShell({
                     <span
                       className={
                         active
-                          ? "mt-0.5 text-white"
-                          : "mt-0.5 text-neutral-500 transition group-hover:text-white"
+                          ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                          : "mt-0.5 text-white/70 transition group-hover:text-white"
                       }
                     >
                       <Icon name={item.icon} />
                     </span>
                     <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
                     {active ? (
-                      <span className="ml-auto h-1.5 w-1.5 shrink-0 self-center rounded-full bg-white/90 ring-1 ring-white/30" />
+                      <span className="ml-auto h-1.5 w-1.5 shrink-0 self-center rounded-full bg-[var(--ph-flag-red)] ring-1 ring-black/15" />
                     ) : null}
                   </Link>
                 );
               })}
             </nav>
 
-            <div className="mt-4 shrink-0 space-y-1.5 border-t border-neutral-200/80 pt-4">
+            <div className="mt-4 shrink-0 space-y-1.5 border-t border-white/15 pt-4">
               <Link
                 href="/admin/logout"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-500 transition duration-200 hover:translate-x-0.5 hover:text-rose-600"
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition duration-200 hover:translate-x-0.5 hover:bg-[var(--ph-flag-red)]/20 hover:text-white"
               >
-                <Icon name="logout" className="h-4 w-4 text-rose-500/80" />
+                <Icon name="logout" className="h-4 w-4 text-[var(--ph-flag-red)]" />
                 Logout
               </Link>
               <Link
                 href="/"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-500 transition duration-200 hover:translate-x-0.5 hover:text-neutral-800"
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition duration-200 hover:translate-x-0.5 hover:bg-white/10 hover:text-white"
               >
-                <Icon name="home" className="h-4 w-4 text-neutral-400" />
+                <Icon name="home" className="h-4 w-4 text-white/55" />
                 Back to home
               </Link>
+              <div
+                aria-hidden
+                className="mt-3 h-1.5 w-full rounded-full"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, var(--ph-flag-blue) 0%, var(--ph-flag-blue) 45%, var(--ph-flag-yellow) 45%, var(--ph-flag-yellow) 55%, var(--ph-flag-red) 55%, var(--ph-flag-red) 100%)",
+                }}
+              />
             </div>
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 bg-white p-4 sm:p-6 lg:border-l lg:border-t-0 lg:p-8">
-          {children}
+        <main className="flex min-w-0 flex-1 flex-col bg-white lg:border-l lg:border-t-0 lg:border-neutral-200/80">
+          <div aria-hidden className="ph-flag-strip-top" />
+          <div className="flex-1 p-4 sm:p-6 lg:p-8">{children}</div>
+          <div aria-hidden className="ph-flag-strip-bottom" />
         </main>
       </div>
     </div>

@@ -6,16 +6,16 @@ import { CandidatesTable, type CandidateRow, type GeoGroupRow } from "./candidat
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 const fieldInputClass =
-  "mt-1.5 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
+  "mt-1.5 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15";
 const fieldSelectClass =
-  "mt-1.5 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
+  "mt-1.5 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15";
 const fileInputClass =
   "mt-1.5 block w-full text-sm text-neutral-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-neutral-800 hover:file:bg-neutral-200/90";
 const fieldTextareaClass =
-  "mt-1.5 min-h-[5.5rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
+  "mt-1.5 min-h-[5.5rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15";
 
 const fieldTextareaShortClass =
-  "mt-1.5 min-h-[3.25rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
+  "mt-1.5 min-h-[3.25rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15";
 
 export default async function AdminCandidatesPage() {
   const supabase = createSupabaseServiceRoleClient();
@@ -125,7 +125,7 @@ export default async function AdminCandidatesPage() {
           {activeConfcode ? (
             <a
               href="/api/admin/candidates-presentation"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#050203] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-neutral-900"
+              className="ph-brand-button inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold"
               title="Download a PDF with one page per active candidate"
             >
               <svg
@@ -231,7 +231,7 @@ export default async function AdminCandidatesPage() {
                 type="checkbox"
                 name="is_active"
                 defaultChecked
-                className="h-4 w-4 rounded border-neutral-300 text-[#050203] focus:ring-[#050203]/20"
+                className="h-4 w-4 rounded border-neutral-300 text-[var(--ph-flag-blue)] focus:ring-[var(--ph-flag-blue)]/25"
               />
               <span className="text-sm font-medium text-neutral-800">Visible on ballot (active)</span>
             </label>
@@ -391,7 +391,7 @@ export default async function AdminCandidatesPage() {
             <button
               type="submit"
               disabled={!activeConfcode || !hasGeoGroups}
-              className="h-10 rounded-lg bg-[#050203] px-5 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-45"
+              className="ph-brand-button h-10 rounded-lg px-5 text-sm font-medium disabled:opacity-45"
             >
               Add candidate
             </button>

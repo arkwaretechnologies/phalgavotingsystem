@@ -106,7 +106,7 @@ export function NonParticipatingVotersClient({
             <button
               type="button"
               onClick={exportPdfPrint}
-              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-neutral-800"
+              className="ph-brand-button rounded-lg px-4 py-2 text-sm font-medium"
               title="Downloads a PDF file"
             >
               Export PDF

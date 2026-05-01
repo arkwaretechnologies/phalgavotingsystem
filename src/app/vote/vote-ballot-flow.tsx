@@ -111,8 +111,9 @@ export function VoteBallotFlow({
   const canSubmit = canGoToReview;
 
   return (
-    <div className="min-h-dvh bg-white font-sans text-black">
-      <main className="w-full max-w-none px-4 py-8 sm:px-6 lg:px-10 sm:py-10">
+    <div className="flex min-h-dvh flex-col bg-white font-sans text-black">
+      <div aria-hidden className="ph-flag-strip-top" />
+      <main className="w-full max-w-none flex-1 px-4 py-8 sm:px-6 lg:px-10 sm:py-10">
         <ConferenceBanner conference={conference} activeConfcode={activeConfcode} />
 
         <header className="mb-8 text-center sm:mb-8 sm:text-left">
@@ -157,7 +158,7 @@ export function VoteBallotFlow({
                   type="button"
                   disabled={!canGoToReview}
                   onClick={() => setStep("review")}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="ph-brand-button inline-flex min-h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold disabled:opacity-40"
                 >
                   Submit — review ballot
                 </button>
@@ -245,6 +246,7 @@ export function VoteBallotFlow({
           </>
         )}
       </main>
+      <div aria-hidden className="ph-flag-strip-bottom" />
     </div>
   );
 }

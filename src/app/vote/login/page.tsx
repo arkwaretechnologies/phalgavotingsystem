@@ -11,27 +11,31 @@ export default async function VoteLoginPage() {
   const { conference, activeConfcode } = await getVotingActiveConference();
 
   return (
-    <main className="relative isolate min-h-dvh overflow-x-hidden font-sans">
-      {/* Ambient background */}
+    <main className="relative isolate flex min-h-dvh flex-col overflow-x-hidden font-sans">
+      {/* Ambient background — Philippine flag wash */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"
         aria-hidden
       >
         <div
-          className="vote-login-shimmer absolute inset-0 bg-linear-to-br from-slate-100 via-indigo-50/80 to-cyan-50/90 dark:from-slate-950 dark:via-indigo-950/40 dark:to-slate-900/90"
+          className="vote-login-shimmer absolute inset-0 bg-linear-to-br from-white via-[#dde7ff]/70 to-[#fde2e6]/80"
         />
         <div
-          className="vote-login-blob absolute -left-[20%] -top-[30%] h-[60vmin] w-[60vmin] rounded-full bg-indigo-400/25 blur-3xl dark:bg-indigo-500/15"
+          className="vote-login-blob absolute -left-[20%] -top-[30%] h-[60vmin] w-[60vmin] rounded-full bg-[var(--ph-flag-blue)]/20 blur-3xl"
         />
         <div
-          className="vote-login-blob absolute -right-[15%] bottom-[-20%] h-[55vmin] w-[55vmin] rounded-full bg-cyan-400/20 blur-3xl [animation-delay:-6s] dark:bg-cyan-500/10"
+          className="vote-login-blob absolute -right-[15%] bottom-[-20%] h-[55vmin] w-[55vmin] rounded-full bg-[var(--ph-flag-red)]/18 blur-3xl [animation-delay:-6s]"
         />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.2),transparent)]" />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(0,56,168,0.14),transparent)]"
+        />
       </div>
 
-      <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4 py-12 sm:px-6">
+      <div aria-hidden className="ph-flag-strip-top" />
+
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12 sm:px-6">
         <div className="vote-login-fade-up mb-6 flex items-center justify-end gap-4 text-sm">
-          <span className="rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-neutral-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+          <span className="ph-brand-highlight rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
             Voter
           </span>
         </div>
@@ -41,22 +45,22 @@ export default async function VoteLoginPage() {
         </div>
 
         <div
-          className="vote-login-fade-up vote-login-fade-up-delay-1 relative overflow-hidden rounded-3xl border border-white/60 bg-white/70 p-8 shadow-2xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/50 dark:shadow-black/40 sm:p-10"
+          className="vote-login-fade-up vote-login-fade-up-delay-1 relative overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-8 shadow-2xl shadow-[var(--ph-flag-blue-deep)]/10 backdrop-blur-xl sm:p-10"
         >
           <div
-            className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-linear-to-br from-indigo-400/20 to-transparent blur-2xl dark:from-indigo-400/10"
+            className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-linear-to-br from-[var(--ph-flag-blue)]/25 to-transparent blur-2xl"
             aria-hidden
           />
           <div
-            className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-linear-to-tr from-cyan-400/15 to-transparent blur-2xl dark:from-cyan-400/8"
+            className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-linear-to-tr from-[var(--ph-flag-red)]/20 to-transparent blur-2xl"
             aria-hidden
           />
 
           <div className="relative">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
               Sign in to vote
             </h1>
-            <p className="mt-2 text-pretty text-sm leading-relaxed text-neutral-600 dark:text-slate-400">
+            <p className="mt-2 text-pretty text-sm leading-relaxed text-neutral-600">
               Enter the queue number you were assigned and the six-digit code from
               your QR or from Comelec personnel, then continue to the ballot.
             </p>
@@ -69,10 +73,12 @@ export default async function VoteLoginPage() {
           </div>
         </div>
 
-        <p className="vote-login-fade-up vote-login-fade-up-delay-3 mt-6 text-center text-xs text-neutral-600 dark:text-neutral-600">
+        <p className="vote-login-fade-up vote-login-fade-up-delay-3 mt-6 text-center text-xs text-neutral-600">
           PhALGA Automated Online Voting System
         </p>
       </div>
+
+      <div aria-hidden className="ph-flag-strip-bottom" />
     </main>
   );
 }

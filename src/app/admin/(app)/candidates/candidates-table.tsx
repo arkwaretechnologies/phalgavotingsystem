@@ -78,7 +78,7 @@ export function CandidatesTable({
   return (
     <div className="admin-table-wrap mt-4">
       {confirmOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+        <div className="ph-brand-scrim fixed inset-0 z-50 grid place-items-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xl">
             <div className="text-base font-semibold">{confirmTitle}</div>
             <div className="mt-2 text-sm text-neutral-600">{confirmMessage}</div>
@@ -92,7 +92,7 @@ export function CandidatesTable({
               </button>
               <button
                 type="button"
-                className="rounded-md bg-black px-3 py-2 text-sm text-white"
+                className="ph-brand-button rounded-md px-3 py-2 text-sm"
                 onClick={() => {
                   const fn = confirmActionRef.current;
                   closeConfirm();
@@ -229,7 +229,7 @@ export function CandidatesTable({
                       <select
                         name="geo_group_id"
                         defaultValue={c.geo_group_id == null ? "" : String(c.geo_group_id)}
-                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                         required
                         disabled={geoOptions.length === 0}
                       >
@@ -272,7 +272,7 @@ export function CandidatesTable({
                       <select
                         name="gender"
                         defaultValue={c.gender ?? ""}
-                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                       >
                         <option value="">Select…</option>
                         <option value="Male">Male</option>
@@ -285,7 +285,7 @@ export function CandidatesTable({
                       <select
                         name="civil_status"
                         defaultValue={c.civil_status ?? ""}
-                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                       >
                         <option value="">Select…</option>
                         <option value="S">Single</option>
@@ -320,7 +320,7 @@ export function CandidatesTable({
                       <select
                         name="present_position"
                         defaultValue={c.present_position ?? ""}
-                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                       >
                         <option value="">Select…</option>
                         <option value="PROVINCIAL ACCOUNTANT">PROVINCIAL ACCOUNTANT</option>
@@ -373,13 +373,13 @@ export function CandidatesTable({
                               <input
                                 name={`phalga_position_${idx + 1}`}
                                 defaultValue={line?.position ?? ""}
-                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                                 placeholder={`Position ${idx + 1}`}
                               />
                               <input
                                 name={`phalga_period_${idx + 1}`}
                                 defaultValue={line?.period_covered ?? ""}
-                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                                 placeholder={`Period covered ${idx + 1}`}
                               />
                             </div>
@@ -400,13 +400,13 @@ export function CandidatesTable({
                               <input
                                 name={`prov_position_${idx + 1}`}
                                 defaultValue={line?.position ?? ""}
-                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                                 placeholder={`Position ${idx + 1}`}
                               />
                               <input
                                 name={`prov_period_${idx + 1}`}
                                 defaultValue={line?.period_covered ?? ""}
-                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[var(--ph-flag-blue)]/15"
                                 placeholder={`Period covered ${idx + 1}`}
                               />
                             </div>
@@ -428,7 +428,7 @@ export function CandidatesTable({
                     <div className="flex flex-wrap items-end gap-2 sm:col-span-5">
                       <button
                         type="button"
-                        className="rounded-md bg-black px-3 py-2 text-sm text-white"
+                        className="ph-brand-button rounded-md px-3 py-2 text-sm"
                         onClick={(e) => {
                           const form = (e.currentTarget as HTMLButtonElement).form;
                           if (!form) return;

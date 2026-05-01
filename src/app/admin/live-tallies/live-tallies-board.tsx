@@ -212,7 +212,7 @@ export function LiveTalliesBoard() {
       <div className="flex h-full min-h-0 items-center justify-center p-8">
         <div className="flex items-center gap-3 text-slate-300">
           <span
-            className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-sky-400"
+            className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-[var(--ph-flag-yellow)]"
             aria-hidden
           />
           Loading live tallies…
@@ -236,7 +236,7 @@ export function LiveTalliesBoard() {
     <div className="flex h-full min-h-0 flex-col px-2 pb-2 pt-2 sm:px-3 sm:pb-3 sm:pt-3">
       <header className="flex shrink-0 flex-col gap-2 border-b border-white/10 pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-300/90 sm:text-xs">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ph-flag-yellow)] sm:text-xs">
             PhALGA
           </p>
           <h1 className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">
@@ -267,7 +267,7 @@ export function LiveTalliesBoard() {
             onClick={() => void toggleFullscreen()}
             title={fullscreen ? "Exit full screen" : "Full screen"}
             aria-label={fullscreen ? "Exit full screen" : "Enter full screen"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500 text-slate-950 shadow-md shadow-sky-500/25 hover:bg-sky-400 sm:h-10 sm:w-10"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--ph-flag-yellow)] text-[var(--ph-flag-blue-deep)] shadow-md shadow-[var(--ph-flag-yellow)]/30 hover:bg-[var(--ph-flag-yellow-dark)] sm:h-10 sm:w-10"
           >
             {fullscreen ? (
               <IconArrowsCollapse className="h-5 w-5 sm:h-[1.35rem] sm:w-[1.35rem]" />
@@ -347,10 +347,10 @@ function CandidateRow({
       <div className="min-w-0 flex-1">
         <div className="truncate text-xs font-medium text-white sm:text-sm">{r.full_name}</div>
         <div className="mt-0.5 flex items-center gap-2">
-          <span className="text-base font-bold tabular-nums text-sky-300 sm:text-lg">{r.vote_count}</span>
+          <span className="text-base font-bold tabular-nums text-[var(--ph-flag-yellow)] sm:text-lg">{r.vote_count}</span>
           <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-800 sm:h-2">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-400 transition-[width] duration-700 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-[var(--ph-flag-blue)] to-[var(--ph-flag-red)] transition-[width] duration-700 ease-out"
               style={{
                 width: `${barWidthPercent(r.vote_count, totalVoters)}%`,
               }}

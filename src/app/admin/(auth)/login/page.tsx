@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
           <span className="text-sm font-medium text-neutral-800">Username</span>
           <input
             name="username"
-            className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[#050203] focus:ring-2 focus:ring-[#050203]/15"
+            className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[var(--ph-brand-blue)] focus:ring-2 focus:ring-[var(--ph-brand-blue)]/25"
             required
             autoComplete="username"
           />
@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
           <input
             name="password"
             type="password"
-            className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[#050203] focus:ring-2 focus:ring-[#050203]/15"
+            className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[var(--ph-brand-blue)] focus:ring-2 focus:ring-[var(--ph-brand-blue)]/25"
             required
             autoComplete="current-password"
           />
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
         <button
           type="submit"
-          className="ph-glossy-black w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 active:scale-[0.98]"
+          className="ph-brand-button w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 active:scale-[0.98]"
         >
           Sign in
         </button>

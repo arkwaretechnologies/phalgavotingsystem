@@ -135,7 +135,7 @@ export function AdminResultsReport({ initial }: { initial: AdminResultsPayload }
               type="button"
               onClick={openLiveTallies}
               disabled={!payload.activeConfcode}
-              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="ph-brand-button rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
               View Final Tallies
             </button>
@@ -274,7 +274,7 @@ function FilterChip({
       className={[
         "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
         active
-          ? "border-black bg-black text-white"
+          ? "ph-brand-pill-active"
           : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50",
       ].join(" ")}
     >

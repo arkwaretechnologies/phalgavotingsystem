@@ -67,7 +67,7 @@ export default async function AdminReportsPage() {
           <div className="h-3 w-full overflow-hidden rounded-full bg-neutral-100 ring-1 ring-neutral-200/70">
             <div className="flex h-full w-full">
               <div
-                className="h-full bg-neutral-900"
+                className="ph-brand-bar h-full"
                 style={{ width: `${Math.min(100, Math.max(0, votedPct))}%` }}
                 title={`Voted: ${votedVoters} (${votedPct.toFixed(1)}%)`}
               />
