@@ -14,7 +14,7 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="admin-hero-fade text-center sm:text-left">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#050203]/70">PhALGA</p>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">Automated Online Voting</h1>
+          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">Phalga Electronic Voting System</h1>
           <p className="mt-3 max-w-2xl text-pretty text-base text-neutral-600 sm:text-lg">
             Choose your role to continue. Staff sign in to open the control panel, then use the
             dashboard to run check-in, queueing, and results.

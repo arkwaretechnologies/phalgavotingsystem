@@ -13,6 +13,14 @@ export type CandidateRow = {
   confcode: string;
   photo_url: string | null;
   bio?: string | null;
+  gender?: string | null;
+  civil_status?: string | null;
+  date_of_birth?: string | null;
+  post_office_address?: string | null;
+  present_position?: string | null;
+  lgu_address?: string | null;
+  highest_educational_attainment?: string | null;
+  provincial_league?: string | null;
 };
 
 export type GeoGroupRow = {
@@ -22,15 +30,26 @@ export type GeoGroupRow = {
   is_active: boolean | null;
 };
 
+export type PrevCurrLine = {
+  position: string | null;
+  period_covered: string | null;
+};
+
+export type CandidatesTableProps = {
+  candidates: CandidateRow[];
+  geoGroups: GeoGroupRow[];
+  activeConfcode: string | null;
+  prevCurrPhalgaById: Record<string, PrevCurrLine[]>;
+  prevCurrProvincialById: Record<string, PrevCurrLine[]>;
+};
+
 export function CandidatesTable({
   candidates,
   geoGroups,
   activeConfcode,
-}: {
-  candidates: CandidateRow[];
-  geoGroups: GeoGroupRow[];
-  activeConfcode: string | null;
-}) {
+  prevCurrPhalgaById,
+  prevCurrProvincialById,
+}: CandidatesTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTitle, setConfirmTitle] = useState<string>("Confirm");
@@ -244,12 +263,160 @@ export function CandidatesTable({
                         name="bio"
                         defaultValue={c.bio ?? ""}
                         className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
-                        placeholder="(optional)"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">Gender</span>
+                      <select
+                        name="gender"
+                        defaultValue={c.gender ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">Civil status</span>
+                      <select
+                        name="civil_status"
+                        defaultValue={c.civil_status ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="S">Single</option>
+                        <option value="M">Married</option>
+                        <option value="W">Widowed</option>
+                      </select>
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Date of birth</span>
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        defaultValue={c.date_of_birth ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-3">
+                      <span className="text-xs text-neutral-600">Post office address</span>
+                      <textarea
+                        name="post_office_address"
+                        defaultValue={c.post_office_address ?? ""}
+                        rows={2}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
                       />
                     </label>
 
                     <label className="block sm:col-span-2">
-                      <span className="text-xs text-neutral-600">Replace photo (optional)</span>
+                      <span className="text-xs text-neutral-600">Present position (LGU)</span>
+                      <select
+                        name="present_position"
+                        defaultValue={c.present_position ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="PROVINCIAL ACCOUNTANT">PROVINCIAL ACCOUNTANT</option>
+                        <option value="CITY ACCOUNTANT">CITY ACCOUNTANT</option>
+                        <option value="MUNICIPAL ACCOUNTANT">MUNICIPAL ACCOUNTANT</option>
+                      </select>
+                    </label>
+
+                    <label className="block sm:col-span-3">
+                      <span className="text-xs text-neutral-600">LGU Address</span>
+                      <textarea
+                        name="lgu_address"
+                        defaultValue={c.lgu_address ?? ""}
+                        rows={2}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-3">
+                      <span className="text-xs text-neutral-600">Highest educational attainment</span>
+                      <input
+                        name="highest_educational_attainment"
+                        defaultValue={c.highest_educational_attainment ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Provincial Association address</span>
+                      <textarea
+                        name="provincial_league"
+                        defaultValue={c.provincial_league ?? ""}
+                        rows={2}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <div className="sm:col-span-5">
+                      <div className="mt-1 text-xs font-semibold text-neutral-700">
+                        Previous / Current positions in PhALGA
+                      </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {Array.from({ length: 3 }).map((_, idx) => {
+                          const line = prevCurrPhalgaById[c.id]?.[idx] ?? null;
+                          return (
+                            <div key={`phalga-${c.id}-${idx}`} className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+                              <input
+                                name={`phalga_position_${idx + 1}`}
+                                defaultValue={line?.position ?? ""}
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                placeholder={`Position ${idx + 1}`}
+                              />
+                              <input
+                                name={`phalga_period_${idx + 1}`}
+                                defaultValue={line?.period_covered ?? ""}
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                placeholder={`Period covered ${idx + 1}`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-5">
+                      <div className="mt-1 text-xs font-semibold text-neutral-700">
+                        Previous / Current positions in Provincial Association
+                      </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {Array.from({ length: 3 }).map((_, idx) => {
+                          const line = prevCurrProvincialById[c.id]?.[idx] ?? null;
+                          return (
+                            <div key={`prov-${c.id}-${idx}`} className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+                              <input
+                                name={`prov_position_${idx + 1}`}
+                                defaultValue={line?.position ?? ""}
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                placeholder={`Position ${idx + 1}`}
+                              />
+                              <input
+                                name={`prov_period_${idx + 1}`}
+                                defaultValue={line?.period_covered ?? ""}
+                                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                                placeholder={`Period covered ${idx + 1}`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Replace photo</span>
                       <input
                         name="photo_file"
                         type="file"

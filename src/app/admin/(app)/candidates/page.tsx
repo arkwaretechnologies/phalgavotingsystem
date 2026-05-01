@@ -14,6 +14,9 @@ const fileInputClass =
 const fieldTextareaClass =
   "mt-1.5 min-h-[5.5rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
 
+const fieldTextareaShortClass =
+  "mt-1.5 min-h-[3.25rem] w-full resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10";
+
 export default async function AdminCandidatesPage() {
   const supabase = createSupabaseServiceRoleClient();
 
@@ -42,7 +45,9 @@ export default async function AdminCandidatesPage() {
   const hasGeoGroups = geoList.length > 0;
   const candidatesQuery = supabase
     .from("candidates")
-    .select("id, full_name, geo_group_id, is_active, created_at, confcode, photo_url, bio")
+    .select(
+      "id, full_name, geo_group_id, is_active, created_at, confcode, photo_url, bio, gender, civil_status, date_of_birth, post_office_address, present_position, lgu_address, highest_educational_attainment, provincial_league",
+    )
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -54,6 +59,56 @@ export default async function AdminCandidatesPage() {
     console.error("admin candidates list failed", candErr);
     const { message } = toPublicMessage(candErr, "Unable to load candidates list.");
     throw new Error(message);
+  }
+
+  const candidateIds = (candidates ?? []).map((c) => String((c as { id?: string }).id ?? "")).filter(Boolean);
+  const [{ data: phalgaLines, error: phErr }, { data: provLines, error: provErr }] =
+    candidateIds.length > 0
+      ? await Promise.all([
+          supabase
+            .from("candidates_prev_curr_phalga")
+            .select("id, linenum, position, period_covered")
+            .in("id", candidateIds)
+            .order("id", { ascending: true })
+            .order("linenum", { ascending: true }),
+          supabase
+            .from("candidates_prev_curr_provincial_league")
+            .select("id, linenum, position, period_covered")
+            .in("id", candidateIds)
+            .order("id", { ascending: true })
+            .order("linenum", { ascending: true }),
+        ])
+      : [{ data: [], error: null }, { data: [], error: null }];
+
+  if (phErr || provErr) {
+    // eslint-disable-next-line no-console
+    console.error("admin candidates prev/curr load failed", { phErr, provErr });
+  }
+
+  const phalgaById: Record<string, Array<{ position: string | null; period_covered: string | null }>> =
+    {};
+  for (const row of (phalgaLines ?? []) as Array<{
+    id: string;
+    linenum: number;
+    position: string | null;
+    period_covered: string | null;
+  }>) {
+    const id = String(row.id);
+    if (!phalgaById[id]) phalgaById[id] = [];
+    phalgaById[id].push({ position: row.position ?? null, period_covered: row.period_covered ?? null });
+  }
+
+  const provincialById: Record<string, Array<{ position: string | null; period_covered: string | null }>> =
+    {};
+  for (const row of (provLines ?? []) as Array<{
+    id: string;
+    linenum: number;
+    position: string | null;
+    period_covered: string | null;
+  }>) {
+    const id = String(row.id);
+    if (!provincialById[id]) provincialById[id] = [];
+    provincialById[id].push({ position: row.position ?? null, period_covered: row.period_covered ?? null });
   }
 
   return (
@@ -173,6 +228,132 @@ export default async function AdminCandidatesPage() {
             </label>
           </div>
 
+          <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="text-sm font-semibold text-neutral-900">Candidate Information</div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
+              <label className="block min-w-0">
+                <span className="text-sm font-medium text-neutral-800">Gender</span>
+                <select name="gender" className={fieldSelectClass} defaultValue="">
+                  <option value="">Select…</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </label>
+
+              <label className="block min-w-0">
+                <span className="text-sm font-medium text-neutral-800">Civil status</span>
+                <select name="civil_status" className={fieldSelectClass} defaultValue="">
+                  <option value="">Select…</option>
+                  <option value="S">Single</option>
+                  <option value="M">Married</option>
+                  <option value="W">Widowed</option>
+                </select>
+              </label>
+
+              <label className="block min-w-0">
+                <span className="text-sm font-medium text-neutral-800">Date of birth</span>
+                <input name="date_of_birth" type="date" className={fieldInputClass} />
+              </label>
+
+              <label className="block min-w-0">
+                <span className="text-sm font-medium text-neutral-800">Highest educational attainment</span>
+                <input
+                  name="highest_educational_attainment"
+                  className={fieldInputClass}
+                  placeholder=""
+                />
+              </label>
+
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-sm font-medium text-neutral-800">
+                  Post office address (for election purposes)
+                </span>
+                <textarea
+                  name="post_office_address"
+                  rows={2}
+                  className={fieldTextareaShortClass}
+                  placeholder=""
+                />
+              </label>
+
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-sm font-medium text-neutral-800">Present position in the LGU</span>
+                <select name="present_position" className={fieldSelectClass} defaultValue="">
+                  <option value="">Select…</option>
+                  <option value="PROVINCIAL ACCOUNTANT">PROVINCIAL ACCOUNTANT</option>
+                  <option value="CITY ACCOUNTANT">CITY ACCOUNTANT</option>
+                  <option value="MUNICIPAL ACCOUNTANT">MUNICIPAL ACCOUNTANT</option>
+                </select>
+              </label>
+
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-sm font-medium text-neutral-800">LGU Address</span>
+                <textarea
+                  name="lgu_address"
+                  rows={2}
+                  className={fieldTextareaShortClass}
+                  placeholder=""
+                />
+              </label>
+
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-sm font-medium text-neutral-800">Provincial Association address</span>
+                <textarea
+                  name="provincial_league"
+                  rows={2}
+                  className={fieldTextareaShortClass}
+                  placeholder=""
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 sm:gap-5">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-neutral-800">
+                  Previous / Current positions in PhALGA
+                </div>
+                <div className="mt-2 space-y-2">
+                  {Array.from({ length: 3 }).map((_, idx) => (
+                    <div key={`phalga-${idx}`} className="grid gap-2 sm:grid-cols-2">
+                      <input
+                        name={`phalga_position_${idx + 1}`}
+                        className={fieldInputClass}
+                        placeholder={`Position ${idx + 1}`}
+                      />
+                      <input
+                        name={`phalga_period_${idx + 1}`}
+                        className={fieldInputClass}
+                        placeholder={`Period covered ${idx + 1}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-neutral-800">
+                  Previous / Current positions in Provincial Association
+                </div>
+                <div className="mt-2 space-y-2">
+                  {Array.from({ length: 3 }).map((_, idx) => (
+                    <div key={`prov-${idx}`} className="grid gap-2 sm:grid-cols-2">
+                      <input
+                        name={`prov_position_${idx + 1}`}
+                        className={fieldInputClass}
+                        placeholder={`Position ${idx + 1}`}
+                      />
+                      <input
+                        name={`prov_period_${idx + 1}`}
+                        className={fieldInputClass}
+                        placeholder={`Period covered ${idx + 1}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col-reverse gap-3 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
             <p className="text-center text-[11px] text-neutral-500 sm:mr-auto sm:text-left">
               {!activeConfcode
@@ -210,6 +391,8 @@ export default async function AdminCandidatesPage() {
           candidates={(candidates ?? []) as unknown as CandidateRow[]}
           geoGroups={geoList as unknown as GeoGroupRow[]}
           activeConfcode={activeConfcode}
+          prevCurrPhalgaById={phalgaById}
+          prevCurrProvincialById={provincialById}
         />
       </div>
     </div>

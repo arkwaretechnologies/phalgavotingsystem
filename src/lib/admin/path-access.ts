@@ -25,6 +25,7 @@ export function pathnameToPageKey(pathname: string): AdminPageKey | "settings_us
   if (p.startsWith("/admin/tablets")) return "tablets";
   if (p.startsWith("/admin/results")) return "canvass";
   if (p.startsWith("/admin/canvass")) return "canvass";
+  if (p.startsWith("/admin/reports")) return "reports";
   if (p.startsWith("/admin/settings/users")) return "settings_users";
   if (p.startsWith("/admin/settings/roles")) return "settings_roles";
   if (p.startsWith("/admin/settings")) return "settings";
