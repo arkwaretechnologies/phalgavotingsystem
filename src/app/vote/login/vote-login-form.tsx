@@ -74,7 +74,7 @@ export function VoteLoginForm() {
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-neutral-800" htmlFor="token">
-          6-digit token
+          6-digit ballot code
         </label>
         <input
           id="token"
