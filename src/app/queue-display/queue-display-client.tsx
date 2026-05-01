@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TabletRow = { id: number; label: string; status: string | null };
 
+type ActiveVotingRow = { queue_number: number; tablet_id: number | null };
+
 type VotingWindowPayload = {
   start: string | null;
   end: string | null;
@@ -13,6 +15,7 @@ type VotingWindowPayload = {
 
 type Payload = {
   queue_numbers: number[];
+  active_voting?: ActiveVotingRow[];
   tablets: TabletRow[];
   now: string;
   votingWindow?: VotingWindowPayload;
@@ -103,6 +106,12 @@ function formatTabletLine(t: TabletRow) {
   return `Tablet ${t.id} (${name})`;
 }
 
+function tabletLineForId(tablets: TabletRow[], tabletId: number | null): string | null {
+  if (tabletId == null) return null;
+  const t = tablets.find((x) => Number(x.id) === Number(tabletId));
+  return t ? formatTabletLine(t) : `Tablet ${tabletId}`;
+}
+
 function formatHHMMSS(ms: number | null): string {
   if (ms == null) return "—";
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -152,6 +161,7 @@ function VotingSessionCountdownPane({
 
 export default function QueueDisplayClient() {
   const [queueNumbers, setQueueNumbers] = useState<number[]>([]);
+  const [activeVoting, setActiveVoting] = useState<ActiveVotingRow[]>([]);
   const [tablets, setTablets] = useState<TabletRow[]>([]);
   const [connected, setConnected] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -186,6 +196,7 @@ export default function QueueDisplayClient() {
       setFetchError(null);
       setConnected(true);
       setQueueNumbers(json.queue_numbers ?? []);
+      setActiveVoting(json.active_voting ?? []);
       const nextTablets = json.tablets ?? [];
       setTablets(nextTablets);
       if (json.votingWindow) {
@@ -262,6 +273,10 @@ export default function QueueDisplayClient() {
   const sortedQueue = useMemo(
     () => [...queueNumbers].sort((a, b) => a - b),
     [queueNumbers]
+  );
+  const sortedActiveVoting = useMemo(
+    () => [...activeVoting].sort((a, b) => a.queue_number - b.queue_number),
+    [activeVoting]
   );
   const nowServing = sortedQueue[0];
   const nextInLine = sortedQueue.slice(1);
@@ -399,10 +414,6 @@ export default function QueueDisplayClient() {
       </header>
 
       <main className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pb-8 pt-6 sm:px-8 lg:px-10">
-        <p className="text-center text-sm font-medium text-indigo-200/80">
-          Center shows who is first in line; everyone else is listed on the side
-        </p>
-
         {sortedQueue.length === 0 ? (
           <div className="mx-auto mt-5 max-w-md">
             <VotingSessionCountdownPane
@@ -414,8 +425,44 @@ export default function QueueDisplayClient() {
         ) : null}
 
         <div className="mt-6 flex min-h-0 flex-1 flex-col gap-8 lg:mt-8 lg:flex-row lg:items-stretch lg:gap-10 xl:gap-14">
+          {/* Left: sessions currently on the ballot */}
+          {sortedActiveVoting.length > 0 ? (
+            <div className="order-2 flex w-full shrink-0 flex-col items-center lg:order-1 lg:w-[min(100%,280px)] lg:items-stretch xl:w-[300px]">
+              <aside
+                className="flex w-full flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm sm:p-5"
+                aria-label="Actively voting"
+              >
+                <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Actively voting</h2>
+                <ol className="mt-4 flex max-h-[50vh] min-h-0 flex-col gap-2 overflow-y-auto pr-1 lg:max-h-[calc(100dvh-220px)] lg:flex-1">
+                  {sortedActiveVoting.map((row, i) => {
+                    const station = tabletLineForId(tablets, row.tablet_id);
+                    return (
+                      <li key={`${row.queue_number}-${row.tablet_id ?? "x"}`}>
+                        <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/25 text-xs font-bold text-emerald-200">
+                              {i + 1}
+                            </span>
+                            <span className="font-mono text-xl font-semibold tabular-nums text-white">
+                              #{row.queue_number}
+                            </span>
+                          </div>
+                          {station ? (
+                            <p className="pl-11 text-[11px] font-medium leading-snug text-emerald-100/85">{station}</p>
+                          ) : (
+                            <p className="pl-11 text-[11px] leading-snug text-zinc-500">Ballot in progress</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </aside>
+            </div>
+          ) : null}
+
           {/* Hero: single “now serving” number */}
-          <div className="flex min-h-[280px] flex-1 flex-col items-center justify-center lg:min-h-0">
+          <div className="order-1 flex min-h-[280px] flex-1 flex-col items-center justify-center lg:order-2 lg:min-h-0">
             {sortedQueue.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-16 text-center backdrop-blur-sm">
                 <p className="text-lg text-slate-300">No queue numbers at the moment</p>
@@ -443,7 +490,7 @@ export default function QueueDisplayClient() {
 
           {/* Side: voting window + upcoming numbers */}
           {sortedQueue.length > 0 ? (
-            <div className="flex w-full shrink-0 flex-col items-center gap-1 lg:w-[min(100%,280px)] lg:items-stretch xl:w-[300px]">
+            <div className="order-3 flex w-full shrink-0 flex-col items-center gap-1 lg:w-[min(100%,280px)] lg:items-stretch xl:w-[300px]">
               <VotingSessionCountdownPane
                 votingWindow={votingWindow}
                 windowLabel={windowLabel}

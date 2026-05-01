@@ -14,12 +14,17 @@ export async function GET() {
     await Promise.all([
       (async () => {
         try {
-          const data = await fetchAllRows<{ queue_number: number; voter_id: string | null; status: string | null }>(
+          const data = await fetchAllRows<{
+            queue_number: number;
+            voter_id: string | null;
+            status: string | null;
+            tablet_id: number | null;
+          }>(
             async (from, to) =>
               await supabase
                 .from("voting_sessions")
-                .select("queue_number, voter_id, status")
-                .eq("status", "queued")
+                .select("queue_number, voter_id, status, tablet_id")
+                .in("status", ["queued", "voting"])
                 .order("queue_number", { ascending: true })
                 .order("id", { ascending: true })
                 .range(from, to),
@@ -66,10 +71,20 @@ export async function GET() {
     verifiedIds = new Set((voters ?? []).map((v) => v.id as string));
   }
 
-  const queue_numbers = sessionList
-    .filter((s) => s.voter_id && verifiedIds.has(s.voter_id))
+  const verifiedRows = sessionList.filter((s) => s.voter_id && verifiedIds.has(s.voter_id));
+
+  const queue_numbers = verifiedRows
+    .filter((s) => s.status === "queued")
     .map((s) => Number(s.queue_number))
     .filter((n) => Number.isFinite(n));
+
+  const active_voting = verifiedRows
+    .filter((s) => s.status === "voting")
+    .map((s) => ({
+      queue_number: Number(s.queue_number),
+      tablet_id: s.tablet_id == null || Number.isNaN(Number(s.tablet_id)) ? null : Number(s.tablet_id),
+    }))
+    .filter((r) => Number.isFinite(r.queue_number));
 
   const wStatus = getVotingWindowStatus(votingWindowRaw);
   const votingWindow = {
@@ -89,6 +104,7 @@ export async function GET() {
   return NextResponse.json(
     {
       queue_numbers,
+      active_voting,
       tablets: tablets ?? [],
       now,
       votingWindow,

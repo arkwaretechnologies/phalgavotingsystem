@@ -2,7 +2,7 @@ import Link from "next/link";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { createCandidate } from "../../candidates/actions";
-import { CandidatesTable } from "./candidates-table";
+import { CandidatesTable, type CandidateRow, type GeoGroupRow } from "./candidates-table";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 const fieldInputClass =
@@ -207,8 +207,8 @@ export default async function AdminCandidatesPage() {
         </div>
 
         <CandidatesTable
-          candidates={(candidates ?? []) as any}
-          geoGroups={geoList as any}
+          candidates={(candidates ?? []) as unknown as CandidateRow[]}
+          geoGroups={geoList as unknown as GeoGroupRow[]}
           activeConfcode={activeConfcode}
         />
       </div>

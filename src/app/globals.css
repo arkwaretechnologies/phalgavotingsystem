@@ -186,6 +186,120 @@ body {
   }
 }
 
+/* Candidate profile — page-level micro-interactions */
+@keyframes candidate-profile-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes candidate-profile-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes candidate-profile-blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, -4%) scale(1.04);
+  }
+}
+
+.candidate-profile-in {
+  animation: candidate-profile-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.candidate-profile-card-in {
+  animation: candidate-profile-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.candidate-profile-card-in:nth-child(1) {
+  animation-delay: 0.06s;
+}
+.candidate-profile-card-in:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.candidate-profile-blob {
+  animation: candidate-profile-blob-drift 16s ease-in-out infinite;
+}
+.candidate-profile-blob-delay {
+  animation-delay: -6s;
+}
+
+@keyframes candidate-profile-photo-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes candidate-profile-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.candidate-profile-photo-wrap {
+  animation: candidate-profile-photo-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.candidate-profile-photo {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+@media (hover: hover) {
+  .candidate-profile-photo:hover {
+    transform: translateY(-3px) scale(1.015);
+    box-shadow: 0 36px 90px -32px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.candidate-profile-stagger {
+  animation: candidate-profile-stagger 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.1s;
+}
+.candidate-profile-stagger-1 {
+  animation-delay: 0.18s;
+}
+.candidate-profile-stagger-2 {
+  animation-delay: 0.26s;
+}
+.candidate-profile-stagger-3 {
+  animation-delay: 0.34s;
+}
+
+.candidate-profile-stat {
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+@media (hover: hover) {
+  .candidate-profile-stat:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 34px -28px rgba(0, 0, 0, 0.35);
+  }
+}
+
 @keyframes admin-hero-fade {
   from {
     opacity: 0;
@@ -252,7 +366,15 @@ body {
   .admin-hero-fade-delay-1,
   .admin-hero-fade-delay-2,
   .admin-hero-fade-delay-3,
-  .admin-card-in {
+  .admin-card-in,
+  .candidate-profile-in,
+  .candidate-profile-card-in,
+  .candidate-profile-blob,
+  .candidate-profile-photo-wrap,
+  .candidate-profile-stagger,
+  .candidate-profile-stagger-1,
+  .candidate-profile-stagger-2,
+  .candidate-profile-stagger-3 {
     animation: none !important;
   }
 
@@ -260,7 +382,14 @@ body {
   .admin-hero-fade-delay-1,
   .admin-hero-fade-delay-2,
   .admin-hero-fade-delay-3,
-  .admin-card-in {
+  .admin-card-in,
+  .candidate-profile-in,
+  .candidate-profile-card-in,
+  .candidate-profile-photo-wrap,
+  .candidate-profile-stagger,
+  .candidate-profile-stagger-1,
+  .candidate-profile-stagger-2,
+  .candidate-profile-stagger-3 {
     opacity: 1;
     transform: none;
   }

@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { deleteCandidate, updateCandidate } from "@/app/admin/candidates/actions";
 
-type CandidateRow = {
+export type CandidateRow = {
   id: string;
   full_name: string;
   geo_group_id: number | null;
@@ -14,7 +15,7 @@ type CandidateRow = {
   bio?: string | null;
 };
 
-type GeoGroupRow = {
+export type GeoGroupRow = {
   id: number;
   code: string;
   name: string;
@@ -124,6 +125,15 @@ export function CandidatesTable({
                   <td className="text-neutral-600">{new Date(c.created_at).toLocaleString()}</td>
                   <td>
                     <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/candidates/${encodeURIComponent(c.id)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
+                        title="Open candidate profile in a new tab"
+                      >
+                        View
+                      </Link>
                       <button
                         type="button"
                         className="rounded-md border px-2 py-1 text-xs hover:bg-neutral-50"
