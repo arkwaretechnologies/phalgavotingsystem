@@ -11,6 +11,7 @@ export const ADMIN_PAGE_KEY_ORDER = [
   "tablets",
   "live_tallies",
   "canvass",
+  "reports",
   "settings",
 ] as const;
 
@@ -25,6 +26,7 @@ const LABEL: Record<AdminPageKey, string> = {
   tablets: "Tablets",
   live_tallies: "Live tallies",
   canvass: "Canvass (Results · Ballots · Report)",
+  reports: "Reports",
   settings: "Settings (conference)",
 };
 
@@ -59,5 +61,6 @@ export const ADMIN_PAGE_HREF: Record<AdminPageKey, string> = {
   tablets: "/admin/tablets",
   live_tallies: "/admin/live-tallies",
   canvass: "/admin/canvass",
+  reports: "/admin/reports",
   settings: "/admin/settings/conference",
 };
