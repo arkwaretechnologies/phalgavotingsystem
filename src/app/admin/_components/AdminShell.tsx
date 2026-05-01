@@ -116,10 +116,20 @@ const NAV_ITEMS = [
   { pageKey: "candidates" as const, href: "/admin/candidates", label: "Candidates", icon: "candidate" as const },
   { pageKey: "tablets" as const, href: "/admin/tablets", label: "Tablets", icon: "tablet" as const },
   { pageKey: "canvass" as const, href: "/admin/canvass", label: "Canvass", icon: "doc" as const },
+  { pageKey: "reports" as const, href: "/admin/reports", label: "Reports", icon: "chart" as const },
   { pageKey: "settings" as const, href: "/admin/settings/conference", label: "Settings", icon: "settings" as const },
 ] as const;
 
 function settingsSubClass(active: boolean) {
+  return [
+    "block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
+    active
+      ? "border-black bg-white/90 font-medium text-neutral-900 shadow-sm ring-1 ring-neutral-200/80"
+      : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100/80 hover:text-neutral-900",
+  ].join(" ");
+}
+
+function reportsSubClass(active: boolean) {
   return [
     "block rounded-lg border-l-2 py-1.5 pl-2.5 pr-2 text-sm leading-snug",
     active
@@ -142,16 +152,25 @@ export default function AdminShell({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const settingsInPath = pathname.startsWith("/admin/settings");
   const [settingsExpanded, setSettingsExpanded] = useState(settingsInPath);
+  const reportsInPath = pathname.startsWith("/admin/reports");
+  const [reportsExpanded, setReportsExpanded] = useState(reportsInPath);
 
   useEffect(() => {
     if (settingsInPath) setSettingsExpanded(true);
   }, [settingsInPath]);
+
+  useEffect(() => {
+    if (reportsInPath) setReportsExpanded(true);
+  }, [reportsInPath]);
 
   const allow = new Set(allowedPageKeys);
   const visibleNav = NAV_ITEMS.filter((item) => allow.has(item.pageKey));
   const isActive = (item: (typeof NAV_ITEMS)[number]) => {
     if (item.pageKey === "settings") {
       return pathname.startsWith("/admin/settings");
+    }
+    if (item.pageKey === "reports") {
+      return pathname.startsWith("/admin/reports");
     }
     if (item.href === "/admin") return pathname === "/admin" || pathname === "/admin/";
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -166,6 +185,19 @@ export default function AdminShell({
   const votingSchedulePathActive = pathname.startsWith(votingSchedulePath);
   const confSubActive =
     settingsRootActive && !usersPathActive && !rolesPathActive && !votingSchedulePathActive;
+
+  const nonParticipatingPath = "/admin/reports/non-participating-voters";
+  const votedVotersPath = "/admin/reports/voted-voters";
+  const candidatesReportPath = "/admin/reports/candidates";
+  const reportsRootActive = pathname === "/admin/reports" || pathname === "/admin/reports/";
+  const nonParticipatingActive = pathname.startsWith(nonParticipatingPath);
+  const votedVotersActive = pathname.startsWith(votedVotersPath);
+  const candidatesReportActive = pathname.startsWith(candidatesReportPath);
+  const reportsSubActive =
+    reportsRootActive &&
+    !nonParticipatingActive &&
+    !votedVotersActive &&
+    !candidatesReportActive;
 
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden bg-neutral-100 text-neutral-900">
@@ -337,6 +369,90 @@ export default function AdminShell({
                               log out and sign in again.
                             </p>
                           )}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                }
+                if (item.pageKey === "reports") {
+                  const parentActive = pathname.startsWith("/admin/reports");
+                  return (
+                    <div key="reports" className="space-y-1">
+                      <button
+                        type="button"
+                        aria-expanded={reportsExpanded}
+                        aria-controls="admin-reports-submenu"
+                        onClick={() => setReportsExpanded((open) => !open)}
+                        className={[
+                          "group flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium",
+                          parentActive ? "nav-sidebar-active" : "nav-sidebar-inactive hover:translate-x-0.5",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={
+                            parentActive
+                              ? "mt-0.5 text-white"
+                              : "mt-0.5 text-neutral-500 transition group-hover:text-white"
+                          }
+                        >
+                          <Icon name="chart" />
+                        </span>
+                        <span className="min-w-0 flex-1 break-words leading-snug">{item.label}</span>
+                        <span className="ml-auto flex shrink-0 items-start gap-1.5 pt-0.5">
+                          {parentActive ? (
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/90 ring-1 ring-white/30" />
+                          ) : null}
+                          <svg
+                            className={[
+                              "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
+                              parentActive ? "text-white/90" : "text-neutral-400 group-hover:text-white",
+                              reportsExpanded ? "rotate-180" : "rotate-0",
+                            ].join(" ")}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            aria-hidden
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                          </svg>
+                        </span>
+                      </button>
+                      {reportsExpanded ? (
+                        <div
+                          id="admin-reports-submenu"
+                          className="space-y-0.5 border-l border-neutral-200/90 pb-0.5 pl-3 ml-3"
+                          role="group"
+                          aria-label="Reports submenu"
+                        >
+                          <Link
+                            href="/admin/reports"
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={reportsSubClass(reportsSubActive)}
+                          >
+                            Overview
+                          </Link>
+                          <Link
+                            href={candidatesReportPath}
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={reportsSubClass(candidatesReportActive)}
+                          >
+                            Candidates
+                          </Link>
+                          <Link
+                            href={votedVotersPath}
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={reportsSubClass(votedVotersActive)}
+                          >
+                            Voted Voters
+                          </Link>
+                          <Link
+                            href={nonParticipatingPath}
+                            onClick={() => setIsMobileNavOpen(false)}
+                            className={reportsSubClass(nonParticipatingActive)}
+                          >
+                            Inactive Voters
+                          </Link>
                         </div>
                       ) : null}
                     </div>
