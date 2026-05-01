@@ -46,6 +46,7 @@ export interface Candidate {
   date_of_birth?: string | null;
   post_office_address?: string | null;
   present_position?: string | null;
+  lgu_address?: string | null;
   highest_educational_attainment?: string | null;
   provincial_league?: string | null;
 }

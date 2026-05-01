@@ -46,7 +46,7 @@ export default async function AdminCandidatesPage() {
   const candidatesQuery = supabase
     .from("candidates")
     .select(
-      "id, full_name, geo_group_id, is_active, created_at, confcode, photo_url, bio, gender, civil_status, date_of_birth, post_office_address, present_position, highest_educational_attainment, provincial_league",
+      "id, full_name, geo_group_id, is_active, created_at, confcode, photo_url, bio, gender, civil_status, date_of_birth, post_office_address, present_position, lgu_address, highest_educational_attainment, provincial_league",
     )
     .order("created_at", { ascending: false })
     .limit(50);
@@ -59,6 +59,56 @@ export default async function AdminCandidatesPage() {
     console.error("admin candidates list failed", candErr);
     const { message } = toPublicMessage(candErr, "Unable to load candidates list.");
     throw new Error(message);
+  }
+
+  const candidateIds = (candidates ?? []).map((c) => String((c as { id?: string }).id ?? "")).filter(Boolean);
+  const [{ data: phalgaLines, error: phErr }, { data: provLines, error: provErr }] =
+    candidateIds.length > 0
+      ? await Promise.all([
+          supabase
+            .from("candidates_prev_curr_phalga")
+            .select("id, linenum, position, period_covered")
+            .in("id", candidateIds)
+            .order("id", { ascending: true })
+            .order("linenum", { ascending: true }),
+          supabase
+            .from("candidates_prev_curr_provincial_league")
+            .select("id, linenum, position, period_covered")
+            .in("id", candidateIds)
+            .order("id", { ascending: true })
+            .order("linenum", { ascending: true }),
+        ])
+      : [{ data: [], error: null }, { data: [], error: null }];
+
+  if (phErr || provErr) {
+    // eslint-disable-next-line no-console
+    console.error("admin candidates prev/curr load failed", { phErr, provErr });
+  }
+
+  const phalgaById: Record<string, Array<{ position: string | null; period_covered: string | null }>> =
+    {};
+  for (const row of (phalgaLines ?? []) as Array<{
+    id: string;
+    linenum: number;
+    position: string | null;
+    period_covered: string | null;
+  }>) {
+    const id = String(row.id);
+    if (!phalgaById[id]) phalgaById[id] = [];
+    phalgaById[id].push({ position: row.position ?? null, period_covered: row.period_covered ?? null });
+  }
+
+  const provincialById: Record<string, Array<{ position: string | null; period_covered: string | null }>> =
+    {};
+  for (const row of (provLines ?? []) as Array<{
+    id: string;
+    linenum: number;
+    position: string | null;
+    period_covered: string | null;
+  }>) {
+    const id = String(row.id);
+    if (!provincialById[id]) provincialById[id] = [];
+    provincialById[id].push({ position: row.position ?? null, period_covered: row.period_covered ?? null });
   }
 
   return (
@@ -179,7 +229,7 @@ export default async function AdminCandidatesPage() {
           </div>
 
           <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
-            <div className="text-sm font-semibold text-neutral-900">Candidate information (from form)</div>
+            <div className="text-sm font-semibold text-neutral-900">Candidate Information</div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
               <label className="block min-w-0">
                 <span className="text-sm font-medium text-neutral-800">Gender</span>
@@ -234,6 +284,16 @@ export default async function AdminCandidatesPage() {
                   <option value="CITY ACCOUNTANT">CITY ACCOUNTANT</option>
                   <option value="MUNICIPAL ACCOUNTANT">MUNICIPAL ACCOUNTANT</option>
                 </select>
+              </label>
+
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-sm font-medium text-neutral-800">LGU Address</span>
+                <textarea
+                  name="lgu_address"
+                  rows={2}
+                  className={fieldTextareaShortClass}
+                  placeholder=""
+                />
               </label>
 
               <label className="block min-w-0 sm:col-span-2">
@@ -331,6 +391,8 @@ export default async function AdminCandidatesPage() {
           candidates={(candidates ?? []) as unknown as CandidateRow[]}
           geoGroups={geoList as unknown as GeoGroupRow[]}
           activeConfcode={activeConfcode}
+          prevCurrPhalgaById={phalgaById}
+          prevCurrProvincialById={provincialById}
         />
       </div>
     </div>

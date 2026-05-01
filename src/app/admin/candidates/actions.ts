@@ -16,6 +16,7 @@ export async function createCandidate(formData: FormData) {
   const date_of_birth = String(formData.get("date_of_birth") ?? "").trim() || null;
   const post_office_address = String(formData.get("post_office_address") ?? "").trim() || null;
   const present_position = String(formData.get("present_position") ?? "").trim() || null;
+  const lgu_address = String(formData.get("lgu_address") ?? "").trim() || null;
   const highest_educational_attainment =
     String(formData.get("highest_educational_attainment") ?? "").trim() || null;
   const provincial_league = String(formData.get("provincial_league") ?? "").trim() || null;
@@ -74,6 +75,7 @@ export async function createCandidate(formData: FormData) {
     date_of_birth: date_of_birth ? date_of_birth : null,
     post_office_address,
     present_position,
+    lgu_address,
     highest_educational_attainment,
     provincial_league,
     })
@@ -145,6 +147,7 @@ export async function updateCandidate(formData: FormData) {
   const date_of_birth = String(formData.get("date_of_birth") ?? "").trim() || null;
   const post_office_address = String(formData.get("post_office_address") ?? "").trim() || null;
   const present_position = String(formData.get("present_position") ?? "").trim() || null;
+  const lgu_address = String(formData.get("lgu_address") ?? "").trim() || null;
   const highest_educational_attainment =
     String(formData.get("highest_educational_attainment") ?? "").trim() || null;
   const provincial_league = String(formData.get("provincial_league") ?? "").trim() || null;
@@ -199,6 +202,7 @@ export async function updateCandidate(formData: FormData) {
     date_of_birth: date_of_birth ? date_of_birth : null,
     post_office_address,
     present_position,
+    lgu_address,
     highest_educational_attainment,
     provincial_league,
   };
