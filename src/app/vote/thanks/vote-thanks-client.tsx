@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { clearVoteBallotSubmittingFlag } from "@/app/vote/use-vote-leave-guard";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -95,17 +93,8 @@ export function VoteThanksClient() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href="/vote/login"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
-        >
-          {isPaired ? "Go to voter sign-in now" : "Queue login (optional)"}
-        </Link>
-      </div>
-
       <p className="text-xs text-white/55">
-        Keep your queue stub until staff confirms your voting transaction is complete.
+        Drop your check-in receipt at the designated drop box.
       </p>
     </main>
   );
