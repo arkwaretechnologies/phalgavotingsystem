@@ -40,6 +40,7 @@ export async function POST() {
       session_start: null,
       session_end: null,
       tablet_id: null,
+      skipped_at: null,
     })
     .eq("id", sessionId)
     .eq("status", "voting");

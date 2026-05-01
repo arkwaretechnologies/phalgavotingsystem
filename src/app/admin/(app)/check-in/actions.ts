@@ -121,6 +121,7 @@ export async function checkInVoter(formData: FormData) {
         voted_via: null,
         session_start: null,
         session_end: null,
+        skipped_at: null,
       })
       .eq("id", existing.id)
       .select("id, queue_number")

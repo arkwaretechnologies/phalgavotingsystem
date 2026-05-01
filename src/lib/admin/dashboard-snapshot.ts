@@ -112,9 +112,14 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       : Promise.resolve({ count: 0, error: null });
 
   const sessionStatuses = ["queued", "voting", "voted"] as const;
-  const sessionPromises = sessionStatuses.map((status) =>
-    supabase.from("voting_sessions").select("id", { count: "exact", head: true }).eq("status", status),
-  );
+  const sessionPromises = sessionStatuses.map((status) => {
+    const q = supabase
+      .from("voting_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", status);
+    // The "queued" tile counts active waiters only; skipped voters are hidden until re-called.
+    return status === "queued" ? q.is("skipped_at", null) : q;
+  });
 
   const tabletStatuses = ["vacant", "in_use", "offline"] as const;
   const tabletPromises = tabletStatuses.map((status) =>
@@ -126,6 +131,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       .from("voting_sessions")
       .select("queue_number, voter_id")
       .eq("status", "queued")
+      .is("skipped_at", null)
       .order("queue_number", { ascending: true })
       .order("id", { ascending: true })
       .range(from, to),

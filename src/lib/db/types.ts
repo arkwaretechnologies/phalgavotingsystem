@@ -80,6 +80,8 @@ export interface VotingSession {
   voted_via: "tablet" | "phone" | null;
   session_start: string | null;
   session_end: string | null;
+  /** Set when staff manually skipped the voter from the queue board; cleared on re-call/re-queue. */
+  skipped_at: string | null;
   created_at: string;
 }
 

@@ -15,12 +15,18 @@ type VotingWindowPayload = {
 
 type Payload = {
   queue_numbers: number[];
+  /** Queue numbers that staff temporarily skipped (e.g. voter stepped away).
+   *  Rendered at the BACK of "Next in line" so the voter can still find their
+   *  number on the board until staff re-call them. */
+  skipped_queue_numbers?: number[];
   active_voting?: ActiveVotingRow[];
   tablets: TabletRow[];
   now: string;
   votingWindow?: VotingWindowPayload;
   error?: string;
 };
+
+type QueueEntry = { queue_number: number; skipped: boolean };
 
 const POLL_MS = 2500;
 const BANNER_MS = 14000;
@@ -161,6 +167,7 @@ function VotingSessionCountdownPane({
 
 export default function QueueDisplayClient() {
   const [queueNumbers, setQueueNumbers] = useState<number[]>([]);
+  const [skippedQueueNumbers, setSkippedQueueNumbers] = useState<number[]>([]);
   const [activeVoting, setActiveVoting] = useState<ActiveVotingRow[]>([]);
   const [tablets, setTablets] = useState<TabletRow[]>([]);
   const [connected, setConnected] = useState(false);
@@ -196,6 +203,7 @@ export default function QueueDisplayClient() {
       setFetchError(null);
       setConnected(true);
       setQueueNumbers(json.queue_numbers ?? []);
+      setSkippedQueueNumbers(json.skipped_queue_numbers ?? []);
       setActiveVoting(json.active_voting ?? []);
       const nextTablets = json.tablets ?? [];
       setTablets(nextTablets);
@@ -270,16 +278,27 @@ export default function QueueDisplayClient() {
     };
   }, []);
 
-  const sortedQueue = useMemo(
+  const sortedActive = useMemo(
     () => [...queueNumbers].sort((a, b) => a - b),
     [queueNumbers]
   );
+  // Skipped numbers are pinned to the BACK of the line, in the order the API
+  // returned them (oldest skip first). They never become "Now serving" until
+  // staff re-call them from the admin queueing screen.
+  const sortedSkipped = useMemo(() => [...skippedQueueNumbers], [skippedQueueNumbers]);
   const sortedActiveVoting = useMemo(
     () => [...activeVoting].sort((a, b) => a.queue_number - b.queue_number),
     [activeVoting]
   );
-  const nowServing = sortedQueue[0];
-  const nextInLine = sortedQueue.slice(1);
+  const nowServing = sortedActive[0];
+  const nextInLine = useMemo<QueueEntry[]>(() => {
+    const tail = sortedActive
+      .slice(1)
+      .map<QueueEntry>((n) => ({ queue_number: n, skipped: false }));
+    const skipped = sortedSkipped.map<QueueEntry>((n) => ({ queue_number: n, skipped: true }));
+    return [...tail, ...skipped];
+  }, [sortedActive, sortedSkipped]);
+  const hasAnyQueue = sortedActive.length > 0 || sortedSkipped.length > 0;
 
   useEffect(() => {
     if (!voiceOn) {
@@ -414,7 +433,7 @@ export default function QueueDisplayClient() {
       </header>
 
       <main className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pb-8 pt-6 sm:px-8 lg:px-10">
-        {sortedQueue.length === 0 ? (
+        {!hasAnyQueue ? (
           <div className="mx-auto mt-5 max-w-md">
             <VotingSessionCountdownPane
               votingWindow={votingWindow}
@@ -463,10 +482,14 @@ export default function QueueDisplayClient() {
 
           {/* Hero: single “now serving” number */}
           <div className="order-1 flex min-h-[280px] flex-1 flex-col items-center justify-center lg:order-2 lg:min-h-0">
-            {sortedQueue.length === 0 ? (
+            {sortedActive.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-16 text-center backdrop-blur-sm">
                 <p className="text-lg text-slate-300">No queue numbers at the moment</p>
-                <p className="mt-2 text-sm text-zinc-400">Check back after voters check in</p>
+                <p className="mt-2 text-sm text-zinc-400">
+                  {sortedSkipped.length > 0
+                    ? "Skipped numbers are listed at the back of the line."
+                    : "Check back after voters check in"}
+                </p>
               </div>
             ) : (
               <div className="flex w-full max-w-xl flex-col items-center">
@@ -489,7 +512,7 @@ export default function QueueDisplayClient() {
           </div>
 
           {/* Side: voting window + upcoming numbers */}
-          {sortedQueue.length > 0 ? (
+          {hasAnyQueue ? (
             <div className="order-3 flex w-full shrink-0 flex-col items-center gap-1 lg:w-[min(100%,280px)] lg:items-stretch xl:w-[300px]">
               <VotingSessionCountdownPane
                 votingWindow={votingWindow}
@@ -507,13 +530,39 @@ export default function QueueDisplayClient() {
                 </p>
               ) : (
                 <ol className="mt-4 flex max-h-[50vh] min-h-0 flex-col gap-2 overflow-y-auto pr-1 lg:max-h-[calc(100dvh-220px)] lg:flex-1">
-                  {nextInLine.map((n, i) => (
-                    <li key={n}>
-                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/25 text-xs font-bold text-indigo-200">
+                  {nextInLine.map((entry, i) => (
+                    <li key={`${entry.skipped ? "s" : "a"}-${entry.queue_number}`}>
+                      <div
+                        className={[
+                          "flex items-center gap-3 rounded-xl border px-4 py-3",
+                          entry.skipped
+                            ? "border-amber-400/30 bg-amber-500/10"
+                            : "border-white/10 bg-slate-950/40",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={[
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+                            entry.skipped
+                              ? "bg-amber-500/25 text-amber-100"
+                              : "bg-indigo-500/25 text-indigo-200",
+                          ].join(" ")}
+                        >
                           {i + 1}
                         </span>
-                        <span className="font-mono text-xl font-semibold tabular-nums text-white">#{n}</span>
+                        <span
+                          className={[
+                            "font-mono text-xl font-semibold tabular-nums",
+                            entry.skipped ? "text-amber-100" : "text-white",
+                          ].join(" ")}
+                        >
+                          #{entry.queue_number}
+                        </span>
+                        {entry.skipped ? (
+                          <span className="ml-auto rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100">
+                            Skipped
+                          </span>
+                        ) : null}
                       </div>
                     </li>
                   ))}

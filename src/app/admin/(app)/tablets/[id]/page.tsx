@@ -37,6 +37,8 @@ export default async function AdminTabletDetailsPage({
       .from("voting_sessions")
       .select("id, queue_number, status, tablet_id")
       .in("status", ["queued", "voting"])
+      // Hide skipped queued voters from the tablet detail's queue preview.
+      .or("status.eq.voting,skipped_at.is.null")
       .order("queue_number", { ascending: true })
       .limit(20),
     supabase

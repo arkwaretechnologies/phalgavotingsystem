@@ -19,11 +19,12 @@ export async function GET() {
             voter_id: string | null;
             status: string | null;
             tablet_id: number | null;
+            skipped_at: string | null;
           }>(
             async (from, to) =>
               await supabase
                 .from("voting_sessions")
-                .select("queue_number, voter_id, status, tablet_id")
+                .select("queue_number, voter_id, status, tablet_id, skipped_at")
                 .in("status", ["queued", "voting"])
                 .order("queue_number", { ascending: true })
                 .order("id", { ascending: true })
@@ -73,8 +74,24 @@ export async function GET() {
 
   const verifiedRows = sessionList.filter((s) => s.voter_id && verifiedIds.has(s.voter_id));
 
-  const queue_numbers = verifiedRows
-    .filter((s) => s.status === "queued")
+  const queuedRows = verifiedRows.filter((s) => s.status === "queued");
+
+  // Active queued numbers (not skipped) are sorted ascending and drive "Now serving".
+  const queue_numbers = queuedRows
+    .filter((s) => !s.skipped_at)
+    .map((s) => Number(s.queue_number))
+    .filter((n) => Number.isFinite(n));
+
+  // Skipped queued numbers stay visible at the BACK of "Next in line" so voters
+  // who stepped away can still see their number until staff re-call them. Sorted
+  // by skip time (oldest skip first) so longest-waiting skipped appears first.
+  const skipped_queue_numbers = queuedRows
+    .filter((s) => Boolean(s.skipped_at))
+    .sort((a, b) => {
+      const at = a.skipped_at ? Date.parse(a.skipped_at) : 0;
+      const bt = b.skipped_at ? Date.parse(b.skipped_at) : 0;
+      return at - bt;
+    })
     .map((s) => Number(s.queue_number))
     .filter((n) => Number.isFinite(n));
 
@@ -104,6 +121,7 @@ export async function GET() {
   return NextResponse.json(
     {
       queue_numbers,
+      skipped_queue_numbers,
       active_voting,
       tablets: tablets ?? [],
       now,

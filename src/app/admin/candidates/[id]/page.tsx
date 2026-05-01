@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
+import { Playfair_Display } from "next/font/google";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { FullscreenButton } from "./fullscreen-button";
+
+const displayFont = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+});
 
 type GeoGroupLite = {
   id: number;
@@ -17,7 +24,16 @@ type CandidateWithGeo = {
   is_active: boolean | null;
   confcode: string;
   created_at: string;
+  present_position: string | null;
+  lgu_address: string | null;
+  highest_educational_attainment: string | null;
   geo_group?: GeoGroupLite | null;
+};
+
+type PrevCurrLine = {
+  linenum: number;
+  position: string | null;
+  period_covered: string | null;
 };
 
 export default async function AdminCandidateProfilePage({
@@ -41,6 +57,9 @@ export default async function AdminCandidateProfilePage({
       is_active,
       confcode,
       created_at,
+      present_position,
+      lgu_address,
+      highest_educational_attainment,
       geo_group:geo_groups (
         id,
         code,
@@ -61,6 +80,32 @@ export default async function AdminCandidateProfilePage({
 
   const typed = candidate as unknown as CandidateWithGeo;
   const geoGroup = typed.geo_group ?? null;
+
+  const [{ data: phalgaRows, error: phErr }, { data: provRows, error: provErr }] =
+    await Promise.all([
+      supabase
+        .from("candidates_prev_curr_phalga")
+        .select("linenum, position, period_covered")
+        .eq("id", id)
+        .order("linenum", { ascending: true }),
+      supabase
+        .from("candidates_prev_curr_provincial_league")
+        .select("linenum, position, period_covered")
+        .eq("id", id)
+        .order("linenum", { ascending: true }),
+    ]);
+
+  if (phErr || provErr) {
+    console.error("admin candidate prev/curr load failed", { phErr, provErr });
+  }
+
+  const phalgaLines: PrevCurrLine[] = ((phalgaRows ?? []) as PrevCurrLine[]).filter(
+    (r) => (r.position && r.position.trim()) || (r.period_covered && r.period_covered.trim()),
+  );
+  const provLines: PrevCurrLine[] = ((provRows ?? []) as PrevCurrLine[]).filter(
+    (r) => (r.position && r.position.trim()) || (r.period_covered && r.period_covered.trim()),
+  );
+
   const bioParagraphs = typed.bio
     ? String(typed.bio)
         .split(/\n+/)
@@ -69,87 +114,248 @@ export default async function AdminCandidateProfilePage({
     : [];
 
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden">
+    <main className="relative isolate min-h-dvh overflow-hidden bg-[#0a0820] text-white">
+      {/* Background image */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/candidates-bg.png"
+          alt=""
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0820]/40 via-[#0a0820]/55 to-[#0a0820]/85" />
+      </div>
+
+      {/* Fullscreen button */}
+      <div className="absolute right-5 top-5 z-30 sm:right-8 sm:top-8">
+        <FullscreenButton />
+      </div>
+
+      {/* Watermark logo */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-neutral-50 via-white to-white"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
+        className="pointer-events-none absolute -bottom-24 -right-24 z-[1] hidden lg:block"
       >
-        {/* Blur + filter compositing is unreliable with bg-image alone in some browsers; use a real img. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo.png"
           alt=""
-          width={1600}
-          height={1600}
-          className="absolute left-1/2 top-1/2 h-[280vmin] w-[280vmin] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover opacity-[0.22] blur-3xl will-change-transform"
+          className="h-[34rem] w-[34rem] opacity-[0.06]"
         />
       </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-32 top-10 z-[2] h-[28rem] w-[28rem] rounded-full bg-neutral-200/50 blur-3xl candidate-profile-blob"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-40 bottom-0 z-[2] h-[34rem] w-[34rem] rounded-full bg-neutral-200/40 blur-3xl candidate-profile-blob candidate-profile-blob-delay"
-      />
 
-      <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">
-        <FullscreenButton />
+      {/* Top-left PhALGA brand */}
+      <div className="absolute left-5 top-5 z-30 flex items-center gap-2.5 sm:left-8 sm:top-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="PhALGA logo"
+          className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+        />
+        <span className="text-xs font-bold uppercase tracking-[0.22em] text-white/80 sm:text-sm">
+          PhALGA
+        </span>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-dvh max-w-6xl flex-col items-center justify-center px-6 py-20 sm:py-24">
-        <div className="grid w-full items-center gap-12 lg:grid-cols-[minmax(0,_22rem)_minmax(0,_1fr)] lg:gap-16">
-          <div className="flex justify-center lg:justify-end candidate-profile-photo-wrap">
-            {typed.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={typed.photo_url}
-                alt={`${typed.full_name} portrait`}
-                className="h-72 w-72 rounded-full object-cover shadow-[0_30px_80px_-30px_rgba(0,0,0,0.45)] ring-1 ring-neutral-200 sm:h-80 sm:w-80 lg:h-[22rem] lg:w-[22rem] candidate-profile-photo"
+      <div className="relative z-10 mx-auto flex min-h-dvh max-w-7xl flex-col justify-center px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
+        {/* BODY */}
+        <section className="grid flex-1 items-center gap-8 lg:grid-cols-[minmax(0,_34rem)_minmax(0,_1fr)] lg:gap-14">
+          {/* PHOTO COLUMN */}
+          <div className="flex justify-center lg:justify-start candidate-profile-photo-wrap">
+            <div className="relative">
+              <div
+                aria-hidden
+                className="absolute -inset-4 rounded-[32px] bg-gradient-to-br from-[#facc15]/40 via-white/10 to-[#ef4444]/40 blur-2xl"
               />
-            ) : (
-              <div className="grid h-72 w-72 place-items-center rounded-full bg-neutral-100 text-sm text-neutral-500 ring-1 ring-neutral-200 sm:h-80 sm:w-80 lg:h-[22rem] lg:w-[22rem]">
-                No photo
-              </div>
-            )}
-          </div>
-
-          <div className="text-center lg:text-left">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 candidate-profile-stagger">
-              Candidate
-            </p>
-            <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl candidate-profile-stagger candidate-profile-stagger-1">
-              {typed.full_name}
-            </h1>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-neutral-600 lg:justify-start candidate-profile-stagger candidate-profile-stagger-2">
-              {geoGroup ? (
-                <span className="font-medium text-neutral-800">
-                  {geoGroup.code} — {geoGroup.name}
-                </span>
-              ) : null}
-              {geoGroup ? <span aria-hidden className="text-neutral-300">•</span> : null}
-              <span className="font-mono text-neutral-700">{String(typed.confcode ?? "")}</span>
-            </div>
-
-            <div className="mt-8 max-w-2xl text-base leading-relaxed text-neutral-700 sm:text-[1.0625rem] candidate-profile-stagger candidate-profile-stagger-3">
-              {bioParagraphs.length > 0 ? (
-                bioParagraphs.map((p, idx) => (
-                  <p key={idx} className={idx === 0 ? "mt-0" : "mt-4"}>
-                    {p}
-                  </p>
-                ))
+              {typed.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={typed.photo_url}
+                  alt={`${typed.full_name} portrait`}
+                  className="relative h-[22rem] w-[22rem] rounded-[28px] object-cover shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)] ring-2 ring-white/15 sm:h-[28rem] sm:w-[28rem] lg:h-[34rem] lg:w-[34rem] candidate-profile-photo"
+                />
               ) : (
-                <p className="text-neutral-500">No bio provided.</p>
+                <div className="relative grid h-[22rem] w-[22rem] place-items-center rounded-[28px] bg-white/10 text-sm text-white/70 ring-2 ring-white/15 sm:h-[28rem] sm:w-[28rem] lg:h-[34rem] lg:w-[34rem]">
+                  No photo
+                </div>
               )}
             </div>
           </div>
-        </div>
+
+          {/* DETAILS COLUMN */}
+          <div className="space-y-6 candidate-profile-stagger candidate-profile-stagger-1">
+            {/* Name (top of details column) */}
+            <div className="candidate-profile-stagger">
+              <h1
+                className={`${displayFont.className} break-words text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]`}
+              >
+                {typed.full_name}
+              </h1>
+              <div
+                aria-hidden
+                className="mt-3 h-1 w-16 rounded-full bg-[#facc15]"
+              />
+            </div>
+
+            {/* Quick info cards row */}
+            <div className="grid gap-3 text-sm sm:grid-cols-3">
+              {typed.present_position ? (
+                <div className="rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur-sm candidate-profile-stat">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#facc15]">
+                    Present position
+                  </div>
+                  <div className="mt-1 text-[15px] font-semibold text-white">
+                    {typed.present_position}
+                  </div>
+                </div>
+              ) : null}
+              {typed.lgu_address ? (
+                <div className="rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur-sm candidate-profile-stat">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#facc15]">
+                    LGU address
+                  </div>
+                  <div className="mt-1 whitespace-pre-line text-[15px] font-medium text-white/95">
+                    {typed.lgu_address}
+                  </div>
+                </div>
+              ) : null}
+              {geoGroup || typed.confcode ? (
+                <div className="rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur-sm candidate-profile-stat">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#facc15]">
+                    Geo group
+                  </div>
+                  {geoGroup ? (
+                    <div className="mt-1 text-[15px] font-semibold text-white">
+                      {geoGroup.code} — {geoGroup.name}
+                    </div>
+                  ) : null}
+                  {typed.confcode ? (
+                    <div className="mt-0.5 font-mono text-xs text-white/70">
+                      {String(typed.confcode)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {/* EDUCATION */}
+            <FactSection title="Education">
+              {typed.highest_educational_attainment ? (
+                <ul className="space-y-1.5">
+                  <FactBullet>
+                    <span className="font-semibold">Highest educational attainment:</span>{" "}
+                    {typed.highest_educational_attainment}
+                  </FactBullet>
+                </ul>
+              ) : (
+                <EmptyNote>No educational attainment provided.</EmptyNote>
+              )}
+            </FactSection>
+
+            {/* PHALGA POSITIONS */}
+            <FactSection title="Previous / Current Positions in PhALGA">
+              {phalgaLines.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {phalgaLines.map((line) => (
+                    <FactBullet key={`phalga-${line.linenum}`}>
+                      <PositionLine
+                        position={line.position}
+                        period={line.period_covered}
+                      />
+                    </FactBullet>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyNote>No PhALGA positions on record.</EmptyNote>
+              )}
+            </FactSection>
+
+            {/* PROVINCIAL ASSOCIATION POSITIONS */}
+            <FactSection title="Previous / Current Positions in Provincial Association">
+              {provLines.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {provLines.map((line) => (
+                    <FactBullet key={`prov-${line.linenum}`}>
+                      <PositionLine
+                        position={line.position}
+                        period={line.period_covered}
+                      />
+                    </FactBullet>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyNote>No Provincial Association positions on record.</EmptyNote>
+              )}
+            </FactSection>
+
+            {/* BIO (only if present) */}
+            {bioParagraphs.length > 0 ? (
+              <div className="rounded-2xl bg-white/[0.06] p-5 ring-1 ring-white/10 backdrop-blur-sm">
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#facc15]">
+                  Bio
+                </div>
+                <div className="mt-2 space-y-2 text-[15px] leading-relaxed text-white/90">
+                  {bioParagraphs.map((p, idx) => (
+                    <p key={idx}>{p}</p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
       </div>
     </main>
   );
+}
+
+function FactSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="inline-flex items-center rounded-md bg-[#facc15] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#1a1a1a] shadow-sm sm:text-xs">
+        {title}
+      </h2>
+      <div className="mt-3 text-[15px] leading-relaxed text-white/95 sm:text-base">{children}</div>
+    </section>
+  );
+}
+
+function FactBullet({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span aria-hidden className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#facc15]" />
+      <span className="min-w-0">{children}</span>
+    </li>
+  );
+}
+
+function PositionLine({
+  position,
+  period,
+}: {
+  position: string | null;
+  period: string | null;
+}) {
+  const pos = (position ?? "").trim();
+  const per = (period ?? "").trim();
+  if (pos && per) {
+    return (
+      <span>
+        <span className="font-semibold">{pos}</span>{" "}
+        <span className="text-white/75">({per})</span>
+      </span>
+    );
+  }
+  if (pos) return <span className="font-semibold">{pos}</span>;
+  if (per) return <span className="text-white/75">{per}</span>;
+  return null;
+}
+
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm italic text-white/55">{children}</p>;
 }

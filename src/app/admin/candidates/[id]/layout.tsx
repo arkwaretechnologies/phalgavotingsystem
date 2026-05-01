@@ -18,5 +18,5 @@ export default async function CandidateProfileLayout({
     await assertAdminPathAccessForSession(session, path);
   }
 
-  return <div className="min-h-dvh bg-white text-neutral-900">{children}</div>;
+  return <div className="min-h-dvh">{children}</div>;
 }
