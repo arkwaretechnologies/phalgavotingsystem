@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { clearVoteBallotSubmittingFlag } from "@/app/vote/use-vote-leave-guard";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function fireCelebrationConfetti() {
   void import("canvas-confetti").then((mod) => {
@@ -38,8 +38,10 @@ function fireCelebrationConfetti() {
 
 export function VoteThanksClient() {
   const router = useRouter();
-  const [secondsLeft, setSecondsLeft] = useState(10);
+  const sp = useSearchParams();
+  const isPaired = sp.get("paired") === "1";
   const firedRef = useRef(false);
+  const [secondsLeft, setSecondsLeft] = useState(10);
 
   useEffect(() => {
     clearVoteBallotSubmittingFlag();
@@ -49,6 +51,7 @@ export function VoteThanksClient() {
   }, []);
 
   useEffect(() => {
+    if (!isPaired) return;
     const interval = window.setInterval(() => {
       setSecondsLeft((s) => {
         const next = s - 1;
@@ -60,12 +63,13 @@ export function VoteThanksClient() {
       });
     }, 1000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [isPaired]);
 
   useEffect(() => {
+    if (!isPaired) return;
     if (secondsLeft !== 0) return;
     router.replace("/vote/login");
-  }, [secondsLeft, router]);
+  }, [isPaired, secondsLeft, router]);
 
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16 text-center sm:px-6">
@@ -73,33 +77,35 @@ export function VoteThanksClient() {
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
           Thank you for casting your votes
         </h1>
-        <p className="text-base leading-relaxed text-neutral-700">
-          Please proceed to Comelec personnel to complete your voting transaction.
+        <p className="text-base leading-relaxed text-white/85">
+          Your ballot has been recorded successfully.
         </p>
-        <p className="text-sm text-neutral-600">
-          If you used a voting tablet, you may leave it at the designated area—staff will ready it for
-          the next voter.
+        <p className="text-sm text-white/70">
+          {isPaired
+            ? "Please return the tablet to the designated area."
+            : "You can leave this page open or close it when you are done. No further action is required."}
         </p>
       </div>
 
-      <p className="text-sm font-medium text-neutral-600" aria-live="polite">
-        Returning to queue login in{" "}
-        <span className="tabular-nums font-semibold text-white">{secondsLeft}</span>{" "}
-        {secondsLeft === 1 ? "second" : "seconds"}…
-      </p>
+      {isPaired ? (
+        <p className="text-sm font-medium text-white/75" aria-live="polite">
+          Returning to voter sign-in in{" "}
+          <span className="tabular-nums font-semibold text-white">{secondsLeft}</span>{" "}
+          {secondsLeft === 1 ? "second" : "seconds"}…
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/vote/login"
           className="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
         >
-          Go to queue login now
+          {isPaired ? "Go to voter sign-in now" : "Queue login (optional)"}
         </Link>
       </div>
 
-      <p className="text-xs text-neutral-500">
-        Your ballot is saved. The voting station tablet (if any) is released for the next voter when
-        your ballot was submitted.
+      <p className="text-xs text-white/55">
+        Keep your queue stub until staff confirms your voting transaction is complete.
       </p>
     </main>
   );

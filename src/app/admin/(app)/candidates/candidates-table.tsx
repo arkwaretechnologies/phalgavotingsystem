@@ -13,6 +13,13 @@ export type CandidateRow = {
   confcode: string;
   photo_url: string | null;
   bio?: string | null;
+  gender?: string | null;
+  civil_status?: string | null;
+  date_of_birth?: string | null;
+  post_office_address?: string | null;
+  present_position?: string | null;
+  highest_educational_attainment?: string | null;
+  provincial_league?: string | null;
 };
 
 export type GeoGroupRow = {
@@ -244,12 +251,93 @@ export function CandidatesTable({
                         name="bio"
                         defaultValue={c.bio ?? ""}
                         className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
-                        placeholder="(optional)"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">Gender</span>
+                      <select
+                        name="gender"
+                        defaultValue={c.gender ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">Civil status</span>
+                      <select
+                        name="civil_status"
+                        defaultValue={c.civil_status ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="S">Single</option>
+                        <option value="M">Married</option>
+                        <option value="W">Widowed</option>
+                      </select>
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Date of birth</span>
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        defaultValue={c.date_of_birth ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-3">
+                      <span className="text-xs text-neutral-600">Post office address</span>
+                      <input
+                        name="post_office_address"
+                        defaultValue={c.post_office_address ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
                       />
                     </label>
 
                     <label className="block sm:col-span-2">
-                      <span className="text-xs text-neutral-600">Replace photo (optional)</span>
+                      <span className="text-xs text-neutral-600">Present position (LGU)</span>
+                      <select
+                        name="present_position"
+                        defaultValue={c.present_position ?? ""}
+                        className="mt-1 h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-neutral-300 focus:ring-2 focus:ring-[#050203]/10"
+                      >
+                        <option value="">Select…</option>
+                        <option value="PROVINCIAL ACCOUNTANT">PROVINCIAL ACCOUNTANT</option>
+                        <option value="CITY ACCOUNTANT">CITY ACCOUNTANT</option>
+                        <option value="MUNICIPAL ACCOUNTANT">MUNICIPAL ACCOUNTANT</option>
+                      </select>
+                    </label>
+
+                    <label className="block sm:col-span-3">
+                      <span className="text-xs text-neutral-600">Highest educational attainment</span>
+                      <input
+                        name="highest_educational_attainment"
+                        defaultValue={c.highest_educational_attainment ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Provincial Association address</span>
+                      <input
+                        name="provincial_league"
+                        defaultValue={c.provincial_league ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        placeholder=""
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-xs text-neutral-600">Replace photo</span>
                       <input
                         name="photo_file"
                         type="file"

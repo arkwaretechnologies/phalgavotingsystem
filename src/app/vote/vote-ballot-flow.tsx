@@ -11,6 +11,7 @@ import {
   markVoteBallotSubmitting,
   useVoteLeaveGuard,
 } from "./use-vote-leave-guard";
+import { getBoundTabletId } from "@/lib/tablet/device";
 
 function candidatesForGeo(candidates: Candidate[], geoId: number) {
   return candidates.filter((c) => c.geo_group_id === geoId);
@@ -47,6 +48,7 @@ export function VoteBallotFlow({
   activeConfcode,
 }: Props) {
   const [step, setStep] = useState<"edit" | "review">("edit");
+  const [tabletId, setTabletId] = useState<number | null>(null);
   const [selections, setSelections] = useState<Record<number, (string | null)[]>>(() =>
     buildInitialSelections(geoGroups),
   );
@@ -57,6 +59,10 @@ export function VoteBallotFlow({
   useEffect(() => {
     if (confirmState?.error) clearVoteBallotSubmittingFlag();
   }, [confirmState?.error]);
+
+  useEffect(() => {
+    setTabletId(getBoundTabletId());
+  }, []);
 
   const byId = useMemo(
     () => Object.fromEntries(candidates.map((c) => [c.id, c])) as Record<string, Candidate>,
@@ -204,6 +210,7 @@ export function VoteBallotFlow({
               }}
             >
               <input type="hidden" name="choices" value={JSON.stringify(choicesPayload)} />
+              <input type="hidden" name="tablet_id" value={tabletId ? String(tabletId) : ""} />
 
               {confirmState?.error ? (
                 <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">

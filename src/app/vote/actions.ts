@@ -28,6 +28,10 @@ export async function confirmBallotSubmission(
     };
   }
 
+  const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
+  const tabletId = tabletIdRaw ? Number(tabletIdRaw) : null;
+  const isTabletFlow = tabletId !== null && Number.isFinite(tabletId) && tabletId > 0;
+
   const raw = String(formData.get("choices") ?? "").trim();
   let choices: BallotChoicePayload[];
   try {
@@ -128,5 +132,7 @@ export async function confirmBallotSubmission(
   }
 
   await clearVotingSessionCookie();
-  redirect("/vote/thanks");
+  // Paired tablet/station flow: show a quick thank-you then bounce back to voter sign-in.
+  // Phone / not paired: stay on thanks page (no auto redirect).
+  redirect(isTabletFlow ? "/vote/thanks?paired=1" : "/vote/thanks");
 }
