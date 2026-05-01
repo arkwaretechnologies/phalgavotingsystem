@@ -267,7 +267,9 @@ function SquareStatCard({
 export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
   const [data, setData] = useState<DashboardSnapshot>(initial);
   const [pollError, setPollError] = useState<string | null>(null);
-  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  // Avoid SSR/client hydration mismatch: server & initial client render must match.
+  // We start ticking only after mount.
+  const [nowTick, setNowTick] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
     setPollError(null);
@@ -293,6 +295,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
 
   // Smooth countdown updates (1s) without refetching.
   useEffect(() => {
+    setNowTick(Date.now());
     const id = window.setInterval(() => setNowTick(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
@@ -310,6 +313,7 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
   const liveWindowMsRemaining = useMemo(() => {
     const base = data.votingWindow.msRemaining;
     if (base == null) return null;
+    if (nowTick == null) return base;
     const anchor = fetchedAtMs ?? nowTick;
     const elapsed = Math.max(0, nowTick - anchor);
     return Math.max(0, base - elapsed);

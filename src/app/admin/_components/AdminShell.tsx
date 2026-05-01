@@ -298,7 +298,7 @@ export default function AdminShell({
                         <span
                           className={
                             parentActive
-                              ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                              ? "mt-0.5 text-neutral-900"
                               : "mt-0.5 text-white/70 transition group-hover:text-white"
                           }
                         >
@@ -312,7 +312,7 @@ export default function AdminShell({
                           <svg
                             className={[
                               "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
-                              parentActive ? "text-[var(--ph-flag-blue-deep)]/80" : "text-white/55 group-hover:text-white",
+                              parentActive ? "text-neutral-900/80" : "text-white/55 group-hover:text-white",
                               settingsExpanded ? "rotate-180" : "rotate-0",
                             ].join(" ")}
                             fill="none"
@@ -397,7 +397,7 @@ export default function AdminShell({
                         <span
                           className={
                             parentActive
-                              ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                              ? "mt-0.5 text-neutral-900"
                               : "mt-0.5 text-white/70 transition group-hover:text-white"
                           }
                         >
@@ -411,7 +411,7 @@ export default function AdminShell({
                           <svg
                             className={[
                               "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
-                              parentActive ? "text-[var(--ph-flag-blue-deep)]/80" : "text-white/55 group-hover:text-white",
+                              parentActive ? "text-neutral-900/80" : "text-white/55 group-hover:text-white",
                               reportsExpanded ? "rotate-180" : "rotate-0",
                             ].join(" ")}
                             fill="none"
@@ -478,7 +478,7 @@ export default function AdminShell({
                     <span
                       className={
                         active
-                          ? "mt-0.5 text-[var(--ph-flag-blue-deep)]"
+                          ? "mt-0.5 text-neutral-900"
                           : "mt-0.5 text-white/70 transition group-hover:text-white"
                       }
                     >
