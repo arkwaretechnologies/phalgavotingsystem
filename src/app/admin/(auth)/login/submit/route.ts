@@ -40,35 +40,24 @@ function getPublicOrigin(req: Request): string {
 }
 
 /**
- * Return a 200 HTML response that triggers the browser to navigate to `target`.
- *
- * Why not `NextResponse.redirect()`? On Railway (Next 16) we observed that
- * `Set-Cookie` headers attached to 3xx redirect responses are dropped before
- * reaching the browser — confirmed by the `[admin-session] route-handler set
- * cookie` log firing server-side while the very next request still has no
- * token. Cookies attached to a 200 HTML response are preserved (proven by the
- * `phalga_debug_secure` probe). So we set the cookie, return a 200, and let
- * the browser refresh into the destination.
+ * Build an HTML "redirect" response (200 OK). Returns the NextResponse so callers
+ * can attach cookies via `response.cookies.set(...)` AFTER construction — that
+ * mutates the response's internal headers list rather than overwriting it.
  */
-function htmlRedirect(target: string, init?: ResponseInit) {
+function buildHtmlRedirect(target: string): NextResponse {
   const escaped = target
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;");
   const body = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${escaped}"><title>Redirecting…</title><script>window.location.replace(${JSON.stringify(target)});</script></head><body>Redirecting…</body></html>`;
-  return new NextResponse(body, {
-    ...init,
-    status: 200,
-    headers: {
-      ...(init?.headers ?? {}),
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-    },
-  });
+  const response = new NextResponse(body, { status: 200 });
+  response.headers.set("content-type", "text/html; charset=utf-8");
+  response.headers.set("cache-control", "no-store");
+  return response;
 }
 
-function loginError(target: string, message: string) {
-  return htmlRedirect(`${target}/admin/login?error=${encodeURIComponent(message)}`);
+function loginError(originUrl: string, message: string) {
+  return buildHtmlRedirect(`${originUrl}/admin/login?error=${encodeURIComponent(message)}`);
 }
 
 export async function POST(req: Request) {
@@ -153,19 +142,27 @@ export async function POST(req: Request) {
     return loginError(origin, `session error: ${msg}`);
   }
 
-  // Commit cookie via Next's cookie store (matches the debug-session route that
-  // succeeded on this deployment) rather than attaching to a `NextResponse.redirect()`.
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+  const cookieOpts = {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 12,
-  });
+  };
+
+  // Belt + suspenders: commit via `cookies()` (matches working debug-session probes)…
+  const store = await cookies();
+  store.set(COOKIE_NAME, token, cookieOpts);
+
+  // …AND attach directly on the NextResponse so the Set-Cookie header is on this
+  // specific response regardless of whether Next merges the `cookies()` store into
+  // a manually-constructed NextResponse on this version.
+  const response = buildHtmlRedirect(`${origin}/admin?ok=login`);
+  response.cookies.set(COOKIE_NAME, token, cookieOpts);
+
   // eslint-disable-next-line no-console
   console.info(
-    `[admin-session] route-handler set cookie user=${user.id} role=${role_slug} token_len=${token.length}`,
+    `[admin-session] route-handler set cookie user=${user.id} role=${role_slug} token_len=${token.length} setcookie_present=${response.headers.has("set-cookie")}`,
   );
-  return htmlRedirect(`${origin}/admin?ok=login`);
+  return response;
 }
