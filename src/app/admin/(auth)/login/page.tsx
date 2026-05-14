@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { adminLogin } from "./actions";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 
 export default function AdminLoginPage() {
@@ -13,7 +12,7 @@ export default function AdminLoginPage() {
         <p className="mt-2 text-sm text-neutral-600">Sign in to open the dashboard and run election tools.</p>
       </div>
 
-      <form action={adminLogin} className="mt-8 space-y-5">
+      <form action="/admin/login/submit" method="POST" className="mt-8 space-y-5">
         <label className="block">
           <span className="text-sm font-medium text-neutral-800">Username</span>
           <input
