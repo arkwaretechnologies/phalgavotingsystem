@@ -11,8 +11,24 @@ function getPublicOrigin(req: Request): string {
   return `${proto}://${host}`;
 }
 
+/**
+ * 200 HTML "redirect" so the cookie-delete header isn't stripped by Railway's proxy
+ * on 3xx responses (same reason as `/admin/login/submit`).
+ */
+function htmlRedirect(target: string) {
+  const escaped = target.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const body = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${escaped}"><title>Redirecting…</title><script>window.location.replace(${JSON.stringify(target)});</script></head><body>Redirecting…</body></html>`;
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
 export async function GET(req: Request) {
   await clearAdminSession();
-  return NextResponse.redirect(new URL("/admin/login", getPublicOrigin(req)));
+  return htmlRedirect(`${getPublicOrigin(req)}/admin/login`);
 }
 
