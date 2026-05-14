@@ -1,17 +1,15 @@
-import { redirect } from "next/navigation";
 import {
   assertAdminPathAccessForSession,
   getPathnameFromHeaders,
 } from "@/lib/admin/path-access";
-import { getAdminSession } from "@/lib/admin/session";
+import { requireAdminSession } from "@/lib/admin/session";
 
 export default async function CandidateProfileLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
+  const session = await requireAdminSession();
 
   const path = await getPathnameFromHeaders();
   if (path) {

@@ -1,7 +1,7 @@
 import { AdminUsersTable } from "../admin-users-table";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { isSystemSuperSession } from "@/lib/admin/admin-roles";
-import { getAdminSession } from "@/lib/admin/session";
+import { requireAdminSession } from "@/lib/admin/session";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { redirect } from "next/navigation";
@@ -9,8 +9,7 @@ import { redirect } from "next/navigation";
 type AdminRoleRow = { role_id: number; name: string; slug: string; sort_order: number | null };
 
 export default async function AdminSettingsUsersPage() {
-  const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
+  const session = await requireAdminSession();
   if (!isSystemSuperSession(session)) {
     redirect("/admin/settings/conference?error=" + encodeURIComponent("You do not have access to that page."));
   }

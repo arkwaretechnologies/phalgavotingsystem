@@ -1,9 +1,7 @@
-import { getAdminSession } from "@/lib/admin/session";
-import { redirect } from "next/navigation";
+import { requireAdminSession } from "@/lib/admin/session";
 
 export default async function AdminSettingsLayout({ children }: { children: React.ReactNode }) {
-  const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
+  await requireAdminSession();
 
   return (
     <div className="space-y-6">

@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { SignJWT } from "jose";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { fetchAdminRoleByUserRoleId } from "@/lib/admin/fetch-admin-role-by-id";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { signLoginExchangeToken } from "@/lib/admin/session";
+import {
+  buildHtmlRedirect,
+  getPublicOrigin,
+} from "@/lib/http/railway-redirect";
 
 /**
  * Admin login — POST half of a two-step flow.
@@ -23,46 +26,6 @@ import { toPublicMessage } from "@/lib/errors/public-message";
  * The exchange token is short-lived and bound to a `purpose: "login-exchange"`
  * claim so it cannot be used as a session JWT even if it leaks.
  */
-
-function getSecret() {
-  const raw = process.env.JWT_SECRET ?? process.env.ADMIN_SESSION_SECRET;
-  const secret = raw?.trim();
-  if (!secret) {
-    throw new Error("Missing env: JWT_SECRET (or legacy ADMIN_SESSION_SECRET)");
-  }
-  return new TextEncoder().encode(secret);
-}
-
-/**
- * On Railway / behind a reverse proxy, `req.url` is the internal upstream URL
- * (e.g. `http://localhost:8080`). Honor `x-forwarded-host` / `x-forwarded-proto`
- * so the redirect goes to the public origin the browser actually used.
- */
-function getPublicOrigin(req: Request): string {
-  const url = new URL(req.url);
-  const forwardedHost = req.headers.get("x-forwarded-host");
-  const forwardedProto = req.headers.get("x-forwarded-proto");
-  const host = forwardedHost || req.headers.get("host") || url.host;
-  const proto = forwardedProto || url.protocol.replace(":", "") || "https";
-  return `${proto}://${host}`;
-}
-
-/**
- * Build an HTML "redirect" response (200 OK). Returns the NextResponse so callers
- * can attach cookies via `response.cookies.set(...)` AFTER construction — that
- * mutates the response's internal headers list rather than overwriting it.
- */
-function buildHtmlRedirect(target: string): NextResponse {
-  const escaped = target
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
-  const body = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${escaped}"><title>Redirecting…</title><script>window.location.replace(${JSON.stringify(target)});</script></head><body>Redirecting…</body></html>`;
-  const response = new NextResponse(body, { status: 200 });
-  response.headers.set("content-type", "text/html; charset=utf-8");
-  response.headers.set("cache-control", "no-store");
-  return response;
-}
 
 function loginError(originUrl: string, message: string) {
   return buildHtmlRedirect(`${originUrl}/admin/login?error=${encodeURIComponent(message)}`);
@@ -136,18 +99,13 @@ export async function POST(req: Request) {
 
   let exchangeToken: string;
   try {
-    exchangeToken = await new SignJWT({
-      purpose: "login-exchange",
+    exchangeToken = await signLoginExchangeToken({
       admin_user_id: user.id,
       admin_role_id: roleId,
       role_slug: cleanRoleSlug,
       is_full_access,
       full_name: user.full_name ?? null,
-    })
-      .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-      .setIssuedAt()
-      .setExpirationTime("60s")
-      .sign(getSecret());
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("admin login JWT sign failed", err);

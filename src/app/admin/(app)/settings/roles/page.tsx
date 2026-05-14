@@ -1,13 +1,12 @@
 import { RolePresetsForm } from "./role-presets-form";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { isSystemSuperSession, listAdminRolesWithPresets } from "@/lib/admin/admin-roles";
-import { getAdminSession } from "@/lib/admin/session";
+import { requireAdminSession } from "@/lib/admin/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function AdminSettingsRolesPage() {
-  const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
+  const session = await requireAdminSession();
   if (!isSystemSuperSession(session)) {
     redirect("/admin/settings/conference?error=" + encodeURIComponent("You do not have access to that page."));
   }
