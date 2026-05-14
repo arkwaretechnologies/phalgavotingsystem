@@ -4,8 +4,16 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   const pathname = request.nextUrl.pathname;
+
+  // Admin uses `phalga_admin_session` (see `lib/admin/session.ts`), not Supabase Auth.
+  // Running `createServerClient` + `getUser()` here still mutates auth cookies and can
+  // cause unnecessary Set-Cookie churn; @supabase/ssr notes that can surface as random
+  // logouts behind reverse proxies. Skip Supabase entirely for `/admin`.
   if (pathname.startsWith("/admin")) {
     requestHeaders.set("x-phalga-path", pathname);
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   }
 
   const response = NextResponse.next({

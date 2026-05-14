@@ -8,6 +8,9 @@ import { getAdminSession } from "@/lib/admin/session";
 import { redirect } from "next/navigation";
 import AdminShell from "../_components/AdminShell";
 
+/** Auth + role checks must run every request; never serve a cached shell as logged-in. */
+export const dynamic = "force-dynamic";
+
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
