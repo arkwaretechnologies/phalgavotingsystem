@@ -57,13 +57,20 @@ export async function adminLogin(formData: FormData) {
   const is_full_access = roleRow.is_full_access;
   if (!role_slug) throw new Error("Invalid account role.");
 
-  await setAdminSession({
-    admin_user_id: user.id,
-    admin_role_id: roleId,
-    role_slug,
-    is_full_access,
-    full_name: user.full_name ?? null,
-  });
+  try {
+    await setAdminSession({
+      admin_user_id: user.id,
+      admin_role_id: roleId,
+      role_slug,
+      is_full_access,
+      full_name: user.full_name ?? null,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("admin login setAdminSession failed", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    redirect(`/admin/login?error=${encodeURIComponent(`session error: ${msg}`)}`);
+  }
 
-  redirect("/admin");
+  redirect("/admin?ok=login");
 }

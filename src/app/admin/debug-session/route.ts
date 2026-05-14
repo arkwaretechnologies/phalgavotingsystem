@@ -14,6 +14,7 @@ import { jwtVerify } from "jose";
  */
 const COOKIE_NAME = "phalga_admin_session";
 const DEBUG_PROBE_COOKIE = "phalga_debug_probe";
+const DEBUG_SECURE_COOKIE = "phalga_debug_secure";
 
 function getSecret() {
   const raw = process.env.JWT_SECRET ?? process.env.ADMIN_SESSION_SECRET;
@@ -40,6 +41,7 @@ export async function GET(req: Request) {
   const cookieNames = jar.getAll().map((c) => c.name).sort();
   const adminCookieFromJar = jar.get(COOKIE_NAME)?.value ?? null;
   const debugProbeBack = jar.get(DEBUG_PROBE_COOKIE)?.value ?? null;
+  const debugSecureBack = jar.get(DEBUG_SECURE_COOKIE)?.value ?? null;
 
   const secret = getSecret();
   let verify: { ok: boolean; reason?: string; payloadKeys?: string[] } = { ok: false };
@@ -69,6 +71,17 @@ export async function GET(req: Request) {
     maxAge: 300,
   });
 
+  // Same flags as the real admin cookie, just from a Route Handler (no Server Action +
+  // redirect). If this `phalga_debug_secure` cookie persists across calls but
+  // `phalga_admin_session` doesn't, the Server Action redirect path is the culprit.
+  jar.set(DEBUG_SECURE_COOKIE, probeValue, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 300,
+  });
+
   return NextResponse.json({
     ok: true,
     timestamp: new Date().toISOString(),
@@ -91,6 +104,10 @@ export async function GET(req: Request) {
       sentNow: probeValue,
       echoed: Boolean(debugProbeBack),
       echoedValue: debugProbeBack,
+    },
+    debugSecureProbe: {
+      echoed: Boolean(debugSecureBack),
+      echoedValue: debugSecureBack,
     },
     verify,
   });
