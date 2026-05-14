@@ -24,6 +24,20 @@ function getSecret() {
   return new TextEncoder().encode(secret);
 }
 
+/**
+ * On Railway / behind a reverse proxy, `req.url` is the internal upstream URL
+ * (e.g. `http://localhost:8080`). Honor `x-forwarded-host` / `x-forwarded-proto`
+ * so the redirect goes to the public origin the browser actually used.
+ */
+function getPublicOrigin(req: Request): string {
+  const url = new URL(req.url);
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const host = forwardedHost || req.headers.get("host") || url.host;
+  const proto = forwardedProto || url.protocol.replace(":", "") || "https";
+  return `${proto}://${host}`;
+}
+
 function redirectTo(origin: string, target: string) {
   return NextResponse.redirect(new URL(target, origin), { status: 303 });
 }
@@ -33,7 +47,7 @@ function loginError(origin: string, message: string) {
 }
 
 export async function POST(req: Request) {
-  const origin = new URL(req.url).origin;
+  const origin = getPublicOrigin(req);
 
   let formData: FormData;
   try {
