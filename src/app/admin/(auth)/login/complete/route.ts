@@ -1,9 +1,7 @@
 import {
-  ADMIN_SESSION_COOKIE_NAME,
-  ADMIN_SESSION_COOKIE_PATH,
-  ADMIN_SESSION_MAX_AGE_SECONDS,
   signAdminSessionToken,
   verifyLoginExchangeToken,
+  writeAdminSessionCookie,
 } from "@/lib/admin/session";
 import {
   buildHtmlRedirect,
@@ -46,17 +44,18 @@ export async function GET(req: Request) {
     return loginError(origin, `session error: ${msg}`);
   }
 
-  const response = buildHtmlRedirect(`${origin}/admin?ok=login`);
-  response.cookies.set(ADMIN_SESSION_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: ADMIN_SESSION_COOKIE_PATH,
-    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
-  });
+  // IMPORTANT: write via the framework's request-side cookie store (`cookies()`
+  // from `next/headers`) — NOT `response.cookies.set()` on a custom NextResponse.
+  // The custom-Response path emits `Set-Cookie` on the object but it does not
+  // survive Next.js 16's response pipeline reliably (we observed
+  // `setcookie_present=true` server-side while the browser never received it).
+  // `cookies().set()` is the same path used by `/admin/debug-session` for
+  // `phalga_debug_secure`, which is proven to reach the browser through Railway.
+  await writeAdminSessionCookie(sessionToken);
+
   // eslint-disable-next-line no-console
   console.info(
-    `[admin-session] GET set cookie user=${session.admin_user_id} role=${session.role_slug} token_len=${sessionToken.length} setcookie_present=${response.headers.has("set-cookie")}`,
+    `[admin-session] GET set cookie user=${session.admin_user_id} role=${session.role_slug} token_len=${sessionToken.length}`,
   );
-  return response;
+  return buildHtmlRedirect(`${origin}/admin?ok=login`);
 }
