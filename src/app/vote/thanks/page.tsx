@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { VoteThanksClient } from "./vote-thanks-client";
 
 export default function VoteThanksPage() {
@@ -10,7 +11,15 @@ export default function VoteThanksPage() {
       </div>
       <div aria-hidden className="ph-flag-strip-top" />
       <div className="flex-1">
-        <VoteThanksClient />
+        <Suspense
+          fallback={
+            <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-16 text-center sm:px-6">
+              <p className="text-sm text-white/80">Loading…</p>
+            </main>
+          }
+        >
+          <VoteThanksClient />
+        </Suspense>
       </div>
       <div aria-hidden className="ph-flag-strip-bottom" />
     </div>

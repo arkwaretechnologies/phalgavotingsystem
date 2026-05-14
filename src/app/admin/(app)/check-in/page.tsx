@@ -100,17 +100,10 @@ export default async function AdminCheckInPage({
   let voters: VoterRow[] = [];
   let sessionByVoterId = new Map<string, SessionBrief>();
   if (q.length >= 2) {
-    // OR across fields using PostgREST `or` filter
-    const or = [
-      `full_name.ilike.%${q}%`,
-      `email.ilike.%${q}%`,
-      `phone.ilike.%${q}%`,
-    ].join(",");
-
     const { data, error } = await supabase
       .from("voters")
       .select("id, full_name, position, lgu, province, email, phone, is_verified")
-      .or(or)
+      .ilike("full_name", `%${q}%`)
       .order("full_name", { ascending: true })
       .limit(25);
 
@@ -166,7 +159,7 @@ export default async function AdminCheckInPage({
             name="q"
             defaultValue={q}
             className="w-full rounded-md border px-3 py-2"
-            placeholder="Search by full name / email / phone…"
+            placeholder="Search by full name…"
           />
           <button type="submit" className="ph-brand-button rounded-md px-4 py-2">
             Search

@@ -98,8 +98,8 @@ export async function GET() {
 
   try {
     const submitted = await fetchAllRows<SubmittedBallotRow>(
-      (from, to) =>
-        supabase
+      async (from, to) =>
+        await supabase
           .from("ballots")
           .select("voter_id")
           .eq("is_submitted", true)
@@ -114,8 +114,8 @@ export async function GET() {
     );
 
     const voters = await fetchAllRows<VoterRow>(
-      (from, to) =>
-        supabase
+      async (from, to) =>
+        await supabase
           .from("voters")
           .select("id, full_name, position, lgu, province, email, phone")
           .order("full_name", { ascending: true })

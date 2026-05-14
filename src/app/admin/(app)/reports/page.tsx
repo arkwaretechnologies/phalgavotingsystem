@@ -16,8 +16,8 @@ export default async function AdminReportsPage() {
     totalVoters = Number(count ?? 0);
 
     const submitted = await fetchAllRows<{ voter_id: string | null }>(
-      (from, to) =>
-        supabase
+      async (from, to) =>
+        await supabase
           .from("ballots")
           .select("voter_id")
           .eq("is_submitted", true)
