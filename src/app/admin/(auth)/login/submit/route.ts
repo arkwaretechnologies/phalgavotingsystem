@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
@@ -7,14 +6,23 @@ import { fetchAdminRoleByUserRoleId } from "@/lib/admin/fetch-admin-role-by-id";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 /**
- * Admin login as a Route Handler so the `Set-Cookie` for `phalga_admin_session`
- * is committed via `NextResponse.redirect()`. On Railway (Next 16) we observed
- * that cookies set inside a Server Action followed by `redirect()` were not
- * being delivered to the browser, even though identical cookies set from a
- * Route Handler persisted normally. See `/admin/debug-session` probes.
+ * Admin login — POST half of a two-step flow.
+ *
+ * Why two steps? Railway's edge appears to drop `Set-Cookie` headers on
+ * non-GET responses (we observed the cookie being emitted in the response
+ * but never reaching the browser, while identical cookies on GET responses
+ * via `/admin/debug-session` persisted fine).
+ *
+ *   POST /admin/login/submit  → validates credentials, signs a 60s exchange
+ *                                token (NOT the session), redirects (HTML 200)
+ *                                to GET /admin/login/complete?xt=<token>
+ *   GET  /admin/login/complete → verifies the exchange token, signs the real
+ *                                12h session JWT, sets it as a cookie on the
+ *                                GET response, redirects to /admin.
+ *
+ * The exchange token is short-lived and bound to a `purpose: "login-exchange"`
+ * claim so it cannot be used as a session JWT even if it leaks.
  */
-
-const COOKIE_NAME = "phalga_admin_session";
 
 function getSecret() {
   const raw = process.env.JWT_SECRET ?? process.env.ADMIN_SESSION_SECRET;
@@ -122,18 +130,23 @@ export async function POST(req: Request) {
     return loginError(origin, "Invalid account role.");
   }
 
-  let token: string;
+  // Trim any stray CR/LF in role_slug coming from the DB so it doesn't end up
+  // as control characters inside the JWT payload.
+  const cleanRoleSlug = String(role_slug).trim();
+
+  let exchangeToken: string;
   try {
-    token = await new SignJWT({
+    exchangeToken = await new SignJWT({
+      purpose: "login-exchange",
       admin_user_id: user.id,
       admin_role_id: roleId,
-      role_slug,
+      role_slug: cleanRoleSlug,
       is_full_access,
       full_name: user.full_name ?? null,
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setIssuedAt()
-      .setExpirationTime("12h")
+      .setExpirationTime("60s")
       .sign(getSecret());
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -142,27 +155,11 @@ export async function POST(req: Request) {
     return loginError(origin, `session error: ${msg}`);
   }
 
-  const cookieOpts = {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 12,
-  };
-
-  // Belt + suspenders: commit via `cookies()` (matches working debug-session probes)…
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, cookieOpts);
-
-  // …AND attach directly on the NextResponse so the Set-Cookie header is on this
-  // specific response regardless of whether Next merges the `cookies()` store into
-  // a manually-constructed NextResponse on this version.
-  const response = buildHtmlRedirect(`${origin}/admin?ok=login`);
-  response.cookies.set(COOKIE_NAME, token, cookieOpts);
-
   // eslint-disable-next-line no-console
   console.info(
-    `[admin-session] route-handler set cookie user=${user.id} role=${role_slug} token_len=${token.length} setcookie_present=${response.headers.has("set-cookie")}`,
+    `[admin-session] credentials ok user=${user.id} role=${cleanRoleSlug}, redirecting to /admin/login/complete`,
   );
-  return response;
+  return buildHtmlRedirect(
+    `${origin}/admin/login/complete?xt=${encodeURIComponent(exchangeToken)}`,
+  );
 }
