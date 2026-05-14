@@ -13,6 +13,7 @@ import { jwtVerify } from "jose";
  * Never enabled unless the env is set, so the endpoint is inert by default.
  */
 const COOKIE_NAME = "phalga_admin_session";
+const DEBUG_PROBE_COOKIE = "phalga_debug_probe";
 
 function getSecret() {
   const raw = process.env.JWT_SECRET ?? process.env.ADMIN_SESSION_SECRET;
@@ -38,6 +39,7 @@ export async function GET(req: Request) {
   const rawCookieHeader = hdrs.get("cookie") ?? "";
   const cookieNames = jar.getAll().map((c) => c.name).sort();
   const adminCookieFromJar = jar.get(COOKIE_NAME)?.value ?? null;
+  const debugProbeBack = jar.get(DEBUG_PROBE_COOKIE)?.value ?? null;
 
   const secret = getSecret();
   let verify: { ok: boolean; reason?: string; payloadKeys?: string[] } = { ok: false };
@@ -54,6 +56,18 @@ export async function GET(req: Request) {
       verify = { ok: false, reason: `verify failed: ${e.code ?? e.name ?? "?"} ${e.message ?? ""}`.trim() };
     }
   }
+
+  // Set a tiny probe cookie on every response. If the browser stores it and resends it
+  // on the next request to this endpoint, `debugProbe.echoed` becomes true. If it's never
+  // true even on the second hit, cookies are not being persisted at all.
+  const probeValue = `t${Date.now()}`;
+  jar.set(DEBUG_PROBE_COOKIE, probeValue, {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: true,
+    path: "/",
+    maxAge: 300,
+  });
 
   return NextResponse.json({
     ok: true,
@@ -73,6 +87,11 @@ export async function GET(req: Request) {
       .sort(),
     adminCookiePresent: Boolean(adminCookieFromJar),
     adminCookieLength: adminCookieFromJar?.length ?? 0,
+    debugProbe: {
+      sentNow: probeValue,
+      echoed: Boolean(debugProbeBack),
+      echoedValue: debugProbeBack,
+    },
     verify,
   });
 }
