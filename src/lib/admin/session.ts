@@ -66,13 +66,7 @@ export async function verifyAdminSessionToken(
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return parseSessionPayload(payload as Record<string, unknown>);
-  } catch (err) {
-    const code = (err as { code?: string; name?: string }).code
-      ?? (err as { name?: string }).name
-      ?? "unknown";
-    const msg = (err as Error).message ?? "";
-    // eslint-disable-next-line no-console
-    console.warn(`[admin-session] jwtVerify failed code=${code} msg=${msg}`);
+  } catch {
     return null;
   }
 }
@@ -81,7 +75,14 @@ export async function verifyAdminSessionToken(
 // Cookie read / write / clear
 // ---------------------------------------------------------------------------
 
-/** Write the session token to the response cookie store. Separate from signing. */
+/**
+ * Write the session token to the response cookie store. Separate from signing.
+ *
+ * IMPORTANT: writes go through `cookies()` from `next/headers` so Next.js
+ * serializes the `Set-Cookie` header through its normal response pipeline.
+ * Setting cookies on a custom `new NextResponse(...)` via `response.cookies.set`
+ * does not reliably reach the browser in this app's Railway deployment.
+ */
 export async function writeAdminSessionCookie(token: string) {
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
@@ -91,28 +92,15 @@ export async function writeAdminSessionCookie(token: string) {
     path: COOKIE_PATH,
     maxAge: SESSION_TTL_SECONDS,
   });
-  // Diagnostic: should fire only at /admin/login/complete. Any other call site
-  // would indicate a stray re-write that could clobber the cookie attributes.
-  // eslint-disable-next-line no-console
-  console.info(`[admin-session] writeAdminSessionCookie called (token_len=${token.length})`);
 }
 
 /** Sign a session payload and persist it as a cookie in one step. */
 export async function setAdminSession(payload: AdminSessionPayload) {
   const token = await signAdminSessionToken(payload);
   await writeAdminSessionCookie(token);
-  // eslint-disable-next-line no-console
-  console.info(
-    `[admin-session] set cookie user=${payload.admin_user_id} role=${payload.role_slug} token_len=${token.length}`,
-  );
 }
 
 export async function clearAdminSession() {
-  // Diagnostic: clearAdminSession should fire ONLY from /admin/logout. If we
-  // ever see this log without a user-initiated logout, something is wiping the
-  // session unexpectedly. The stack trace pinpoints the call site.
-  // eslint-disable-next-line no-console
-  console.warn("[admin-session] clearAdminSession called", new Error("trace").stack);
   const store = await cookies();
   store.delete({ name: COOKIE_NAME, path: COOKIE_PATH });
 }
@@ -138,7 +126,8 @@ function parseSessionPayload(payload: Record<string, unknown>): AdminSessionPayl
 }
 
 /**
- * Returns null if the cookie is missing, invalid, or a pre–dynamic-roles token (re-login required).
+ * Returns null if the cookie is missing, invalid, or a pre–dynamic-roles token
+ * (re-login required).
  *
  * Includes a raw-`Cookie`-header fallback because Railway's edge has been
  * observed to omit cookies from `cookies().get()` on some routes despite
@@ -147,24 +136,12 @@ function parseSessionPayload(payload: Record<string, unknown>): AdminSessionPayl
 export async function getAdminSession(): Promise<AdminSessionPayload | null> {
   const store = await cookies();
   let token = store.get(COOKIE_NAME)?.value ?? null;
-  let source: "store" | "raw" | "missing" = token ? "store" : "missing";
   if (!token) {
     const rawCookie = (await headers()).get("cookie");
     token = tokenFromRawCookieHeader(rawCookie);
-    if (token) source = "raw";
   }
-  if (!token) {
-    // eslint-disable-next-line no-console
-    console.warn("[admin-session] no token in request");
-    return null;
-  }
-
-  const parsed = await verifyAdminSessionToken(token);
-  if (!parsed) {
-    // eslint-disable-next-line no-console
-    console.warn(`[admin-session] verify failed or payload invalid (source=${source})`);
-  }
-  return parsed;
+  if (!token) return null;
+  return verifyAdminSessionToken(token);
 }
 
 /**
@@ -219,9 +196,7 @@ export async function verifyLoginExchangeToken(
     const { payload } = await jwtVerify(xt, getSecret());
     if ((payload as { purpose?: unknown }).purpose !== EXCHANGE_PURPOSE) return null;
     return parseSessionPayload(payload as Record<string, unknown>);
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[admin-session] exchange verify failed", err);
+  } catch {
     return null;
   }
 }

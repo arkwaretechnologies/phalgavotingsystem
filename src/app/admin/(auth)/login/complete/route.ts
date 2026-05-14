@@ -11,10 +11,11 @@ import {
 /**
  * Admin login — GET half of the two-step flow (see ./submit/route.ts).
  *
- * Accepts a short-lived exchange JWT in `?xt=...`, verifies it, then issues the
- * real 12h session JWT and sets it as a cookie on this GET response. Cookies on
- * GET responses are confirmed to traverse Railway's edge (proven by
- * `phalga_debug_secure` in `/admin/debug-session`).
+ * Accepts a short-lived exchange JWT in `?xt=...`, verifies it, then issues
+ * the real 12h session JWT and sets it as a cookie on this GET response. The
+ * cookie is written via `cookies()` from `next/headers` (NOT
+ * `response.cookies.set` on a custom NextResponse) so Next.js's response
+ * pipeline serializes the `Set-Cookie` header reliably through Railway's edge.
  */
 
 function loginError(originUrl: string, message: string) {
@@ -38,27 +39,11 @@ export async function GET(req: Request) {
   try {
     sessionToken = await signAdminSessionToken(session);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("[admin-session] session JWT sign failed", err);
     const msg = err instanceof Error ? err.message : String(err);
     return loginError(origin, `session error: ${msg}`);
   }
 
-  // IMPORTANT: write via the framework's request-side cookie store (`cookies()`
-  // from `next/headers`) — NOT `response.cookies.set()` on a custom NextResponse.
-  // The custom-Response path emits `Set-Cookie` on the object but it does not
-  // survive Next.js 16's response pipeline reliably (we observed
-  // `setcookie_present=true` server-side while the browser never received it).
-  // `cookies().set()` is the same path used by `/admin/debug-session` for
-  // `phalga_debug_secure`, which is proven to reach the browser through Railway.
   await writeAdminSessionCookie(sessionToken);
-
-  // Diagnostic: log the host context so we can spot a domain mismatch between
-  // where the cookie was set vs. where the meta-refresh navigates the browser.
-  // Remove once the production session issue is fully resolved.
-  // eslint-disable-next-line no-console
-  console.info(
-    `[admin-session] GET set cookie user=${session.admin_user_id} role=${session.role_slug} token_len=${sessionToken.length} host=${req.headers.get("host") ?? "?"} xfh=${req.headers.get("x-forwarded-host") ?? "?"} xfp=${req.headers.get("x-forwarded-proto") ?? "?"} target=${origin}/admin?ok=login`,
-  );
-  return buildHtmlRedirect(`${origin}/admin?ok=login`);
+  return buildHtmlRedirect(`${origin}/admin`);
 }

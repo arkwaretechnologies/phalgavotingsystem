@@ -11,10 +11,8 @@ import {
 /**
  * Admin login — POST half of a two-step flow.
  *
- * Why two steps? Railway's edge appears to drop `Set-Cookie` headers on
- * non-GET responses (we observed the cookie being emitted in the response
- * but never reaching the browser, while identical cookies on GET responses
- * via `/admin/debug-session` persisted fine).
+ * Why two steps? Railway's edge has been observed to drop `Set-Cookie` headers
+ * on non-GET responses. Setting cookies on a GET response is reliable.
  *
  *   POST /admin/login/submit  → validates credentials, signs a 60s exchange
  *                                token (NOT the session), redirects (HTML 200)
@@ -56,7 +54,6 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (error) {
-    // eslint-disable-next-line no-console
     console.error("admin login query failed", error);
     const { message } = toPublicMessage(error, "Unable to sign in right now. Please try again.");
     return loginError(origin, message);
@@ -72,14 +69,12 @@ export async function POST(req: Request) {
 
   const roleId = Number((user as { role_id?: unknown }).role_id);
   if (!Number.isFinite(roleId) || roleId <= 0) {
-    // eslint-disable-next-line no-console
     console.error("admin user has invalid role_id", user);
     return loginError(origin, "Invalid account configuration. Ask a super admin to fix this user's role.");
   }
 
   const roleRow = await fetchAdminRoleByUserRoleId(roleId);
   if (!roleRow) {
-    // eslint-disable-next-line no-console
     console.error("admin role missing for role_id", roleId);
     return loginError(
       origin,
@@ -107,16 +102,11 @@ export async function POST(req: Request) {
       full_name: user.full_name ?? null,
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("admin login JWT sign failed", err);
     const msg = err instanceof Error ? err.message : String(err);
     return loginError(origin, `session error: ${msg}`);
   }
 
-  // eslint-disable-next-line no-console
-  console.info(
-    `[admin-session] credentials ok user=${user.id} role=${cleanRoleSlug}, redirecting to /admin/login/complete`,
-  );
   return buildHtmlRedirect(
     `${origin}/admin/login/complete?xt=${encodeURIComponent(exchangeToken)}`,
   );

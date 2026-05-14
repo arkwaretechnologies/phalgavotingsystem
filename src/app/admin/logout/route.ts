@@ -41,8 +41,6 @@ function isPrefetchRequest(req: Request): boolean {
 
 export async function GET(req: Request) {
   if (isPrefetchRequest(req)) {
-    // eslint-disable-next-line no-console
-    console.info("[admin-session] /admin/logout prefetch ignored");
     // 204 No Content satisfies the prefetcher without emitting a Set-Cookie.
     return new NextResponse(null, {
       status: 204,
