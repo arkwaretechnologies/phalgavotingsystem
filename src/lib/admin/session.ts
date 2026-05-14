@@ -1,9 +1,25 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
 const COOKIE_NAME = "phalga_admin_session";
+const COOKIE_PATH = "/";
+
+/** Pull a name=value pair from a raw `Cookie` header (fallback when `cookies().get` misses in some proxies). */
+function tokenFromRawCookieHeader(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  for (const segment of cookieHeader.split(";")) {
+    const part = segment.trim();
+    const eq = part.indexOf("=");
+    if (eq <= 0) continue;
+    const k = part.slice(0, eq).trim();
+    if (k !== COOKIE_NAME) continue;
+    const v = part.slice(eq + 1).trim();
+    return v || null;
+  }
+  return null;
+}
 
 /**
  * - `is_full_access`: role grants every admin page; runtime ignores `role_pages`.
@@ -18,8 +34,11 @@ export type AdminSessionPayload = {
 };
 
 function getSecret() {
-  const secret = process.env.JWT_SECRET?.trim();
-  if (!secret) throw new Error("Missing env: JWT_SECRET");
+  const raw = process.env.JWT_SECRET ?? process.env.ADMIN_SESSION_SECRET;
+  const secret = raw?.trim();
+  if (!secret) {
+    throw new Error("Missing env: JWT_SECRET (or legacy ADMIN_SESSION_SECRET)");
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -38,14 +57,14 @@ export async function setAdminSession(payload: AdminSessionPayload) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: "/",
+    path: COOKIE_PATH,
     maxAge: 60 * 60 * 12,
   });
 }
 
 export async function clearAdminSession() {
   const store = await cookies();
-  store.delete(COOKIE_NAME);
+  store.delete({ name: COOKIE_NAME, path: COOKIE_PATH });
 }
 
 function parseSessionPayload(payload: Record<string, unknown>): AdminSessionPayload | null {
@@ -73,7 +92,11 @@ function parseSessionPayload(payload: Record<string, unknown>): AdminSessionPayl
  */
 export async function getAdminSession(): Promise<AdminSessionPayload | null> {
   const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
+  let token = store.get(COOKIE_NAME)?.value ?? null;
+  if (!token) {
+    const rawCookie = (await headers()).get("cookie");
+    token = tokenFromRawCookieHeader(rawCookie);
+  }
   if (!token) return null;
 
   try {
