@@ -13,9 +13,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
-
   const path = await getPathnameFromHeaders();
+  if (!session) {
+    // eslint-disable-next-line no-console
+    console.warn(`[admin-layout] redirecting to login (path=${path ?? "?"})`);
+    redirect("/admin/login");
+  }
+
   if (path) {
     await assertAdminPathAccessForSession(session, path);
   }

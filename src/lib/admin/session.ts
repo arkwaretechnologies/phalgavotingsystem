@@ -60,6 +60,10 @@ export async function setAdminSession(payload: AdminSessionPayload) {
     path: COOKIE_PATH,
     maxAge: 60 * 60 * 12,
   });
+  // eslint-disable-next-line no-console
+  console.info(
+    `[admin-session] set cookie user=${payload.admin_user_id} role=${payload.role_slug} token_len=${token.length}`,
+  );
 }
 
 export async function clearAdminSession() {
@@ -93,17 +97,36 @@ function parseSessionPayload(payload: Record<string, unknown>): AdminSessionPayl
 export async function getAdminSession(): Promise<AdminSessionPayload | null> {
   const store = await cookies();
   let token = store.get(COOKIE_NAME)?.value ?? null;
+  let source: "store" | "raw" | "missing" = token ? "store" : "missing";
   if (!token) {
     const rawCookie = (await headers()).get("cookie");
     token = tokenFromRawCookieHeader(rawCookie);
+    if (token) source = "raw";
   }
-  if (!token) return null;
+  if (!token) {
+    // eslint-disable-next-line no-console
+    console.warn("[admin-session] no token in request");
+    return null;
+  }
 
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    const p = payload as Record<string, unknown>;
-    return parseSessionPayload(p);
-  } catch {
+    const parsed = parseSessionPayload(payload as Record<string, unknown>);
+    if (!parsed) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[admin-session] verified but payload invalid (source=${source}) keys=${Object.keys(payload).join(",")}`,
+      );
+      return null;
+    }
+    return parsed;
+  } catch (err) {
+    const code = (err as { code?: string; name?: string }).code
+      ?? (err as { name?: string }).name
+      ?? "unknown";
+    const msg = (err as Error).message ?? "";
+    // eslint-disable-next-line no-console
+    console.warn(`[admin-session] jwtVerify failed source=${source} code=${code} msg=${msg}`);
     return null;
   }
 }
