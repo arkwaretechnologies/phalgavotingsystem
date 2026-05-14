@@ -53,9 +53,12 @@ export async function GET(req: Request) {
   // `phalga_debug_secure`, which is proven to reach the browser through Railway.
   await writeAdminSessionCookie(sessionToken);
 
+  // Diagnostic: log the host context so we can spot a domain mismatch between
+  // where the cookie was set vs. where the meta-refresh navigates the browser.
+  // Remove once the production session issue is fully resolved.
   // eslint-disable-next-line no-console
   console.info(
-    `[admin-session] GET set cookie user=${session.admin_user_id} role=${session.role_slug} token_len=${sessionToken.length}`,
+    `[admin-session] GET set cookie user=${session.admin_user_id} role=${session.role_slug} token_len=${sessionToken.length} host=${req.headers.get("host") ?? "?"} xfh=${req.headers.get("x-forwarded-host") ?? "?"} xfp=${req.headers.get("x-forwarded-proto") ?? "?"} target=${origin}/admin?ok=login`,
   );
   return buildHtmlRedirect(`${origin}/admin?ok=login`);
 }

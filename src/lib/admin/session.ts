@@ -91,6 +91,10 @@ export async function writeAdminSessionCookie(token: string) {
     path: COOKIE_PATH,
     maxAge: SESSION_TTL_SECONDS,
   });
+  // Diagnostic: should fire only at /admin/login/complete. Any other call site
+  // would indicate a stray re-write that could clobber the cookie attributes.
+  // eslint-disable-next-line no-console
+  console.info(`[admin-session] writeAdminSessionCookie called (token_len=${token.length})`);
 }
 
 /** Sign a session payload and persist it as a cookie in one step. */
@@ -104,6 +108,11 @@ export async function setAdminSession(payload: AdminSessionPayload) {
 }
 
 export async function clearAdminSession() {
+  // Diagnostic: clearAdminSession should fire ONLY from /admin/logout. If we
+  // ever see this log without a user-initiated logout, something is wiping the
+  // session unexpectedly. The stack trace pinpoints the call site.
+  // eslint-disable-next-line no-console
+  console.warn("[admin-session] clearAdminSession called", new Error("trace").stack);
   const store = await cookies();
   store.delete({ name: COOKIE_NAME, path: COOKIE_PATH });
 }

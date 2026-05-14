@@ -496,6 +496,7 @@ export default function AdminShell({
             <div className="mt-4 shrink-0 space-y-1.5 border-t border-white/15 pt-4">
               <Link
                 href="/admin/logout"
+                prefetch={false}
                 onClick={() => setIsMobileNavOpen(false)}
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition duration-200 hover:translate-x-0.5 hover:bg-[var(--ph-flag-red)]/20 hover:text-white"
               >
