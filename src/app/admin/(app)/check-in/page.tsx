@@ -5,6 +5,8 @@ import { UrlToasts } from "@/app/_components/UrlToasts";
 import { ThermalReceiptPrintActions } from "./thermal-receipt-print";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 type VoterRow = {
   id: string;
   full_name: string;

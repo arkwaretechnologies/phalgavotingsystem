@@ -1,17 +1,15 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-
-const SESSION_COOKIE = "phalga_voting_session";
+import { clearVotingSessionCookie, getVotingSessionIdFromCookie } from "@/lib/voting/session-cookie";
 
 /**
  * Called when the voter leaves /vote without submitting (tab close, refresh, navigation).
+ * Lives under `/vote/*` so the scoped `phalga_voting_session` cookie (path `/vote`) is sent.
  * Reverts `voting` → `queued`, frees the tablet if any, and clears the session cookie.
  * No-op if session is already `voted` or not in `voting`.
  */
 export async function POST() {
-  const jar = await cookies();
-  const sessionId = jar.get(SESSION_COOKIE)?.value;
+  const sessionId = await getVotingSessionIdFromCookie();
 
   if (!sessionId || sessionId === "dev-bypass") {
     return new NextResponse(null, { status: 204 });
@@ -26,7 +24,7 @@ export async function POST() {
     .maybeSingle();
 
   if (selErr || !row || row.status !== "voting") {
-    jar.delete(SESSION_COOKIE);
+    await clearVotingSessionCookie();
     return new NextResponse(null, { status: 204 });
   }
 
@@ -60,7 +58,7 @@ export async function POST() {
       .eq("id", tabletId);
   }
 
-  jar.delete(SESSION_COOKIE);
+  await clearVotingSessionCookie();
 
   return NextResponse.json({ ok: true });
 }

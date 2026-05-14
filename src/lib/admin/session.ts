@@ -18,7 +18,7 @@ export type AdminSessionPayload = {
 };
 
 function getSecret() {
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = process.env.ADMIN_SESSION_SECRET?.trim();
   if (!secret) throw new Error("Missing env: ADMIN_SESSION_SECRET");
   return new TextEncoder().encode(secret);
 }

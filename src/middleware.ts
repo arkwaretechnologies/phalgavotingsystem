@@ -10,9 +10,15 @@ export async function middleware(request: NextRequest) {
   // cause unnecessary Set-Cookie churn; @supabase/ssr notes that can surface as random
   // logouts behind reverse proxies. Skip Supabase entirely for `/admin`.
   if (pathname.startsWith("/admin")) {
-    requestHeaders.set("x-phalga-path", pathname);
+    // Rebuild headers with append so multi-value / proxy headers behave like the raw request.
+    // Some stacks have been sensitive to `new Headers(request.headers)` + `set` for custom keys.
+    const forwarded = new Headers();
+    request.headers.forEach((value, key) => {
+      forwarded.append(key, value);
+    });
+    forwarded.set("x-phalga-path", pathname);
     return NextResponse.next({
-      request: { headers: requestHeaders },
+      request: { headers: forwarded },
     });
   }
 

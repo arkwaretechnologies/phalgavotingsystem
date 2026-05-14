@@ -41,7 +41,7 @@ export function useVoteLeaveGuard() {
       } catch {
         /* sessionStorage unavailable */
       }
-      void fetch("/api/vote/abandon-session", {
+      void fetch("/vote/abandon-session", {
         method: "POST",
         credentials: "include",
         keepalive: true,
