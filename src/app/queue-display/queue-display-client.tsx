@@ -108,8 +108,8 @@ function speakNowServing(n: number) {
 }
 
 function formatTabletLine(t: TabletRow) {
-  const name = (t.label ?? "").trim() || `Tablet ${t.id}`;
-  return `Tablet ${t.id} (${name})`;
+  const label = (t.label ?? "").trim();
+  return label || `Tablet ${t.id}`;
 }
 
 function tabletLineForId(tablets: TabletRow[], tabletId: number | null): string | null {
