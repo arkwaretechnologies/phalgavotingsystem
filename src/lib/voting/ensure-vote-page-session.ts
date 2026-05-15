@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getVotingSessionIdFromCookie } from "@/lib/voting/session-cookie";
 import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
-import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
+import { isVotingSessionPastMaxDuration } from "@/lib/voting/voting-session-duration";
+import { getBallotSubmissionEligibility } from "@/lib/voting/voting-ballot-eligibility";
 
 /**
  * `/vote` is only for an active `voting` session. Otherwise send the voter to login
@@ -13,10 +14,13 @@ import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-wind
 export async function ensureVotingSessionInProgress(): Promise<void> {
   if (isVoteLoginBypassed()) return;
 
-  const window = await getVotingWindow();
-  const status = getVotingWindowStatus(window);
-  if (status.kind !== "open") {
-    redirect(`/vote/login?error=closed&msg=${encodeURIComponent("Voting is currently closed.")}`);
+  const el = await getBallotSubmissionEligibility();
+  if (!el.ok) {
+    const params = new URLSearchParams({
+      reason: el.kind === "closed" ? "closed" : "unknown",
+      msg: el.message,
+    });
+    redirect(`/vote/session-exit?${params.toString()}`);
   }
 
   const sessionId = await getVotingSessionIdFromCookie();
@@ -25,11 +29,15 @@ export async function ensureVotingSessionInProgress(): Promise<void> {
   const supabase = createSupabaseServiceRoleClient();
   const { data, error } = await supabase
     .from("voting_sessions")
-    .select("status")
+    .select("status, session_start")
     .eq("id", sessionId)
     .maybeSingle();
 
   if (error || !data || data.status !== "voting") {
-    redirect("/vote/login");
+    redirect("/vote/session-exit?reason=invalid");
+  }
+
+  if (isVotingSessionPastMaxDuration(data.session_start as string | null)) {
+    redirect("/vote/session-exit?reason=expired");
   }
 }

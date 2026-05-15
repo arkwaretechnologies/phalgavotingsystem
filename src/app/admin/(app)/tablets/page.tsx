@@ -17,8 +17,7 @@ export default async function AdminTabletsPage({
   const [{ data: tablets, error }, { data: pairings, error: pErr }] = await Promise.all([
     supabase
       .from("tablets")
-      .select("id, label, status, current_session, last_active_at, created_at")
-      .order("id", { ascending: true }),
+      .select("id, label, status, current_session, last_active_at, created_at"),
     supabase
       .from("tablet_pairings")
       .select("tablet_id, claimed_by_device_id, claimed_at, revoked_at")
@@ -42,7 +41,11 @@ export default async function AdminTabletsPage({
     }
   }
 
-  const selected = activeTabletId ? (tablets ?? []).find((t) => t.id === activeTabletId) ?? null : null;
+  const labelAsc = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" }).compare;
+  const tabletsSorted = [...(tablets ?? [])].sort((a, b) => {
+    const byLabel = labelAsc(String(a.label ?? ""), String(b.label ?? ""));
+    return byLabel !== 0 ? byLabel : Number(a.id) - Number(b.id);
+  });
 
   return (
     <div className="space-y-6">
@@ -81,7 +84,7 @@ export default async function AdminTabletsPage({
               </tr>
             </thead>
             <tbody>
-              {(tablets ?? []).map((t) => (
+              {tabletsSorted.map((t) => (
                 <tr key={t.id}>
                   <td>{t.label}</td>
                   <td>{pairedByTabletId.has(t.id) ? t.status : "offline"}</td>
@@ -96,7 +99,7 @@ export default async function AdminTabletsPage({
                   </td>
                 </tr>
               ))}
-              {(tablets ?? []).length === 0 ? (
+              {tabletsSorted.length === 0 ? (
                 <tr>
                   <td className="admin-table-empty" colSpan={4}>
                     No tablets found.

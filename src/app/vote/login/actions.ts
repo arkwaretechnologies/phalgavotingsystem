@@ -4,7 +4,14 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { setVotingSessionCookie } from "@/lib/voting/session-cookie";
 import { toPublicMessage } from "@/lib/errors/public-message";
-import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
+import { getBallotSubmissionEligibility } from "@/lib/voting/voting-ballot-eligibility";
+import {
+  isVotingSessionStatusVoted,
+  isVotingSessionStatusVoting,
+  normalizeVotingSessionStatus,
+} from "@/lib/voting/normalize-voting-session-status";
+
+const INVALID_LOGIN_MSG = encodeURIComponent("Invalid queue number or 6-digit ballot code.");
 
 export async function loginWithQueueAndToken(formData: FormData) {
   const queueNumberRaw = String(formData.get("queue_number") ?? "").trim();
@@ -14,25 +21,25 @@ export async function loginWithQueueAndToken(formData: FormData) {
 
   const queueNumber = Number(queueNumberRaw);
   if (!Number.isFinite(queueNumber) || queueNumber <= 0) {
-    redirect("/vote/login?error=invalid");
+    redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
   }
   if (!/^\d{6}$/.test(token)) {
-    redirect("/vote/login?error=invalid");
+    redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
   }
   if (tabletId !== null && (!Number.isFinite(tabletId) || tabletId <= 0)) {
-    redirect("/vote/login?error=invalid");
+    redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
   }
 
   const supabase = createSupabaseServiceRoleClient();
   const votedVia = tabletId ? "tablet" : "phone";
 
   try {
-    const window = await getVotingWindow();
-    const wStatus = getVotingWindowStatus(window);
-    if (wStatus.kind !== "open") {
-      redirect(
-        `/vote/login?error=closed&msg=${encodeURIComponent("Voting is currently closed.")}`,
-      );
+    const el = await getBallotSubmissionEligibility();
+    if (!el.ok) {
+      if (el.kind === "closed") {
+        redirect(`/vote/login?error=closed&msg=${encodeURIComponent(el.message)}`);
+      }
+      redirect(`/vote/login?error=unknown&msg=${encodeURIComponent(el.message)}`);
     }
 
     // Prefer RPC if installed; fall back to direct update if not present.
@@ -68,14 +75,24 @@ export async function loginWithQueueAndToken(formData: FormData) {
         .eq("token", token)
         .maybeSingle();
       if (sErr) throw sErr;
-      if (!session?.id) redirect("/vote/login?error=invalid");
-      if (session.status !== "queued") {
-        if (session.status === "voted") {
+      if (!session?.id) redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
+      const rowStatus = normalizeVotingSessionStatus(session.status);
+      if (rowStatus !== "queued") {
+        if (isVotingSessionStatusVoted(session.status)) {
           redirect(
             `/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`,
           );
         }
-        redirect("/vote/login?error=notqueued");
+        if (isVotingSessionStatusVoting(session.status)) {
+          redirect(
+            `/vote/login?error=voting&msg=${encodeURIComponent("Voter already voting.")}`,
+          );
+        }
+        redirect(
+          `/vote/login?error=notqueued&msg=${encodeURIComponent(
+            "This voter is not waiting in the queue. Ask Comelec staff if you need a new queue number.",
+          )}`,
+        );
       }
 
       const { error: upErr } = await supabase
@@ -103,10 +120,42 @@ export async function loginWithQueueAndToken(formData: FormData) {
 
       sessionId = String(session.id);
     } else if (error) {
-      // Normalize common cases.
+      // `claim_session` error text varies by migration; read the row so we always
+      // match the real `voting_sessions.status` (also handles enum casing).
+      const { data: statusProbe } = await supabase
+        .from("voting_sessions")
+        .select("status")
+        .eq("queue_number", queueNumber)
+        .eq("token", token)
+        .maybeSingle();
+      if (isVotingSessionStatusVoting(statusProbe?.status)) {
+        redirect(
+          `/vote/login?error=voting&msg=${encodeURIComponent("Voter already voting.")}`,
+        );
+      }
+      if (isVotingSessionStatusVoted(statusProbe?.status)) {
+        redirect(`/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`);
+      }
+
+      // Normalize common cases from RPC / Postgres messages.
       const msg = String(error.message ?? "").toLowerCase();
-      if (msg.includes("invalid") || msg.includes("not found") || msg.includes("queue") || msg.includes("token")) {
-        redirect("/vote/login?error=invalid");
+      // "not in queued status" etc. contains the substring "queue" — handle these
+      // before any broad `queue` matcher so we don't mis-route to `error=invalid`.
+      if (
+        msg.includes("already voting")
+        || msg.includes("already in voting")
+        || msg.includes("session is voting")
+        || msg.includes("not queued")
+        || msg.includes("not_queued")
+        || msg.includes("not in queued")
+        || (msg.includes("queued") && msg.includes("voting"))
+      ) {
+        redirect(
+          `/vote/login?error=voting&msg=${encodeURIComponent("Voter already voting.")}`,
+        );
+      }
+      if (msg.includes("invalid") || msg.includes("not found") || msg.includes("token")) {
+        redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
       }
       if (msg.includes("voted")) {
         redirect(`/vote/login?error=used&msg=${encodeURIComponent("Voter already casted vote.")}`);
@@ -118,7 +167,7 @@ export async function loginWithQueueAndToken(formData: FormData) {
       throw error;
     }
 
-    if (!sessionId) redirect("/vote/login?error=invalid");
+    if (!sessionId) redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
 
     const { data: settingsRow } = await supabase
       .from("app_settings")

@@ -74,7 +74,9 @@ export function buildCanvassReportModel(payload: AdminResultsPayload): CanvassRe
   const geoLabel = (geoId: number | null) => {
     if (geoId == null) return "— Unassigned";
     const g = payload.geoGroups.find((x) => x.id === geoId);
-    return g ? `${g.code} — ${g.name}` : `Geo #${geoId}`;
+    if (!g) return `Geo #${geoId}`;
+    const name = String(g.name ?? "").trim();
+    return name.length > 0 ? name : `Geo #${geoId}`;
   };
 
   const byGeo = new Map<number | null, AdminResultsTallyRow[]>();

@@ -7,6 +7,17 @@ import { getBoundTabletId } from "@/lib/tablet/device";
 import { useSearchParams } from "next/navigation";
 import { useUrlToast } from "@/lib/toast/url-toast";
 
+/** Shown when `?error=<code>` has no `msg` (legacy URLs, proxies, or stripped query). */
+const VOTE_LOGIN_URL_TOAST_ERROR_MESSAGES: Record<string, string> = {
+  notqueued:
+    "This voter is not waiting in the queue. Ask Comelec staff if you need a new queue number.",
+  voting: "Voter already voting.",
+  invalid: "Invalid queue number or 6-digit ballot code.",
+  closed: "Voting is currently closed.",
+  used: "Voter already casted vote.",
+  unknown: "Unable to sign in right now. Please try again.",
+};
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -43,7 +54,12 @@ export function VoteLoginForm() {
 
   void err;
   void msg;
-  useUrlToast({ keys: { message: "msg" }, clearParams: ["error", "msg"], duration: 5000 });
+  useUrlToast({
+    keys: { message: "msg" },
+    clearParams: ["error", "msg"],
+    duration: 5000,
+    errorMessages: VOTE_LOGIN_URL_TOAST_ERROR_MESSAGES,
+  });
 
   useEffect(() => {
     setTabletId(getBoundTabletId());

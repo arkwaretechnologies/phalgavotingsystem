@@ -17,6 +17,11 @@ export function useUrlToast(options?: {
   clearParams?: string[];
   /** How long the toast stays visible (ms). Overrides global Toaster duration for this toast only. */
   duration?: number;
+  /**
+   * When `msg` is absent but `error` is a short code (e.g. `notqueued`), map the code
+   * to human copy so the toast never shows raw query values.
+   */
+  errorMessages?: Record<string, string>;
 }) {
   const sp = useSearchParams();
   const router = useRouter();
@@ -33,7 +38,11 @@ export function useUrlToast(options?: {
     const kindRaw = safeText(sp.get(kindKey));
     const errorParam = safeText(sp.get("error"));
     const msgParam = safeText(sp.get(messageKey));
-    const msgRaw = msgParam ?? errorParam;
+    const fallbackFromErrorCode =
+      !msgParam && errorParam && options?.errorMessages?.[errorParam]
+        ? options.errorMessages[errorParam]
+        : null;
+    const msgRaw = msgParam ?? fallbackFromErrorCode ?? errorParam;
 
     if (!kindRaw && !msgRaw) return;
 
@@ -75,6 +84,17 @@ export function useUrlToast(options?: {
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dedupeKey, sp, pathname, router, kindKey, messageKey, defaultKind, options?.clearParams, options?.duration]);
+  }, [
+    dedupeKey,
+    sp,
+    pathname,
+    router,
+    kindKey,
+    messageKey,
+    defaultKind,
+    options?.clearParams,
+    options?.duration,
+    options?.errorMessages,
+  ]);
 }
 

@@ -3,6 +3,7 @@ import { isVoteLoginBypassed } from "@/lib/voting/dev-bypass";
 import { getVotingActiveConference } from "@/lib/voting/vote-catalog";
 import { ConferenceBanner } from "../conference-banner";
 import { VoteLoginForm } from "./vote-login-form";
+import { VoteSessionExpiredModal } from "./vote-session-expired-modal";
 import { Suspense } from "react";
 
 export default async function VoteLoginPage() {
@@ -77,6 +78,10 @@ export default async function VoteLoginPage() {
           PhALGA Automated Online Voting System
         </p>
       </div>
+
+      <Suspense fallback={null}>
+        <VoteSessionExpiredModal />
+      </Suspense>
 
       <div aria-hidden className="ph-flag-strip-bottom" />
     </main>

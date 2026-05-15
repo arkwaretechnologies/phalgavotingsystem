@@ -150,7 +150,7 @@ export default async function AdminCheckInPage({
         <h1 className="text-xl font-semibold">Voter Check-in</h1>
         <p className="mt-2 text-sm text-neutral-600">
           Search the imported voter list, verify identity on-site, then generate a queue number +
-          6-digit token (QR).
+          6-digit ballot code (QR).
         </p>
       </div>
 
@@ -187,7 +187,7 @@ export default async function AdminCheckInPage({
                 <div className="font-mono text-lg">{(checkedIn ? checkedQueue : showQueue) || "—"}</div>
               </div>
               <div>
-                <div className="text-xs text-neutral-600">Token</div>
+                <div className="text-xs text-neutral-600">Ballot Code</div>
                 <div className="font-mono text-lg tracking-widest">{(checkedIn ? checkedToken : showToken) || "—"}</div>
               </div>
             </div>

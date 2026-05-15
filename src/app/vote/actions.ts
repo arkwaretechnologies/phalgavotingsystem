@@ -8,7 +8,9 @@ import {
 } from "@/lib/voting/session-cookie";
 import { sendVoterReceiptEmail } from "@/lib/email/vote-receipt";
 import { getVotePageCatalog } from "@/lib/voting/vote-catalog";
-import { getVotingWindow, getVotingWindowStatus } from "@/lib/voting/voting-window";
+import { getBallotSubmissionEligibility } from "@/lib/voting/voting-ballot-eligibility";
+import { isVotingSessionPastMaxDuration } from "@/lib/voting/voting-session-duration";
+import { revertVotingSessionToQueuedIfVoting } from "@/lib/voting/revert-voting-session-to-queued";
 
 export type BallotChoicePayload = {
   geo_group_id: number;
@@ -28,6 +30,22 @@ export async function confirmBallotSubmission(
     };
   }
 
+  const supabase = createSupabaseServiceRoleClient();
+  const { data: sessGate, error: sessGateErr } = await supabase
+    .from("voting_sessions")
+    .select("status, session_start")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (sessGateErr || !sessGate || sessGate.status !== "voting") {
+    await clearVotingSessionCookie();
+    redirect("/vote/login");
+  }
+  if (isVotingSessionPastMaxDuration(sessGate.session_start as string | null)) {
+    await revertVotingSessionToQueuedIfVoting(sessionId);
+    await clearVotingSessionCookie();
+    redirect("/vote/login?session_expired=1");
+  }
+
   const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
   const tabletId = tabletIdRaw ? Number(tabletIdRaw) : null;
   const isTabletFlow = tabletId !== null && Number.isFinite(tabletId) && tabletId > 0;
@@ -41,17 +59,10 @@ export async function confirmBallotSubmission(
     return { error: "Invalid ballot data. Go back and try again." };
   }
 
-  const supabase = createSupabaseServiceRoleClient();
-
-  // Do not accept submissions outside the voting window.
-  try {
-    const window = await getVotingWindow();
-    const status = getVotingWindowStatus(window);
-    if (status.kind !== "open") {
-      return { error: "Voting is currently closed." };
-    }
-  } catch {
-    return { error: "Unable to validate voting window right now. Please try again." };
+  // Do not accept submissions when election is closed in app_settings or outside the voting window.
+  const el = await getBallotSubmissionEligibility();
+  if (!el.ok) {
+    return { error: el.message };
   }
 
   // Server-side enforcement: exactly 3 picks per geo group that has nominees.
