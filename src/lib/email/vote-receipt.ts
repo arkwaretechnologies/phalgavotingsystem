@@ -75,13 +75,13 @@ function renderVoteReceiptHtml(opts: {
       const ai = ORDER[aCode] ?? Number.POSITIVE_INFINITY;
       const bi = ORDER[bCode] ?? Number.POSITIVE_INFINITY;
       if (ai !== bi) return ai - bi;
-      // Fallback: stable-ish ordering
-      const aLabel = `${aCode || a.geo_group_id} — ${a.name ?? ""}`.trim();
-      const bLabel = `${bCode || b.geo_group_id} — ${b.name ?? ""}`.trim();
-      return aLabel.localeCompare(bLabel);
+      const aName = (a.name ?? "").trim();
+      const bName = (b.name ?? "").trim();
+      if (aName !== bName) return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+      return a.geo_group_id - b.geo_group_id;
     })
     .map((sec) => {
-      const label = `${sec.code ?? sec.geo_group_id} — ${sec.name ?? ""}`.trim();
+      const label = (sec.name ?? "").trim() || `Geo group ${sec.geo_group_id}`;
       const items = sec.rows
         .map((r) => `<li>${escapeHtml(r.candidate_full_name ?? "—")}</li>`)
         .join("");
