@@ -345,6 +345,44 @@ body {
   animation: vote-login-shimmer 8s ease infinite;
 }
 
+/* Voting routes: keep light, high-contrast UI when the device prefers dark mode */
+.vote-surface {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  .vote-surface {
+    background-color: #ffffff;
+    color: #171717;
+  }
+
+  .vote-surface input:not([type="hidden"]),
+  .vote-surface textarea,
+  .vote-surface select {
+    color-scheme: light;
+    background-color: #ffffff !important;
+    color: #171717 !important;
+    border-color: #d4d4d4 !important;
+  }
+
+  .vote-surface input::placeholder,
+  .vote-surface textarea::placeholder {
+    color: #737373 !important;
+  }
+
+  .vote-surface .vote-login-card {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.85) !important;
+  }
+}
+
+.vote-surface .vote-thanks {
+  color: #ffffff;
+  background-color: var(--ph-flag-blue-deep);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vote-login-blob,
   .vote-login-shimmer,

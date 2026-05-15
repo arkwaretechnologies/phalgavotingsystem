@@ -132,7 +132,7 @@ function FlyToSlotLayer({
   return createPortal(
     <div
       ref={elRef}
-      className="pointer-events-none fixed left-0 top-0 z-[100] origin-top-left overflow-hidden rounded-xl border-2 border-white bg-white shadow-2xl dark:border-slate-700/80 dark:bg-slate-900 dark:shadow-black/30"
+      className="pointer-events-none fixed left-0 top-0 z-[100] origin-top-left overflow-hidden rounded-xl border-2 border-white bg-white shadow-2xl"
       style={{ willChange: "transform" }}
     >
       {payload.photoUrl ? (
@@ -142,7 +142,7 @@ function FlyToSlotLayer({
           className="size-full object-cover object-top"
         />
       ) : (
-        <div className="flex size-full items-center justify-center bg-slate-100 text-2xl font-medium text-neutral-600 dark:bg-slate-800 dark:text-slate-400">
+        <div className="flex size-full items-center justify-center bg-slate-100 text-2xl font-medium text-neutral-600">
           {payload.name
             .split(/\s+/)
             .map((s) => s[0])
@@ -160,7 +160,7 @@ function PoolDragFloat({ drag, candidate }: { drag: PoolDragState; candidate: Ca
   const { x, y, w, h, offX, offY } = drag;
   return createPortal(
     <div
-      className="pointer-events-none fixed z-[90] origin-top-left overflow-hidden rounded-2xl border-2 border-slate-200/90 bg-slate-50/95 shadow-2xl dark:border-white/15 dark:bg-slate-900/95"
+      className="pointer-events-none fixed z-[90] origin-top-left overflow-hidden rounded-2xl border-2 border-slate-200/90 bg-slate-50/95 shadow-2xl"
       style={{
         left: x - offX,
         top: y - offY,
@@ -170,7 +170,7 @@ function PoolDragFloat({ drag, candidate }: { drag: PoolDragState; candidate: Ca
       }}
     >
       <div className="flex h-full flex-col">
-        <div className="pointer-events-none min-h-0 flex-1 overflow-hidden bg-linear-to-b from-slate-100 to-slate-200/50 dark:from-slate-800 dark:to-slate-900/80">
+        <div className="pointer-events-none min-h-0 flex-1 overflow-hidden bg-linear-to-b from-slate-100 to-slate-200/50">
           {candidate.photo_url ? (
             <img
               src={candidate.photo_url}
@@ -188,7 +188,7 @@ function PoolDragFloat({ drag, candidate }: { drag: PoolDragState; candidate: Ca
             </div>
           )}
         </div>
-        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-2 text-center text-sm font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
+        <p className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 py-2 text-center text-sm font-semibold leading-tight text-neutral-900">
           {candidate.full_name}
         </p>
       </div>
@@ -570,7 +570,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
     return (
       <section
         id={`geo-${group.id}`}
-        className="scroll-mt-4 rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/40"
+        className="scroll-mt-4 rounded-2xl border border-slate-200/90 bg-white shadow-sm"
       >
         <GeoHeader
           code={code}
@@ -581,8 +581,8 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
           filledCount={0}
         />
         <div className="p-5">
-          <div className="flex min-h-[100px] items-center justify-center rounded-xl border-2 border-dashed border-slate-200/90 bg-slate-50/50 text-center dark:border-white/10 dark:bg-white/[0.03]">
-            <p className="px-4 text-sm text-neutral-600 dark:text-neutral-600">
+          <div className="flex min-h-[100px] items-center justify-center rounded-xl border-2 border-dashed border-slate-200/90 bg-slate-50/50 text-center">
+            <p className="px-4 text-sm text-neutral-600">
               No candidates in this region for the active conference.
             </p>
           </div>
@@ -594,7 +594,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
   return (
     <section
       id={`geo-${group.id}`}
-      className="scroll-mt-4 rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/40"
+      className="scroll-mt-4 rounded-2xl border border-slate-200/90 bg-white shadow-sm"
     >
       <GeoHeader
         code={code}
@@ -606,14 +606,14 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
       />
 
       <div className="space-y-5 p-5">
-        <p className="text-xs text-neutral-600 dark:text-slate-400">
-          <span className="font-medium text-neutral-600 dark:text-slate-300">Drag</span> or{" "}
-          <span className="font-medium text-neutral-600 dark:text-slate-300">tap</span> a card into a
+        <p className="text-xs text-neutral-600">
+          <span className="font-medium text-neutral-600">Drag</span> or{" "}
+          <span className="font-medium text-neutral-600">tap</span> a card into a
           slot. Use × or the strip below to remove.
         </p>
 
         {poolCandidates.length === 0 && !flying && !poolDrag ? (
-          <p className="text-center text-sm text-neutral-600 dark:text-neutral-600">
+          <p className="text-center text-sm text-neutral-600">
             All choices are in your slots below, or add more by clearing a slot.
           </p>
         ) : null}
@@ -656,13 +656,13 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
               >
                 <div
                   className={[
-                    "overflow-hidden rounded-2xl border-2 border-slate-200/90 bg-slate-50/80 shadow-sm transition hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20",
+                    "overflow-hidden rounded-2xl border-2 border-slate-200/90 bg-slate-50/80 shadow-sm transition hover:border-slate-300",
                     isPlacing ? "opacity-0" : "opacity-100",
                     isPlacing ? "" : "active:scale-[0.99] sm:cursor-grab",
                   ].join(" ")}
                 >
                   <div
-                    className="pointer-events-none aspect-[4/3] w-full overflow-hidden bg-linear-to-b from-slate-100 to-slate-200/60 dark:from-slate-800 dark:to-slate-900/80"
+                    className="pointer-events-none aspect-[4/3] w-full overflow-hidden bg-linear-to-b from-slate-100 to-slate-200/60"
                     ref={(el) => {
                       if (el) cardImageRefs.current.set(c.id, el);
                       else cardImageRefs.current.delete(c.id);
@@ -688,7 +688,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                       </div>
                     )}
                   </div>
-                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-3 text-center text-sm font-semibold leading-tight text-neutral-900 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100">
+                  <p className="border-t border-slate-200/80 bg-white/90 px-2 py-3 text-center text-sm font-semibold leading-tight text-neutral-900">
                     {c.full_name}
                   </p>
                 </div>
@@ -699,7 +699,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
         </ul>
 
         <div>
-          <p className="mb-2 text-xs font-medium text-neutral-600 dark:text-slate-400">
+          <p className="mb-2 text-xs font-medium text-neutral-600">
             Your choices ({filledCount} / {maxSlots})
           </p>
           <ol className="m-0 flex list-none flex-wrap gap-2 p-0 sm:gap-3" aria-label="Vote slots">
@@ -716,8 +716,8 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                   className={[
                     "relative min-h-[128px] rounded-2xl border-2 border-dashed transition",
                     id
-                      ? "border-slate-300/90 bg-slate-50/90 dark:border-white/15 dark:bg-white/[0.04]"
-                      : "border-slate-200/90 bg-slate-50/40 dark:border-white/10 dark:bg-white/[0.02]",
+                      ? "border-slate-300/90 bg-slate-50/90"
+                      : "border-slate-200/90 bg-slate-50/40",
                   ].join(" ")}
                 >
                   {id && byId[id] ? (
@@ -729,7 +729,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                           clearSlot(i);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="absolute right-1.5 top-1.5 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-sm leading-none text-neutral-600 shadow-sm backdrop-blur-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 active:scale-95 dark:border-white/15 dark:bg-slate-800/95 dark:text-slate-300 dark:hover:border-red-500/50 dark:hover:bg-red-950/50 dark:hover:text-red-300"
+                        className="absolute right-1.5 top-1.5 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-sm leading-none text-neutral-600 shadow-sm backdrop-blur-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 active:scale-95"
                         aria-label={`Remove ${byId[id].full_name} from this choice slot`}
                       >
                         <span aria-hidden className="pb-px text-[15px] font-light">
@@ -746,7 +746,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                         aria-label={`${byId[id].full_name} in choice slot ${i + 1}. Drag to another slot, or use remove.`}
                       >
                         <div className="flex flex-col items-stretch overflow-hidden rounded-xl p-1">
-                          <div className="pointer-events-none aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-200/80 dark:bg-slate-800">
+                          <div className="pointer-events-none aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-200/80">
                             {byId[id].photo_url ? (
                               <img
                                 src={byId[id].photo_url!}
@@ -759,7 +759,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                               </div>
                             )}
                           </div>
-                          <p className="mt-1 line-clamp-2 px-0.5 text-center text-xs font-medium leading-tight text-neutral-800 dark:text-slate-100">
+                          <p className="mt-1 line-clamp-2 px-0.5 text-center text-xs font-medium leading-tight text-neutral-800">
                             {byId[id].full_name}
                           </p>
                         </div>
@@ -767,7 +767,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
                     </>
                   ) : (
                     <div className="flex min-h-[128px] items-center justify-center p-1 text-center">
-                      <span className="text-2xl font-light text-slate-300 dark:text-neutral-600">
+                      <span className="text-2xl font-light text-slate-300">
                         {i + 1}
                       </span>
                     </div>
@@ -782,7 +782,7 @@ export function GeoGroupSection({ group, candidates, slots, onSlotsChange }: Pro
           ref={unselectStripRef}
           onDragOver={onDragOver}
           onDrop={onDropUnselect}
-          className="flex min-h-12 items-center justify-center rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 text-xs text-neutral-600 dark:border-white/10 dark:bg-slate-950/20 dark:text-neutral-600"
+          className="flex min-h-12 items-center justify-center rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 text-xs text-neutral-600"
         >
           <span>Drop a filled choice here to remove from your selection</span>
         </div>
@@ -818,20 +818,20 @@ function GeoHeader({
   filledCount?: number;
 }) {
   return (
-    <div className="border-b border-slate-100 px-5 py-4 dark:border-white/10">
+    <div className="border-b border-slate-100 px-5 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2 gap-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex min-w-[2.5rem] items-center justify-center rounded-lg bg-slate-900 px-2 py-1 text-xs font-bold tracking-wide text-white dark:bg-slate-100 dark:text-white"
+            className="inline-flex min-w-[2.5rem] items-center justify-center rounded-lg bg-slate-900 px-2 py-1 text-xs font-bold tracking-wide text-white"
             title="Region code"
           >
             {code}
           </span>
-          <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-slate-100">
+          <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
             {name}
           </h2>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-slate-400">
+        <p className="text-sm text-neutral-600">
           {maxSlots} {maxSlots === 1 ? "slot" : "slots"} · {nCandidates} total ·{" "}
           {poolAvailable != null ? `${poolAvailable} available` : ""}
           {poolAvailable != null && filledCount != null ? " · " : null}

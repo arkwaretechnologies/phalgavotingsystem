@@ -12,7 +12,7 @@ export default async function VoteLoginPage() {
   const { conference, activeConfcode } = await getVotingActiveConference();
 
   return (
-    <main className="relative isolate flex min-h-dvh flex-col overflow-x-hidden font-sans">
+    <main className="relative isolate flex min-h-dvh flex-col overflow-x-hidden font-sans text-neutral-900">
       {/* Ambient background — Philippine flag wash */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"
@@ -46,7 +46,7 @@ export default async function VoteLoginPage() {
         </div>
 
         <div
-          className="vote-login-fade-up vote-login-fade-up-delay-1 relative overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-8 shadow-2xl shadow-[var(--ph-flag-blue-deep)]/10 backdrop-blur-xl sm:p-10"
+          className="vote-login-card vote-login-fade-up vote-login-fade-up-delay-1 relative overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-8 shadow-2xl shadow-[var(--ph-flag-blue-deep)]/10 backdrop-blur-xl sm:p-10"
         >
           <div
             className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-linear-to-br from-[var(--ph-flag-blue)]/25 to-transparent blur-2xl"

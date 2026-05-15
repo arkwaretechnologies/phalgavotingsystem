@@ -29,9 +29,9 @@ function formatDateRange(from: string | null, to: string | null): string | null 
 export function ConferenceBanner({ conference, activeConfcode }: Props) {
   if (!activeConfcode) {
     return (
-      <div className="mb-8 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-100">
+      <div className="mb-8 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-900">
         No conference is set in <span className="font-mono">app_settings</span>. Add
-        <code className="mx-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs dark:bg-amber-900/60">
+        <code className="mx-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs">
           active_confcode
         </code>
         to show the correct candidates and title.
@@ -44,16 +44,16 @@ export function ConferenceBanner({ conference, activeConfcode }: Props) {
   const where = conference?.venue?.trim();
 
   return (
-    <div className="mb-8 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
-      <p className="text-xs font-medium uppercase tracking-wider text-neutral-600 dark:text-slate-400">
+    <div className="mb-8 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wider text-neutral-600">
         Conference
       </p>
-      <h1 className="mt-1 text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl dark:text-white">
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
         {title}
       </h1>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-slate-300">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600">
         {when ? <span>{when}</span> : null}
-        {where ? <span className="text-neutral-600 dark:text-slate-400">{where}</span> : null}
+        {where ? <span className="text-neutral-600">{where}</span> : null}
       </div>
     </div>
   );

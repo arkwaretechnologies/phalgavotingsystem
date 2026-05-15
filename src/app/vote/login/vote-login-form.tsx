@@ -73,7 +73,7 @@ export function VoteLoginForm() {
       {/* legacy inline error removed; toast driven by URL params */}
       <input type="hidden" name="tablet_id" value={tabletId ? String(tabletId) : ""} />
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-800" htmlFor="queue_number">
+        <label className="block text-sm font-medium text-neutral-900" htmlFor="queue_number">
           Queue number
         </label>
         <input
@@ -82,14 +82,14 @@ export function VoteLoginForm() {
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-neutral-900 shadow-sm transition-all duration-200 placeholder:text-neutral-400 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
+          className="vote-field w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-neutral-900 shadow-sm transition-all duration-200 placeholder:text-neutral-500 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
           placeholder="e.g. 12"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-800" htmlFor="token">
+        <label className="block text-sm font-medium text-neutral-900" htmlFor="token">
           6-digit ballot code
         </label>
         <input
@@ -100,7 +100,7 @@ export function VoteLoginForm() {
           pattern="[0-9]{6}"
           maxLength={6}
           autoComplete="one-time-code"
-          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-lg tracking-[0.35em] text-neutral-900 shadow-sm transition-all duration-200 placeholder:tracking-normal placeholder:text-neutral-400 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
+          className="vote-field w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-lg tracking-[0.35em] text-neutral-900 shadow-sm transition-all duration-200 placeholder:tracking-normal placeholder:text-neutral-500 focus:border-[var(--ph-flag-blue)] focus:outline-none focus:ring-4 focus:ring-[var(--ph-flag-blue)]/15"
           placeholder="••••••"
           required
         />

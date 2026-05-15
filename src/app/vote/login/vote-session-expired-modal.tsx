@@ -46,7 +46,7 @@ export function VoteSessionExpiredModal() {
       aria-labelledby="vote-session-expired-msg"
     >
       <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 text-center shadow-2xl">
-        <p id="vote-session-expired-msg" className="text-sm leading-relaxed text-neutral-800">
+        <p id="vote-session-expired-msg" className="text-sm leading-relaxed text-neutral-900">
           {SESSION_EXPIRED_BODY}
         </p>
         <button
