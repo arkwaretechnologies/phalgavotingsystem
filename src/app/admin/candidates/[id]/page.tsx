@@ -226,7 +226,7 @@ export default async function AdminCandidateProfilePage({
                   </div>
                   {geoGroup ? (
                     <div className="mt-1 text-[15px] font-semibold text-white">
-                      {geoGroup.code} — {geoGroup.name}
+                      {geoGroup.name}
                     </div>
                   ) : null}
                   {typed.confcode ? (

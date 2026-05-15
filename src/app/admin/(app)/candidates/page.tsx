@@ -214,7 +214,7 @@ export default async function AdminCandidatesPage() {
                 </option>
                 {geoList.map((g) => (
                   <option key={g.id} value={String(g.id)}>
-                    {g.code} — {g.name}
+                    {g.name}
                     {!g.is_active ? " (inactive)" : ""}
                   </option>
                 ))}

@@ -138,7 +138,7 @@ export function CandidatesTable({
                     </div>
                   </td>
                   <td className="text-neutral-600">
-                    {c.geo_group_id != null ? geoById.get(c.geo_group_id)?.code ?? "—" : "—"}
+                    {c.geo_group_id != null ? geoById.get(c.geo_group_id)?.name ?? "—" : "—"}
                   </td>
                   <td>{c.is_active ? "Yes" : "No"}</td>
                   <td className="text-neutral-600">{new Date(c.created_at).toLocaleString()}</td>
@@ -240,7 +240,7 @@ export function CandidatesTable({
                         ) : null}
                         {geoOptions.map((g) => (
                           <option key={g.id} value={String(g.id)}>
-                            {g.code} — {g.name}
+                            {g.name}
                             {!g.is_active ? " (inactive)" : ""}
                           </option>
                         ))}

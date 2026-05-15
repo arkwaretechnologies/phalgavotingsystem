@@ -212,7 +212,7 @@ function renderCandidatePage(args: {
             geo || candidate.confcode
               ? `<div class="card">
                   <div class="card-label">Geo group</div>
-                  ${geo ? `<div class="card-value">${escapeHtml(`${geo.code} — ${geo.name}`)}</div>` : ""}
+                  ${geo ? `<div class="card-value">${escapeHtml(geo.name)}</div>` : ""}
                   ${candidate.confcode ? `<div class="card-sub mono">${escapeHtml(candidate.confcode)}</div>` : ""}
                 </div>`
               : ""
