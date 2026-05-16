@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function createTablet(formData: FormData) {
+  await requireAdminSession();
   const label = String(formData.get("label") ?? "").trim();
   if (!label) throw new Error("Label is required");
 
@@ -28,6 +30,7 @@ export async function createTablet(formData: FormData) {
 }
 
 export async function updateTablet(formData: FormData) {
+  await requireAdminSession();
   const idRaw = String(formData.get("id") ?? "").trim();
   const label = String(formData.get("label") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
@@ -55,6 +58,7 @@ export async function updateTablet(formData: FormData) {
 }
 
 export async function deleteTablet(formData: FormData) {
+  await requireAdminSession();
   const idRaw = String(formData.get("id") ?? "").trim();
   const id = Number(idRaw);
   if (!Number.isFinite(id) || id <= 0) throw new Error("Invalid tablet id");

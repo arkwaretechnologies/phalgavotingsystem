@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { VOTING_SESSION_DURATION_SECONDS } from "@/lib/voting/voting-session-duration";
+import { shouldUseSecureCookies } from "@/lib/security/cookies";
 
 const COOKIE_NAME = "phalga_voting_session";
 
@@ -14,7 +15,7 @@ export async function setVotingSessionCookie(votingSessionId: string) {
   store.set(COOKIE_NAME, votingSessionId, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: VOTING_SESSION_COOKIE_PATH,
     maxAge: VOTING_SESSION_DURATION_SECONDS,
   });

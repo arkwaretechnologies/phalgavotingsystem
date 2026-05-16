@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 export const runtime = "nodejs";
@@ -127,10 +128,7 @@ export async function GET() {
     const html = renderHtml(rows, generatedAtIso);
     const filename = `Voted_Voters_${tsSafe(new Date())}.pdf`;
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdf = await page.pdf({

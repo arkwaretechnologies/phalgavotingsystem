@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 type CsvRow = Record<string, string | undefined>;
@@ -14,6 +15,7 @@ function norm(v: unknown) {
 }
 
 export async function importVotersCsv(formData: FormData) {
+  await requireAdminSession();
   const file = formData.get("csv");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Please upload a CSV file.");

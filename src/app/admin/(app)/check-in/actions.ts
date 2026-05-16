@@ -1,14 +1,18 @@
 "use server";
 
+import { randomInt } from "node:crypto";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
+/**
+ * 6-digit ballot token. Uses Node's CSPRNG (`crypto.randomInt`) so the token
+ * space (10^6) cannot be predicted from process state, unlike the previous
+ * `Math.random()` implementation.
+ */
 function genToken6() {
-  return Math.floor(Math.random() * 1_000_000)
-    .toString()
-    .padStart(6, "0");
+  return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
 export async function checkInVoter(formData: FormData) {

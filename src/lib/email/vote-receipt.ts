@@ -1,9 +1,11 @@
 import "server-only";
 
+import { randomInt } from "node:crypto";
 import { Resend } from "resend";
 import puppeteer from "puppeteer";
 import { encryptPDF } from "@pdfsmaller/pdf-encrypt-lite";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
 
 function escapeHtml(s: string) {
   return s
@@ -14,26 +16,20 @@ function escapeHtml(s: string) {
     .replaceAll("'", "&#039;");
 }
 
-function lastNameLower(fullName: string) {
-  const parts = String(fullName ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  const last = parts.length ? parts[parts.length - 1] : "";
-  return last.replaceAll(/[^a-zA-Z0-9]+/g, "").toLowerCase();
-}
-
-function last4Digits(phone: string) {
-  const digits = String(phone ?? "").replaceAll(/\D+/g, "");
-  if (digits.length < 4) return "";
-  return digits.slice(-4);
-}
-
-function buildPassword(fullName: string, phone: string) {
-  const ln = lastNameLower(fullName);
-  const p4 = last4Digits(phone);
-  if (!ln || !p4) return null;
-  return `${ln}${p4}`;
+/**
+ * Generate a high-entropy receipt password. Characters that look alike
+ * (0/O/o, 1/l/I) are excluded so the password can be typed back without
+ * confusion. With this alphabet (54 chars) and length 14, an attacker has to
+ * search ~2^80 candidates to guess one PDF — well beyond brute force.
+ */
+function generateReceiptPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const length = 14;
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    out += alphabet[randomInt(alphabet.length)];
+  }
+  return out;
 }
 
 type ChoiceRow = {
@@ -161,10 +157,7 @@ function renderVoteReceiptHtml(opts: {
 async function htmlToPdfBuffer(html: string) {
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdf = await page.pdf({
@@ -214,19 +207,18 @@ export async function sendVoterReceiptEmail(sessionId: string) {
 
   const email = (voter as { email?: string | null } | null)?.email ?? null;
   const fullName = (voter as { full_name?: string | null } | null)?.full_name ?? null;
-  const phone = (voter as { phone?: string | null } | null)?.phone ?? null;
   if (!email || !fullName) {
     // eslint-disable-next-line no-console
     console.warn("vote receipt email skipped: missing voter email/name", { sessionId, voterId });
     return;
   }
 
-  const password = buildPassword(fullName, phone ?? "");
-  if (!password) {
-    // eslint-disable-next-line no-console
-    console.warn("vote receipt email skipped: cannot build pdf password", { sessionId, voterId });
-    return;
-  }
+  // Per-receipt random password. Old behavior derived it from the voter's
+  // last name + last 4 digits of phone — anyone who knew that combination (or
+  // had basic voter info) could decrypt the PDF. A per-receipt high-entropy
+  // password contained in the email body keeps the threat to "owns the inbox",
+  // which is the intended trust boundary.
+  const password = generateReceiptPassword();
 
   // Find ballot id for this session. Schema variants: ballots.session_id or ballots.voting_session_id.
   const ballotRespA = await supabase
@@ -287,9 +279,10 @@ export async function sendVoterReceiptEmail(sessionId: string) {
         <p>Dear ${escapeHtml(fullName)},</p>
         <p>Attached is your vote receipt PDF showing your voted candidates per geo group.</p>
         <p><b>This PDF is password protected.</b><br/>
-          Password format: <b>lastname (lowercase) + last 4 digits of your phone number</b>.
+          Password:
+          <code style="font-family: 'Courier New', monospace; padding: 2px 6px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 4px;">${escapeHtml(password)}</code>
         </p>
-        <p>If you did not request this, you may ignore this email.</p>
+        <p>Keep this email private — anyone with the password can open the PDF. If you did not request this, you may ignore this email.</p>
       </div>
     `,
     attachments: [

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { getAdminSession } from "@/lib/admin/session";
+import { isSystemSuperSession } from "@/lib/admin/admin-roles";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 
@@ -33,6 +35,20 @@ export default async function AdminBallotDetailsPage({
   const { id } = await params;
   const ballotId = String(id || "").trim();
   if (!ballotId) notFound();
+
+  // Vote secrecy: `voter_id` and `session_id` are the deanonymizing fields
+  // on a ballot. Only the system super admin sees them in the UI. Other
+  // admins see ballot content but cannot map it back to a specific voter
+  // from this page. Direct DB access still allows audit when warranted.
+  const session = await getAdminSession();
+  const canSeeVoterLinkage = isSystemSuperSession(session);
+  if (canSeeVoterLinkage) {
+    // eslint-disable-next-line no-console
+    console.info("ballot detail: voter linkage shown", {
+      ballotId,
+      admin_user_id: session?.admin_user_id ?? null,
+    });
+  }
 
   const supabase = createSupabaseServiceRoleClient();
 
@@ -102,7 +118,9 @@ export default async function AdminBallotDetailsPage({
           </div>
           <div className="rounded-xl border p-3">
             <div className="text-xs text-neutral-600">Voter</div>
-            <div className="mt-1 font-mono text-xs">{b.voter_id ?? "—"}</div>
+            <div className="mt-1 font-mono text-xs">
+              {canSeeVoterLinkage ? (b.voter_id ?? "—") : "Hidden for ballot secrecy"}
+            </div>
           </div>
           <div className="rounded-xl border p-3">
             <div className="text-xs text-neutral-600">Submitted</div>

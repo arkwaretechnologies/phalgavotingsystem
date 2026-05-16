@@ -3,7 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
+import { sessionHasAdminPageAccess } from "@/lib/admin/path-access";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 export const runtime = "nodejs";
@@ -495,6 +497,9 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!(await sessionHasAdminPageAccess(session, "candidates"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = createSupabaseServiceRoleClient();
 
@@ -635,10 +640,7 @@ export async function GET() {
       new Date(),
     )}.pdf`;
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(45_000);
     page.setDefaultTimeout(45_000);

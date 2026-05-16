@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { setTabletSessionCookie } from "@/lib/tablet/session";
 
 export async function claimPairCode(formData: FormData) {
   const code = String(formData.get("pair_code") ?? "").trim();
@@ -27,6 +28,15 @@ export async function claimPairCode(formData: FormData) {
   }
   if (!data) throw new Error("Unable to claim code");
 
-  redirect(`/tablet/pair/success?tablet=${encodeURIComponent(String(data))}`);
+  const tabletId = Number(data);
+  if (!Number.isFinite(tabletId) || tabletId <= 0) throw new Error("Unable to claim code");
+
+  // Bind this device to the tablet via an HttpOnly signed cookie. Subsequent
+  // tablet actions and the polling endpoint verify the cookie's tablet_id
+  // matches the form-supplied tablet_id, so a stolen / guessed tablet number
+  // alone cannot drive queue assignments.
+  await setTabletSessionCookie({ tablet_id: tabletId, device_id: deviceId });
+
+  redirect(`/tablet/pair/success?tablet=${encodeURIComponent(String(tabletId))}`);
 }
 

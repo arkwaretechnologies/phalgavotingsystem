@@ -1,4 +1,6 @@
 import {
+  clearLoginExchangeCookie,
+  getLoginExchangeCookieValue,
   signAdminSessionToken,
   verifyLoginExchangeToken,
   writeAdminSessionCookie,
@@ -11,11 +13,13 @@ import {
 /**
  * Admin login — GET half of the two-step flow (see ./submit/route.ts).
  *
- * Accepts a short-lived exchange JWT in `?xt=...`, verifies it, then issues
- * the real 12h session JWT and sets it as a cookie on this GET response. The
- * cookie is written via `cookies()` from `next/headers` (NOT
- * `response.cookies.set` on a custom NextResponse) so Next.js's response
- * pipeline serializes the `Set-Cookie` header reliably through Railway's edge.
+ * Reads a short-lived exchange JWT from a path-scoped HttpOnly cookie set by
+ * the POST step (the token is no longer carried in the URL), verifies it,
+ * issues the 12h session JWT, sets it as a cookie on this GET response, and
+ * clears the exchange cookie. The cookie is written via `cookies()` from
+ * `next/headers` (NOT `response.cookies.set` on a custom NextResponse) so
+ * Next.js's response pipeline serializes the `Set-Cookie` header reliably
+ * through Railway's edge.
  */
 
 function loginError(originUrl: string, message: string) {
@@ -24,13 +28,17 @@ function loginError(originUrl: string, message: string) {
 
 export async function GET(req: Request) {
   const origin = getPublicOrigin(req);
-  const url = new URL(req.url);
-  const xt = url.searchParams.get("xt");
+
+  const xt = await getLoginExchangeCookieValue();
   if (!xt) {
-    return loginError(origin, "Missing login exchange token.");
+    return loginError(origin, "Login link expired. Please sign in again.");
   }
 
   const session = await verifyLoginExchangeToken(xt);
+  // Always clear the exchange cookie, success or failure, so it cannot be
+  // replayed.
+  await clearLoginExchangeCookie();
+
   if (!session) {
     return loginError(origin, "Login link expired. Please sign in again.");
   }
@@ -40,8 +48,7 @@ export async function GET(req: Request) {
     sessionToken = await signAdminSessionToken(session);
   } catch (err) {
     console.error("[admin-session] session JWT sign failed", err);
-    const msg = err instanceof Error ? err.message : String(err);
-    return loginError(origin, `session error: ${msg}`);
+    return loginError(origin, "Unable to sign in right now. Please try again.");
   }
 
   await writeAdminSessionCookie(sessionToken);

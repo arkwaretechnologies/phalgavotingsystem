@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
+import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import {
   buildCanvassReportModel,
@@ -47,10 +48,7 @@ export async function GET() {
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 

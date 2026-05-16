@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function createPairCodeForTablet(formData: FormData) {
+  await requireAdminSession();
   const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
   const tabletId = Number(tabletIdRaw);
   if (!Number.isFinite(tabletId) || tabletId <= 0) throw new Error("Invalid tablet id");

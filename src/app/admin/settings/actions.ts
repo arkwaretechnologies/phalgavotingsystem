@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { manilaDateAndTimeToUtcIso } from "@/lib/datetime/manila";
 
 export async function setActiveConfcode(formData: FormData) {
+  await requireAdminSession();
   const confcodeRaw = String(formData.get("active_confcode") ?? "").trim();
   const active_confcode = confcodeRaw && confcodeRaw !== "null" ? confcodeRaw : null;
 
@@ -43,6 +45,7 @@ export async function setActiveConfcode(formData: FormData) {
 }
 
 export async function setVotingSchedule(formData: FormData) {
+  await requireAdminSession();
   const startDate = String(formData.get("vote_start_date_pht") ?? "");
   const startTime = String(formData.get("vote_start_time_pht") ?? "");
   const endDate = String(formData.get("vote_end_date_pht") ?? "");

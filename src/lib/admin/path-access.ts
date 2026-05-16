@@ -64,3 +64,20 @@ export async function assertAdminPathAccessForSession(
     redirect("/admin?error=" + encodeURIComponent("You do not have access to that page."));
   }
 }
+
+/**
+ * Boolean-returning variant for API routes that need to respond with JSON 403
+ * rather than redirect. `pageKey` identifies the capability area the API maps
+ * onto (mirrors the keys used by `pathnameToPageKey`).
+ */
+export async function sessionHasAdminPageAccess(
+  session: AdminSessionPayload,
+  pageKey: AdminPageKey | "settings_users" | "settings_roles",
+): Promise<boolean> {
+  if (pageKey === "settings_users" || pageKey === "settings_roles") {
+    return isSystemSuperSession(session);
+  }
+  if (session.is_full_access) return true;
+  const allowed = await getAllowedPageKeysForRoleId(session.admin_role_id);
+  return allowed.includes(pageKey);
+}

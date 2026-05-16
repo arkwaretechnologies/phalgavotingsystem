@@ -3,12 +3,16 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { shouldUseSecureCookies } from "@/lib/security/cookies";
 
 const COOKIE_NAME = "phalga_admin_session";
 const COOKIE_PATH = "/";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
 const EXCHANGE_TTL = "60s";
+const EXCHANGE_TTL_SECONDS = 60;
 const EXCHANGE_PURPOSE = "login-exchange";
+const EXCHANGE_COOKIE_NAME = "phalga_admin_login_xt";
+const EXCHANGE_COOKIE_PATH = "/admin/login";
 
 /** Pull a name=value pair from a raw `Cookie` header (fallback when `cookies().get` misses in some proxies). */
 function tokenFromRawCookieHeader(cookieHeader: string | null): string | null {
@@ -88,7 +92,7 @@ export async function writeAdminSessionCookie(token: string) {
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: COOKIE_PATH,
     maxAge: SESSION_TTL_SECONDS,
   });
@@ -202,9 +206,47 @@ export async function verifyLoginExchangeToken(
 }
 
 // ---------------------------------------------------------------------------
+// Login-exchange cookie helpers (POST → GET handoff, no token in URL)
+// ---------------------------------------------------------------------------
+
+/** Read the short-lived exchange cookie value set by the POST submit step. */
+export async function getLoginExchangeCookieValue(): Promise<string | null> {
+  const store = await cookies();
+  let value = store.get(EXCHANGE_COOKIE_NAME)?.value ?? null;
+  if (!value) {
+    const rawCookie = (await headers()).get("cookie");
+    value = exchangeFromRawCookieHeader(rawCookie);
+  }
+  return value;
+}
+
+function exchangeFromRawCookieHeader(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  for (const segment of cookieHeader.split(";")) {
+    const part = segment.trim();
+    const eq = part.indexOf("=");
+    if (eq <= 0) continue;
+    const k = part.slice(0, eq).trim();
+    if (k !== EXCHANGE_COOKIE_NAME) continue;
+    const v = part.slice(eq + 1).trim();
+    return v || null;
+  }
+  return null;
+}
+
+/** Clear the exchange cookie once it has been consumed (or to discard stale ones). */
+export async function clearLoginExchangeCookie() {
+  const store = await cookies();
+  store.delete({ name: EXCHANGE_COOKIE_NAME, path: EXCHANGE_COOKIE_PATH });
+}
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 export const ADMIN_SESSION_COOKIE_NAME = COOKIE_NAME;
 export const ADMIN_SESSION_COOKIE_PATH = COOKIE_PATH;
 export const ADMIN_SESSION_MAX_AGE_SECONDS = SESSION_TTL_SECONDS;
+export const ADMIN_LOGIN_EXCHANGE_COOKIE_NAME = EXCHANGE_COOKIE_NAME;
+export const ADMIN_LOGIN_EXCHANGE_COOKIE_PATH = EXCHANGE_COOKIE_PATH;
+export const ADMIN_LOGIN_EXCHANGE_MAX_AGE_SECONDS = EXCHANGE_TTL_SECONDS;

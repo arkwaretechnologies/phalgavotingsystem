@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 export async function createCandidate(formData: FormData) {
+  await requireAdminSession();
   const fullName = String(formData.get("full_name") ?? "").trim();
   const confcode = String(formData.get("confcode") ?? "").trim();
   const photoFile = formData.get("photo_file");
@@ -135,6 +137,7 @@ export async function createCandidate(formData: FormData) {
 }
 
 export async function updateCandidate(formData: FormData) {
+  await requireAdminSession();
   const id = String(formData.get("id") ?? "").trim();
   const fullName = String(formData.get("full_name") ?? "").trim();
   const confcode = String(formData.get("confcode") ?? "").trim();
@@ -270,6 +273,7 @@ export async function updateCandidate(formData: FormData) {
 }
 
 export async function deleteCandidate(formData: FormData) {
+  await requireAdminSession();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) throw new Error("Missing candidate id");
 

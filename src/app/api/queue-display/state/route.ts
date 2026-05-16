@@ -53,8 +53,16 @@ export async function GET() {
       getVotingWindow(),
     ]);
 
-  if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
-  if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 });
+  if (sErr) {
+    // eslint-disable-next-line no-console
+    console.error("/api/queue-display/state load sessions failed", sErr);
+    return NextResponse.json({ error: "Unable to load lobby state." }, { status: 500 });
+  }
+  if (tErr) {
+    // eslint-disable-next-line no-console
+    console.error("/api/queue-display/state load tablets failed", tErr);
+    return NextResponse.json({ error: "Unable to load lobby state." }, { status: 500 });
+  }
 
   const sessionList = sessions ?? [];
   const voterIds = [
@@ -68,7 +76,11 @@ export async function GET() {
       .select("id")
       .in("id", voterIds)
       .eq("is_verified", true);
-    if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 });
+    if (vErr) {
+      // eslint-disable-next-line no-console
+      console.error("/api/queue-display/state load voters failed", vErr);
+      return NextResponse.json({ error: "Unable to load lobby state." }, { status: 500 });
+    }
     verifiedIds = new Set((voters ?? []).map((v) => v.id as string));
   }
 

@@ -3,12 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { clearTabletSessionCookie, getTabletSessionMatching } from "@/lib/tablet/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
-export async function assignNextSession(formData: FormData) {
+async function requireTabletSessionForFormTabletId(formData: FormData) {
   const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
   const tabletId = Number(tabletIdRaw);
   if (!Number.isFinite(tabletId) || tabletId <= 0) throw new Error("Invalid tablet id");
+
+  const session = await getTabletSessionMatching(tabletId);
+  if (!session) {
+    redirect("/tablet/pair?error=unpaired");
+  }
+  return { tabletId, session };
+}
+
+export async function assignNextSession(formData: FormData) {
+  const { tabletId } = await requireTabletSessionForFormTabletId(formData);
 
   const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase.rpc("assign_next_session", { p_tablet_id: tabletId });
@@ -23,9 +34,7 @@ export async function assignNextSession(formData: FormData) {
 }
 
 export async function markTabletVacant(formData: FormData) {
-  const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
-  const tabletId = Number(tabletIdRaw);
-  if (!Number.isFinite(tabletId) || tabletId <= 0) throw new Error("Invalid tablet id");
+  const { tabletId } = await requireTabletSessionForFormTabletId(formData);
 
   const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase
@@ -43,11 +52,11 @@ export async function markTabletVacant(formData: FormData) {
 }
 
 export async function unpairTabletFromDevice(formData: FormData) {
-  const tabletIdRaw = String(formData.get("tablet_id") ?? "").trim();
-  const deviceId = String(formData.get("device_id") ?? "").trim();
-  const tabletId = Number(tabletIdRaw);
-  if (!Number.isFinite(tabletId) || tabletId <= 0) throw new Error("Invalid tablet id");
-  if (!deviceId) throw new Error("Missing device id");
+  const { tabletId, session } = await requireTabletSessionForFormTabletId(formData);
+  // The form may also supply a device_id; the authoritative one comes from the
+  // signed tablet session cookie so a hostile form payload cannot impersonate
+  // another device.
+  const deviceId = session.device_id;
 
   const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase.rpc("unpair_tablet", {
@@ -79,6 +88,8 @@ export async function unpairTabletFromDevice(formData: FormData) {
     // eslint-disable-next-line no-console
     console.error("set tablet offline after unpair(device) failed", tErr);
   }
+
+  await clearTabletSessionCookie();
 
   revalidatePath("/tablet");
   redirect("/tablet/pair?unpaired=1");

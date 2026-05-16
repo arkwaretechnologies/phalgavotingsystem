@@ -80,6 +80,12 @@ export async function confirmBallotSubmission(
       if (!ch || typeof ch.geo_group_id !== "number" || !Array.isArray(ch.candidate_ids)) {
         return { error: "Invalid ballot data. Go back and try again." };
       }
+      // Last-write-wins on duplicate `geo_group_id` here would silently let a
+      // malicious client send multiple objects for the same group; reject
+      // duplicates outright so we never forward conflicting picks to the RPC.
+      if (byGeo.has(ch.geo_group_id)) {
+        return { error: "Invalid ballot data. Go back and try again." };
+      }
       byGeo.set(ch.geo_group_id, { geo_group_id: ch.geo_group_id, candidate_ids: ch.candidate_ids.map(String) });
     }
 
@@ -102,6 +108,10 @@ export async function confirmBallotSubmission(
         }
       }
     }
+
+    // Replace the raw client payload with the validated, deduplicated map so a
+    // hostile client cannot smuggle extra / duplicate geo entries past the RPC.
+    choices = [...byGeo.values()];
   } catch {
     return { error: "Unable to validate ballot right now. Please try again." };
   }
@@ -114,7 +124,7 @@ export async function confirmBallotSubmission(
     { p_voting_session_id: sessionId, p_choices: choices },
   ];
 
-  let submitError: string | null = null;
+  let submitError: { rawMessage: string } | null = null;
   for (let i = 0; i < attempts.length; i++) {
     const { error } = await supabase.rpc("submit_ballot", attempts[i]);
     if (!error) {
@@ -122,7 +132,7 @@ export async function confirmBallotSubmission(
       break;
     }
     const msg = error.message ?? "";
-    submitError = msg;
+    submitError = { rawMessage: msg };
     if (
       i === 0 &&
       (msg.includes("Could not find the function") || msg.includes("schema cache"))
@@ -132,7 +142,15 @@ export async function confirmBallotSubmission(
     break;
   }
   if (submitError) {
-    return { error: submitError };
+    // Log the raw RPC error server-side for debugging; surface a generic
+    // message to the voter so the response doesn't leak schema / RPC names.
+    // eslint-disable-next-line no-console
+    console.error("submit_ballot RPC failed", submitError.rawMessage);
+    const lower = submitError.rawMessage.toLowerCase();
+    if (lower.includes("already") && lower.includes("submitted")) {
+      return { error: "This ballot has already been submitted." };
+    }
+    return { error: "Unable to submit ballot right now. Please try again." };
   }
 
   // Best-effort email receipt. Do not block the happy path if email fails.

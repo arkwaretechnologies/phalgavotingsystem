@@ -1,10 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { setVotingSessionCookie } from "@/lib/voting/session-cookie";
+import { getTabletSessionMatching } from "@/lib/tablet/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { getBallotSubmissionEligibility } from "@/lib/voting/voting-ballot-eligibility";
+import { tryRateLimit } from "@/lib/security/rate-limit";
 import {
   isVotingSessionStatusVoted,
   isVotingSessionStatusVoting,
@@ -28,6 +31,37 @@ export async function loginWithQueueAndToken(formData: FormData) {
   }
   if (tabletId !== null && (!Number.isFinite(tabletId) || tabletId <= 0)) {
     redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
+  }
+
+  // When a tablet_id is supplied, require the device to actually be paired to
+  // that tablet (verified via signed HttpOnly cookie). This stops a hostile
+  // browser from claiming any tablet id and tying the session to a station.
+  if (tabletId !== null) {
+    const tabletSession = await getTabletSessionMatching(tabletId);
+    if (!tabletSession) {
+      redirect(`/vote/login?error=invalid&msg=${INVALID_LOGIN_MSG}`);
+    }
+  }
+
+  // Rate limit by client IP + queue number to make brute force of the 6-digit
+  // ballot code infeasible. ~10 attempts per minute is generous for legitimate
+  // typos and harsh for automated guessing.
+  const hdrs = await headers();
+  const ipHeader =
+    hdrs.get("x-forwarded-for") ?? hdrs.get("x-real-ip") ?? "unknown";
+  const clientIp = ipHeader.split(",")[0]?.trim() || "unknown";
+  const rl = await tryRateLimit({
+    bucket: "voter_login",
+    key: `${clientIp}:${queueNumber}`,
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!rl.ok) {
+    redirect(
+      `/vote/login?error=unknown&msg=${encodeURIComponent(
+        "Too many sign-in attempts. Please wait a minute and try again.",
+      )}`,
+    );
   }
 
   const supabase = createSupabaseServiceRoleClient();
