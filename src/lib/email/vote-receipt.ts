@@ -7,6 +7,22 @@ import { encryptPDF } from "@pdfsmaller/pdf-encrypt-lite";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
 
+const PDF_NAV_TIMEOUT_MS = 30_000;
+
+export type VoteReceiptFailureReason =
+  | "missing_env"
+  | "session_not_found"
+  | "missing_voter_id"
+  | "missing_voter_email"
+  | "no_ballot"
+  | "no_choices"
+  | "pdf_failed"
+  | "send_failed";
+
+export type VoteReceiptResult =
+  | { ok: true; emailId?: string | null }
+  | { ok: false; reason: VoteReceiptFailureReason; message?: string };
+
 function escapeHtml(s: string) {
   return s
     .replaceAll("&", "&amp;")
@@ -16,12 +32,6 @@ function escapeHtml(s: string) {
     .replaceAll("'", "&#039;");
 }
 
-/**
- * Generate a high-entropy receipt password. Characters that look alike
- * (0/O/o, 1/l/I) are excluded so the password can be typed back without
- * confusion. With this alphabet (54 chars) and length 14, an attacker has to
- * search ~2^80 candidates to guess one PDF — well beyond brute force.
- */
 function generateReceiptPassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   const length = 14;
@@ -37,6 +47,22 @@ type ChoiceRow = {
   candidate_full_name: string | null;
   geo_group_code: string | null;
   geo_group_name: string | null;
+};
+
+type BallotRow = {
+  id: string;
+  voter_id: string | null;
+  session_id: string | null;
+  is_submitted: boolean | null;
+  submitted_at: string | null;
+};
+
+type SessionRow = {
+  id: string;
+  voter_id: string | null;
+  queue_number: number | null;
+  status: string | null;
+  session_end: string | null;
 };
 
 function renderVoteReceiptHtml(opts: {
@@ -58,7 +84,6 @@ function renderVoteReceiptHtml(opts: {
       rows: [],
     };
     cur.rows.push(r);
-    // Prefer non-null code/name if later rows include them.
     if (!cur.code && r.geo_group_code) cur.code = r.geo_group_code;
     if (!cur.name && r.geo_group_name) cur.name = r.geo_group_name;
     sections.set(r.geo_group_id, cur);
@@ -154,12 +179,14 @@ function renderVoteReceiptHtml(opts: {
 </html>`;
 }
 
-async function htmlToPdfBuffer(html: string) {
+async function htmlToPdfBuffer(html: string): Promise<Buffer> {
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
   try {
     browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    page.setDefaultNavigationTimeout(PDF_NAV_TIMEOUT_MS);
+    page.setDefaultTimeout(PDF_NAV_TIMEOUT_MS);
+    await page.setContent(html, { waitUntil: "load", timeout: PDF_NAV_TIMEOUT_MS });
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -175,69 +202,64 @@ async function htmlToPdfBuffer(html: string) {
   }
 }
 
-export async function sendVoterReceiptEmail(sessionId: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !fromEmail) {
-    // eslint-disable-next-line no-console
-    console.warn("vote receipt email skipped: missing RESEND env");
-    return;
-  }
+/**
+ * Resolve the ballot row for a voting session. Ballots are unique per `voter_id`
+ * in this app; `submit_ballot` may not update `session_id`, so voter_id lookup
+ * must come before session_id.
+ */
+async function resolveBallotForReceipt(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  opts: { sessionId: string; voterId: string },
+): Promise<BallotRow | null> {
+  const { sessionId, voterId } = opts;
 
-  const supabase = createSupabaseServiceRoleClient();
-
-  const { data: session } = await supabase
-    .from("voting_sessions")
-    .select("id, voter_id, queue_number, status, session_end")
-    .eq("id", sessionId)
-    .maybeSingle();
-
-  const voterId = (session as { voter_id?: string | null } | null)?.voter_id ?? null;
-  if (!voterId) {
-    // eslint-disable-next-line no-console
-    console.warn("vote receipt email skipped: missing voter_id", { sessionId });
-    return;
-  }
-
-  const { data: voter } = await supabase
-    .from("voters")
-    .select("id, full_name, email, phone")
-    .eq("id", voterId)
-    .maybeSingle();
-
-  const email = (voter as { email?: string | null } | null)?.email ?? null;
-  const fullName = (voter as { full_name?: string | null } | null)?.full_name ?? null;
-  if (!email || !fullName) {
-    // eslint-disable-next-line no-console
-    console.warn("vote receipt email skipped: missing voter email/name", { sessionId, voterId });
-    return;
-  }
-
-  // Per-receipt random password. Old behavior derived it from the voter's
-  // last name + last 4 digits of phone — anyone who knew that combination (or
-  // had basic voter info) could decrypt the PDF. A per-receipt high-entropy
-  // password contained in the email body keeps the threat to "owns the inbox",
-  // which is the intended trust boundary.
-  const password = generateReceiptPassword();
-
-  // Find ballot id for this session. Schema variants: ballots.session_id or ballots.voting_session_id.
-  const ballotRespA = await supabase
+  const { data: byVoterSubmitted } = await supabase
     .from("ballots")
-    .select("id")
+    .select("id, voter_id, session_id, is_submitted, submitted_at")
+    .eq("voter_id", voterId)
+    .eq("is_submitted", true)
+    .order("submitted_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (byVoterSubmitted) return byVoterSubmitted as BallotRow;
+
+  const { data: byVoter } = await supabase
+    .from("ballots")
+    .select("id, voter_id, session_id, is_submitted, submitted_at")
+    .eq("voter_id", voterId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (byVoter) return byVoter as BallotRow;
+
+  const { data: bySession } = await supabase
+    .from("ballots")
+    .select("id, voter_id, session_id, is_submitted, submitted_at")
     .eq("session_id", sessionId)
     .maybeSingle();
-  const ballotId =
-    (ballotRespA.data as { id?: string } | null)?.id ??
-    ((await supabase.from("ballots").select("id").eq("voting_session_id", sessionId).maybeSingle()).data as
-      | { id?: string }
-      | null)?.id ??
-    null;
-  if (!ballotId) {
-    // eslint-disable-next-line no-console
-    console.warn("vote receipt email skipped: no ballot found for session", { sessionId, voterId });
-    return;
+
+  if (bySession) return bySession as BallotRow;
+
+  try {
+    const { data: byVotingSession, error: vsErr } = await supabase
+      .from("ballots")
+      .select("id, voter_id, session_id, is_submitted, submitted_at")
+      .eq("voting_session_id", sessionId)
+      .maybeSingle();
+    if (!vsErr && byVotingSession) return byVotingSession as BallotRow;
+  } catch {
+    // Legacy column may not exist on all deployments.
   }
 
+  return null;
+}
+
+async function loadBallotChoices(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  ballotId: string,
+): Promise<ChoiceRow[]> {
   const { data: choices } = await supabase
     .from("ballot_choices")
     .select(
@@ -250,33 +272,82 @@ export async function sendVoterReceiptEmail(sessionId: string) {
     .eq("ballot_id", ballotId)
     .order("created_at", { ascending: true });
 
-  const rows: ChoiceRow[] = (choices ?? []).map((r: any) => ({
-    geo_group_id: Number(r.geo_group_id),
-    candidate_full_name: r.candidates?.full_name ?? null,
-    geo_group_code: r.geo_groups?.code ?? null,
-    geo_group_name: r.geo_groups?.name ?? null,
-  }));
+  return (choices ?? []).map((r: Record<string, unknown>) => {
+    const candidates = r.candidates as { full_name?: string | null } | null;
+    const geoGroups = r.geo_groups as { code?: string | null; name?: string | null } | null;
+    return {
+      geo_group_id: Number(r.geo_group_id),
+      candidate_full_name: candidates?.full_name ?? null,
+      geo_group_code: geoGroups?.code ?? null,
+      geo_group_name: geoGroups?.name ?? null,
+    };
+  });
+}
+
+async function sendReceiptForResolvedBallot(opts: {
+  session: SessionRow;
+  ballot: BallotRow;
+  voterEmail: string;
+  voterFullName: string;
+  apiKey: string;
+  fromEmail: string;
+}): Promise<VoteReceiptResult> {
+  const { session, ballot, voterEmail, voterFullName, apiKey, fromEmail } = opts;
+  const supabase = createSupabaseServiceRoleClient();
+
+  const rows = await loadBallotChoices(supabase, ballot.id);
+  if (rows.length === 0 && ballot.is_submitted) {
+    // eslint-disable-next-line no-console
+    console.error("vote receipt: submitted ballot has no choices", {
+      sessionId: session.id,
+      ballotId: ballot.id,
+      voterId: ballot.voter_id,
+    });
+    return { ok: false, reason: "no_choices", message: "No ballot choices found." };
+  }
+
+  const password = generateReceiptPassword();
+  const votedAt =
+    ballot.submitted_at ?? session.session_end ?? new Date().toISOString();
 
   const html = renderVoteReceiptHtml({
-    fullName,
-    queueNumber: (session as any)?.queue_number ?? null,
-    votedAt: (session as any)?.session_end ?? null,
+    fullName: voterFullName,
+    queueNumber: session.queue_number,
+    votedAt,
     rows,
   });
 
-  const pdf = await htmlToPdfBuffer(html);
+  let pdf: Buffer;
+  try {
+    pdf = await htmlToPdfBuffer(html);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("vote receipt PDF generation failed", {
+      sessionId: session.id,
+      ballotId: ballot.id,
+      error: e,
+    });
+    return { ok: false, reason: "pdf_failed", message: "Unable to generate receipt PDF." };
+  }
 
-  const encryptedBytes = await encryptPDF(pdf, password, password);
-  const encrypted = Buffer.from(encryptedBytes);
+  let encrypted: Buffer;
+  try {
+    const encryptedBytes = await encryptPDF(pdf, password, password);
+    encrypted = Buffer.from(encryptedBytes);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("vote receipt PDF encryption failed", { sessionId: session.id, error: e });
+    return { ok: false, reason: "pdf_failed", message: "Unable to encrypt receipt PDF." };
+  }
 
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
     from: fromEmail,
-    to: email,
+    to: voterEmail,
     subject: "Your PhALGA vote receipt (password protected PDF)",
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <p>Dear ${escapeHtml(fullName)},</p>
+        <p>Dear ${escapeHtml(voterFullName)},</p>
         <p>Attached is your vote receipt PDF showing your voted candidates per geo group.</p>
         <p><b>This PDF is password protected.</b><br/>
           Password:
@@ -297,15 +368,165 @@ export async function sendVoterReceiptEmail(sessionId: string) {
   if (error) {
     // eslint-disable-next-line no-console
     console.error("vote receipt email failed", {
-      sessionId,
-      voterId,
-      message: (error as any)?.message ?? String(error),
-      name: (error as any)?.name,
-      statusCode: (error as any)?.statusCode,
+      sessionId: session.id,
+      ballotId: ballot.id,
+      message: (error as { message?: string }).message ?? String(error),
     });
-  } else {
-    // eslint-disable-next-line no-console
-    console.log("vote receipt email sent", { sessionId, voterId, id: (data as any)?.id ?? null });
+    return { ok: false, reason: "send_failed", message: "Email provider rejected the send." };
   }
+
+  // eslint-disable-next-line no-console
+  console.log("vote receipt email sent", {
+    sessionId: session.id,
+    ballotId: ballot.id,
+    id: (data as { id?: string } | null)?.id ?? null,
+  });
+  return { ok: true, emailId: (data as { id?: string } | null)?.id ?? null };
 }
 
+/**
+ * Send the password-protected vote receipt for a voting session.
+ */
+export async function sendVoterReceiptEmail(sessionId: string): Promise<VoteReceiptResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  if (!apiKey || !fromEmail) {
+    // eslint-disable-next-line no-console
+    console.warn("vote receipt email skipped: missing RESEND env");
+    return { ok: false, reason: "missing_env" };
+  }
+
+  const supabase = createSupabaseServiceRoleClient();
+
+  const { data: sessionRaw } = await supabase
+    .from("voting_sessions")
+    .select("id, voter_id, queue_number, status, session_end")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (!sessionRaw) {
+    // eslint-disable-next-line no-console
+    console.warn("vote receipt email skipped: session not found", { sessionId });
+    return { ok: false, reason: "session_not_found" };
+  }
+
+  const session = sessionRaw as SessionRow;
+  const voterId = session.voter_id;
+  if (!voterId) {
+    // eslint-disable-next-line no-console
+    console.warn("vote receipt email skipped: missing voter_id", { sessionId });
+    return { ok: false, reason: "missing_voter_id" };
+  }
+
+  const { data: voter } = await supabase
+    .from("voters")
+    .select("id, full_name, email")
+    .eq("id", voterId)
+    .maybeSingle();
+
+  const email = (voter as { email?: string | null } | null)?.email ?? null;
+  const fullName = (voter as { full_name?: string | null } | null)?.full_name ?? null;
+  if (!email || !fullName) {
+    // eslint-disable-next-line no-console
+    console.warn("vote receipt email skipped: missing voter email/name", { sessionId, voterId });
+    return { ok: false, reason: "missing_voter_email" };
+  }
+
+  const ballot = await resolveBallotForReceipt(supabase, { sessionId, voterId });
+  if (!ballot) {
+    // eslint-disable-next-line no-console
+    console.warn("vote receipt email skipped: no ballot found", { sessionId, voterId });
+    return { ok: false, reason: "no_ballot" };
+  }
+
+  return sendReceiptForResolvedBallot({
+    session,
+    ballot,
+    voterEmail: email,
+    voterFullName: fullName,
+    apiKey,
+    fromEmail,
+  });
+}
+
+/**
+ * Admin resend: look up ballot by id, then send receipt using its session or voter.
+ */
+export async function sendVoterReceiptEmailForBallot(ballotId: string): Promise<VoteReceiptResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  if (!apiKey || !fromEmail) {
+    return { ok: false, reason: "missing_env" };
+  }
+
+  const supabase = createSupabaseServiceRoleClient();
+  const { data: ballotRaw } = await supabase
+    .from("ballots")
+    .select("id, voter_id, session_id, is_submitted, submitted_at")
+    .eq("id", ballotId)
+    .maybeSingle();
+
+  if (!ballotRaw) {
+    return { ok: false, reason: "no_ballot", message: "Ballot not found." };
+  }
+
+  const ballot = ballotRaw as BallotRow;
+  if (!ballot.is_submitted) {
+    return { ok: false, reason: "no_ballot", message: "Ballot has not been submitted yet." };
+  }
+
+  const voterId = ballot.voter_id;
+  if (!voterId) {
+    return { ok: false, reason: "missing_voter_id" };
+  }
+
+  let session: SessionRow | null = null;
+  if (ballot.session_id) {
+    const { data: s } = await supabase
+      .from("voting_sessions")
+      .select("id, voter_id, queue_number, status, session_end")
+      .eq("id", ballot.session_id)
+      .maybeSingle();
+    session = (s as SessionRow | null) ?? null;
+  }
+
+  if (!session) {
+    const { data: s } = await supabase
+      .from("voting_sessions")
+      .select("id, voter_id, queue_number, status, session_end")
+      .eq("voter_id", voterId)
+      .maybeSingle();
+    session = (s as SessionRow | null) ?? null;
+  }
+
+  if (!session) {
+    session = {
+      id: ballot.session_id ?? ballot.id,
+      voter_id: voterId,
+      queue_number: null,
+      status: "voted",
+      session_end: ballot.submitted_at,
+    };
+  }
+
+  const { data: voter } = await supabase
+    .from("voters")
+    .select("id, full_name, email")
+    .eq("id", voterId)
+    .maybeSingle();
+
+  const email = (voter as { email?: string | null } | null)?.email ?? null;
+  const fullName = (voter as { full_name?: string | null } | null)?.full_name ?? null;
+  if (!email || !fullName) {
+    return { ok: false, reason: "missing_voter_email" };
+  }
+
+  return sendReceiptForResolvedBallot({
+    session,
+    ballot,
+    voterEmail: email,
+    voterFullName: fullName,
+    apiKey,
+    fromEmail,
+  });
+}

@@ -153,15 +153,47 @@ export async function confirmBallotSubmission(
     return { error: "Unable to submit ballot right now. Please try again." };
   }
 
-  // Best-effort email receipt. Do not block the happy path if email fails.
+  // Keep ballot row aligned with this session so receipt lookup by session_id
+  // or voter_id succeeds even if the DB RPC omits session_id.
+  const { data: sessionAfterSubmit } = await supabase
+    .from("voting_sessions")
+    .select("voter_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  const voterIdAfterSubmit = (sessionAfterSubmit as { voter_id?: string | null } | null)?.voter_id;
+  if (voterIdAfterSubmit) {
+    const submittedAt = new Date().toISOString();
+    const { error: ballotSyncErr } = await supabase
+      .from("ballots")
+      .update({
+        session_id: sessionId,
+        is_submitted: true,
+        submitted_at: submittedAt,
+      })
+      .eq("voter_id", voterIdAfterSubmit);
+    if (ballotSyncErr) {
+      // eslint-disable-next-line no-console
+      console.error("post-submit ballot sync failed", ballotSyncErr);
+    }
+  }
+
+  let receiptOk = true;
   try {
-    await sendVoterReceiptEmail(sessionId);
+    const receiptResult = await sendVoterReceiptEmail(sessionId);
+    if (!receiptResult.ok) {
+      receiptOk = false;
+      // eslint-disable-next-line no-console
+      console.warn("vote receipt not sent after submit", { sessionId, reason: receiptResult.reason });
+    }
   } catch (e) {
+    receiptOk = false;
     console.error("send voter receipt email failed", e);
   }
 
   await clearVotingSessionCookie();
-  // Paired tablet/station flow: show a quick thank-you then bounce back to voter sign-in.
-  // Phone / not paired: stay on thanks page (no auto redirect).
-  redirect(isTabletFlow ? "/vote/thanks?paired=1" : "/vote/thanks");
+  const thanksParams = new URLSearchParams();
+  if (isTabletFlow) thanksParams.set("paired", "1");
+  if (!receiptOk) thanksParams.set("receipt", "failed");
+  const thanksQs = thanksParams.toString();
+  redirect(thanksQs ? `/vote/thanks?${thanksQs}` : "/vote/thanks");
 }

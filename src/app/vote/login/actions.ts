@@ -213,12 +213,32 @@ export async function loginWithQueueAndToken(formData: FormData) {
     const confcode =
       rawConf != null && String(rawConf).trim() !== "" ? String(rawConf).trim() : null;
 
-    const { error: ballotErr } = await supabase
-      .from("ballots")
-      .update({ confcode })
-      .eq("session_id", sessionId);
+    const { data: sessionForBallot } = await supabase
+      .from("voting_sessions")
+      .select("voter_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    const voterIdForBallot = (sessionForBallot as { voter_id?: string | null } | null)?.voter_id;
 
-    if (ballotErr) throw ballotErr;
+    if (voterIdForBallot) {
+      const { error: ballotUpsertErr } = await supabase.from("ballots").upsert(
+        {
+          voter_id: voterIdForBallot,
+          session_id: sessionId,
+          confcode,
+          is_submitted: false,
+          submitted_at: null,
+        },
+        { onConflict: "voter_id" },
+      );
+      if (ballotUpsertErr) throw ballotUpsertErr;
+    } else {
+      const { error: ballotErr } = await supabase
+        .from("ballots")
+        .update({ confcode })
+        .eq("session_id", sessionId);
+      if (ballotErr) throw ballotErr;
+    }
 
     await setVotingSessionCookie(sessionId);
     redirect("/vote");

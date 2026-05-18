@@ -5,6 +5,7 @@ import { getAdminSession } from "@/lib/admin/session";
 import { isSystemSuperSession } from "@/lib/admin/admin-roles";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { UrlToasts } from "@/app/_components/UrlToasts";
+import { ResendVoteReceiptButton } from "./resend-receipt-button";
 
 type BallotRow = {
   id: string;
@@ -106,9 +107,17 @@ export default async function AdminBallotDetailsPage({
               Ballot ID <span className="font-mono text-xs">{b.id}</span>
             </p>
           </div>
-          <Link className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50" href="/admin/ballots">
-            Back
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {b.is_submitted ? (
+              <ResendVoteReceiptButton
+                ballotId={b.id}
+                returnTo={`/admin/ballots/${b.id}`}
+              />
+            ) : null}
+            <Link className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50" href="/admin/ballots">
+              Back
+            </Link>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">

@@ -39,6 +39,7 @@ export function VoteThanksClient() {
   const router = useRouter();
   const sp = useSearchParams();
   const isPaired = sp.get("paired") === "1";
+  const receiptFailed = sp.get("receipt") === "failed";
   const firedRef = useRef(false);
   const [secondsLeft, setSecondsLeft] = useState(10);
 
@@ -84,6 +85,12 @@ export function VoteThanksClient() {
             ? "Please return the tablet to the designated area."
             : "You can leave this page open or close it when you are done. No further action is required."}
         </p>
+        {receiptFailed ? (
+          <p className="rounded-lg border border-amber-200/40 bg-amber-50/10 px-4 py-3 text-sm text-amber-100">
+            Your vote was recorded, but we could not send the email receipt. Please ask Comelec
+            staff to resend your receipt if you need a copy.
+          </p>
+        ) : null}
       </div>
 
       {isPaired ? (
