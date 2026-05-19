@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
 import { sessionHasAdminPageAccess } from "@/lib/admin/path-access";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
+import { fetchImageAsDataUrl } from "@/lib/pdf/fetch-image-data-url";
+import { renderHtmlToLandscapePdfBuffer } from "@/lib/pdf/render-html-to-pdf";
 import { toPublicMessage } from "@/lib/errors/public-message";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 function tsSafe(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -39,50 +40,6 @@ type ComelecMember = {
   confcode: string | null;
   photo_url: string | null;
 };
-
-const PHOTO_FETCH_TIMEOUT_MS = 8_000;
-const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
-
-async function fetchImageAsDataUrl(url: string): Promise<string | null> {
-  if (!url) return null;
-  if (url.startsWith("data:")) return url;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PHOTO_FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      redirect: "follow",
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-
-    const lenHeader = res.headers.get("content-length");
-    const declaredLen = lenHeader ? Number(lenHeader) : NaN;
-    if (Number.isFinite(declaredLen) && declaredLen > PHOTO_MAX_BYTES) return null;
-
-    const contentType = (res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.byteLength > PHOTO_MAX_BYTES) return null;
-
-    const mime =
-      contentType && contentType.startsWith("image/")
-        ? contentType
-        : (() => {
-            const lower = url.toLowerCase();
-            if (lower.endsWith(".png")) return "image/png";
-            if (lower.endsWith(".webp")) return "image/webp";
-            if (lower.endsWith(".gif")) return "image/gif";
-            return "image/jpeg";
-          })();
-
-    return `data:${mime};base64,${buf.toString("base64")}`;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 let cachedBgDataUrl: string | null | undefined;
 let cachedLogoDataUrl: string | null | undefined;
@@ -191,18 +148,12 @@ function renderHtml(args: {
   <head>
     <meta charset="utf-8" />
     <title>COMELEC Members Presentation — ${escapeHtml(confcode)}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@800;900&display=swap"
-    />
     <style>
       :root { color-scheme: light; }
       @page { size: A4 landscape; margin: 0; }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; background: #0a0820; color: #fff; }
-      body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
 
       .page {
         position: relative;
@@ -291,7 +242,7 @@ function renderHtml(args: {
       }
       .comelec-title-main {
         margin-top: 14px;
-        font-family: "Playfair Display", Georgia, serif;
+        font-family: Georgia, "Times New Roman", serif;
         font-weight: 900;
         font-size: 28pt;
         line-height: 1.1;
@@ -302,7 +253,7 @@ function renderHtml(args: {
 
       .details-col { min-width: 0; }
       .name {
-        font-family: "Playfair Display", Georgia, serif;
+        font-family: Georgia, "Times New Roman", serif;
         font-weight: 900;
         font-size: 38pt;
         line-height: 1.05;
@@ -356,7 +307,6 @@ export async function GET() {
   }
 
   const supabase = createSupabaseServiceRoleClient();
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
 
   try {
     const { data: settings, error: settingsErr } = await supabase
@@ -420,34 +370,9 @@ export async function GET() {
     });
     const filename = `COMELEC_Members_Presentation_${fileSafe(activeConfcode)}_${tsSafe(new Date())}.pdf`;
 
-    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(45_000);
-    page.setDefaultTimeout(45_000);
-    await page.setContent(html, { waitUntil: "load", timeout: 45_000 });
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          const ready = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts
-            ?.ready;
-          if (!ready) {
-            resolve();
-            return;
-          }
-          const done = () => resolve();
-          ready.then(done, done);
-          setTimeout(done, 4000);
-        }),
-    );
-    const pdf = await page.pdf({
-      width: "297mm",
-      height: "210mm",
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
-    });
+    const pdf = await renderHtmlToLandscapePdfBuffer(html);
 
-    return new NextResponse(Buffer.from(pdf), {
+    return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
@@ -458,11 +383,5 @@ export async function GET() {
     console.error("comelec members presentation pdf generation failed", e);
     const { message } = toPublicMessage(e, "Unable to generate presentation PDF.");
     return NextResponse.json({ error: message }, { status: 500 });
-  } finally {
-    try {
-      await browser?.close();
-    } catch {
-      // ignore
-    }
   }
 }
