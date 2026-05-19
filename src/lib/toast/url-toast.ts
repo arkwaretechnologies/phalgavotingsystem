@@ -58,11 +58,13 @@ export function useUrlToast(options?: {
       // ignore
     }
 
-    let kind: ToastKind = (kindRaw as ToastKind) || (msgRaw ? "error" : defaultKind);
+    const kindFromParam =
+      kindRaw === "success" || kindRaw === "error" || kindRaw === "info" ? kindRaw : null;
+    let kind: ToastKind = kindFromParam ?? defaultKind;
     let msg = msgRaw ?? "Done.";
 
-    // Special-case common patterns where `error` is a code and `msg` is the text.
-    if (errorParam && errorParam.length <= 24 && msgParam) {
+    // `?error=code&message=…` — show message as error unless toast=success is explicit.
+    if (errorParam && errorParam.length <= 24 && msgParam && kindFromParam !== "success") {
       kind = "error";
       msg = msgParam;
     }

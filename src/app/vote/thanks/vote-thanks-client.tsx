@@ -86,10 +86,14 @@ export function VoteThanksClient() {
             : "You can leave this page open or close it when you are done. No further action is required."}
         </p>
         {receiptFailed ? (
-          <p className="rounded-lg border border-amber-200/40 bg-amber-50/10 px-4 py-3 text-sm text-amber-100">
-            Your vote was recorded, but we could not send the email receipt. Please ask Comelec
-            staff to resend your receipt if you need a copy.
-          </p>
+          <>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Thank you for casting your votes
+            </h1>
+            <p className="text-base leading-relaxed text-white/85">
+              Your ballot has been recorded successfully.
+            </p>
+          </>
         ) : null}
       </div>
 

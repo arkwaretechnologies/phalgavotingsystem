@@ -3,7 +3,6 @@ import { checkInVoter } from "./actions";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { ThermalReceiptPrintActions } from "./thermal-receipt-print";
-import { ResendVoteReceiptButton } from "@/app/admin/(app)/ballots/[id]/resend-receipt-button";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +101,6 @@ export default async function AdminCheckInPage({
 
   let voters: VoterRow[] = [];
   let sessionByVoterId = new Map<string, SessionBrief>();
-  let submittedBallotIdByVoterId = new Map<string, string>();
   if (q.length >= 2) {
     const { data, error } = await supabase
       .from("voters")
@@ -140,24 +138,6 @@ export default async function AdminCheckInPage({
           const prevQ = prev?.queue_number ?? -1;
           const curQ = s.queue_number ?? -1;
           if (!prev || curQ > prevQ) sessionByVoterId.set(vid, s);
-        }
-      }
-
-      const { data: ballots, error: bErr } = await supabase
-        .from("ballots")
-        .select("id, voter_id")
-        .in("voter_id", voterIds)
-        .eq("is_submitted", true);
-
-      if (bErr) {
-        // eslint-disable-next-line no-console
-        console.error("load submitted ballots for check-in list failed", bErr);
-      } else {
-        submittedBallotIdByVoterId = new Map<string, string>();
-        for (const row of ballots ?? []) {
-          const vid = row.voter_id ? String(row.voter_id) : null;
-          const bid = row.id ? String(row.id) : null;
-          if (vid && bid) submittedBallotIdByVoterId.set(vid, bid);
         }
       }
     }
@@ -259,10 +239,8 @@ export default async function AdminCheckInPage({
                   if (q) params.set("q", q);
                   params.set("show_voter_id", v.id);
                   const showUrl = `/admin/check-in?${params.toString()}`;
-                  const returnTo = showUrl;
                   const session = sessionByVoterId.get(v.id) ?? null;
                   const isVoted = (session?.status ?? "").toLowerCase() === "voted";
-                  const submittedBallotId = submittedBallotIdByVoterId.get(v.id) ?? null;
 
                   return (
                     <tr key={v.id}>
@@ -278,17 +256,9 @@ export default async function AdminCheckInPage({
                       <td className="text-neutral-600">{session?.status ?? "—"}</td>
                       <td className="text-right">
                         {isVoted ? (
-                          <div className="inline-flex max-w-full flex-col items-end gap-2">
-                            <span className="inline-flex max-w-full items-center justify-center rounded-md bg-neutral-200 px-2.5 py-2 text-center text-xs font-medium text-neutral-700">
-                              Vote Casted
-                            </span>
-                            {submittedBallotId && v.email ? (
-                              <ResendVoteReceiptButton
-                                ballotId={submittedBallotId}
-                                returnTo={returnTo}
-                              />
-                            ) : null}
-                          </div>
+                          <span className="inline-flex max-w-full items-center justify-center rounded-md bg-neutral-200 px-2.5 py-2 text-center text-xs font-medium text-neutral-700">
+                            Vote Casted
+                          </span>
                         ) : v.is_verified ? (
                           <a
                             href={showUrl}

@@ -2,6 +2,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { importVotersCsv } from "../../voters/actions";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { UrlToasts } from "@/app/_components/UrlToasts";
+import { SendVoterReceiptButton } from "./send-voter-receipt-button";
 
 export default async function AdminVotersPage({
   searchParams,
@@ -48,6 +49,8 @@ export default async function AdminVotersPage({
       }>
     | null = null;
 
+  let votedVoterIds = new Set<string>();
+
   if (total > 0) {
     const query = supabase
       .from("voters")
@@ -67,6 +70,26 @@ export default async function AdminVotersPage({
       throw new Error(message);
     }
     rows = data ?? [];
+
+    const voterIds = rows.map((v) => v.id).filter(Boolean);
+    if (voterIds.length > 0) {
+      const { data: submittedBallots, error: ballotErr } = await supabase
+        .from("ballots")
+        .select("voter_id")
+        .in("voter_id", voterIds)
+        .eq("is_submitted", true);
+
+      if (ballotErr) {
+        // eslint-disable-next-line no-console
+        console.error("load submitted ballots for voters list failed", ballotErr);
+      } else {
+        votedVoterIds = new Set(
+          (submittedBallots ?? [])
+            .map((b) => (b.voter_id ? String(b.voter_id) : null))
+            .filter((id): id is string => Boolean(id)),
+        );
+      }
+    }
   }
 
   const pageHref = (p: number) => {
@@ -178,12 +201,20 @@ export default async function AdminVotersPage({
                   <td className="border-b px-2 py-2 text-neutral-600">{v.email ?? "—"}</td>
                   <td className="border-b px-2 py-2 text-neutral-600">{v.phone ?? "—"}</td>
                   <td className="border-b px-2 py-2 text-right">
-                    <a
-                      href={`/admin/voters/${v.id}`}
-                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-xs font-medium hover:bg-neutral-50"
-                    >
-                      Edit / Delete
-                    </a>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {votedVoterIds.has(v.id) ? (
+                        <SendVoterReceiptButton
+                          voterId={v.id}
+                          returnTo={pageHref(safePage)}
+                        />
+                      ) : null}
+                      <a
+                        href={`/admin/voters/${v.id}`}
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-xs font-medium hover:bg-neutral-50"
+                      >
+                        Edit / Delete
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}

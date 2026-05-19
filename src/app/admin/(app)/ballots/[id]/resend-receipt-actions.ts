@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin/session";
 import { sessionHasAdminPageAccess } from "@/lib/admin/path-access";
+import { adminRedirectWithToast } from "@/lib/admin/admin-toast-redirect";
 import { sendVoterReceiptEmailForBallot } from "@/lib/email/vote-receipt";
 
 export async function resendVoteReceipt(formData: FormData) {
@@ -25,9 +26,7 @@ export async function resendVoteReceipt(formData: FormData) {
   revalidatePath("/admin/canvass");
 
   if (result.ok) {
-    redirect(
-      `${returnTo}?toast=success&message=${encodeURIComponent("Vote receipt email sent.")}`,
-    );
+    adminRedirectWithToast(returnTo, "success", "Vote receipt email sent.");
   }
 
   const message =
@@ -38,5 +37,5 @@ export async function resendVoteReceipt(formData: FormData) {
         ? "Ballot not found or not submitted."
         : "Unable to send vote receipt. Check server logs.");
 
-  redirect(`${returnTo}?toast=error&message=${encodeURIComponent(message)}`);
+  adminRedirectWithToast(returnTo, "error", message);
 }

@@ -33,13 +33,7 @@ function escapeHtml(s: string) {
 }
 
 function generateReceiptPassword(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const length = 14;
-  let out = "";
-  for (let i = 0; i < length; i++) {
-    out += alphabet[randomInt(alphabet.length)];
-  }
-  return out;
+  return String(randomInt(1_000_000)).padStart(6, "0");
 }
 
 type ChoiceRow = {
