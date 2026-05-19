@@ -32,8 +32,11 @@ export default async function AdminComelecMembersPage() {
 
   const membersQuery = supabase
     .from("comelec_members")
-    .select("id, name, position, lgu, province, confcode, photo_url, created_at")
-    .order("created_at", { ascending: false })
+    .select(
+      "id, name, position, comelec_position, sort_order, lgu, province, confcode, photo_url, created_at",
+    )
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true })
     .limit(50);
 
   const { data: members, error: membersErr } = activeConfcode
@@ -50,6 +53,8 @@ export default async function AdminComelecMembersPage() {
     id: String(m.id),
     name: m.name ?? null,
     position: m.position ?? null,
+    comelec_position: m.comelec_position ?? null,
+    sort_order: m.sort_order == null ? null : Number(m.sort_order),
     lgu: m.lgu ?? null,
     province: m.province ?? null,
     confcode: m.confcode ?? null,
@@ -149,7 +154,28 @@ export default async function AdminComelecMembersPage() {
             <input name="photo_file" type="file" accept="image/*" className={fileInputClass} />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+            <label className="block min-w-0">
+              <span className="text-sm font-medium text-neutral-800">COMELEC position</span>
+              <input
+                name="comelec_position"
+                className={fieldInputClass}
+                placeholder="e.g. Chairperson"
+              />
+              <span className="mt-1 block text-[11px] text-neutral-500">
+                Shown under the photo on profile and presentation slides.
+              </span>
+            </label>
+            <label className="block min-w-0">
+              <span className="text-sm font-medium text-neutral-800">Sort order</span>
+              <input
+                name="sort_order"
+                type="number"
+                className={fieldInputClass}
+                placeholder="e.g. 1"
+                inputMode="numeric"
+              />
+            </label>
             <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-800">Position</span>
               <input name="position" className={fieldInputClass} placeholder="Optional" />
@@ -158,7 +184,7 @@ export default async function AdminComelecMembersPage() {
               <span className="text-sm font-medium text-neutral-800">LGU</span>
               <input name="lgu" className={fieldInputClass} placeholder="Optional" />
             </label>
-            <label className="block min-w-0">
+            <label className="block min-w-0 sm:col-span-2 lg:col-span-1">
               <span className="text-sm font-medium text-neutral-800">Province</span>
               <input name="province" className={fieldInputClass} placeholder="Optional" />
             </label>

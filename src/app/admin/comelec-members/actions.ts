@@ -13,6 +13,14 @@ function norm(v: unknown) {
   return s.length ? s : null;
 }
 
+function parseSortOrder(v: unknown): number | null {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) throw new Error("Sort order must be a number.");
+  return Math.trunc(n);
+}
+
 async function uploadComelecPhoto(
   supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
   confcode: string,
@@ -45,6 +53,8 @@ export async function createComelecMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const confcode = String(formData.get("confcode") ?? "").trim();
   const position = norm(formData.get("position"));
+  const comelec_position = norm(formData.get("comelec_position"));
+  const sort_order = parseSortOrder(formData.get("sort_order"));
   const lgu = norm(formData.get("lgu"));
   const province = norm(formData.get("province"));
 
@@ -58,6 +68,8 @@ export async function createComelecMember(formData: FormData) {
     name,
     confcode,
     position,
+    comelec_position,
+    sort_order,
     lgu,
     province,
     photo_url,
@@ -79,6 +91,8 @@ export async function updateComelecMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const confcode = String(formData.get("confcode") ?? "").trim();
   const position = norm(formData.get("position"));
+  const comelec_position = norm(formData.get("comelec_position"));
+  const sort_order = parseSortOrder(formData.get("sort_order"));
   const lgu = norm(formData.get("lgu"));
   const province = norm(formData.get("province"));
 
@@ -88,7 +102,15 @@ export async function updateComelecMember(formData: FormData) {
 
   const supabase = createSupabaseServiceRoleClient();
 
-  const update: Record<string, unknown> = { name, confcode, position, lgu, province };
+  const update: Record<string, unknown> = {
+    name,
+    confcode,
+    position,
+    comelec_position,
+    sort_order,
+    lgu,
+    province,
+  };
   const photo_url = await uploadComelecPhoto(supabase, confcode, formData.get("photo_file"));
   if (photo_url !== null) update.photo_url = photo_url;
 

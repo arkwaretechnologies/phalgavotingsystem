@@ -11,6 +11,8 @@ export type ComelecMemberRow = {
   id: string;
   name: string | null;
   position: string | null;
+  comelec_position: string | null;
+  sort_order: number | null;
   lgu: string | null;
   province: string | null;
   confcode: string | null;
@@ -77,6 +79,8 @@ export function ComelecMembersTable({
         <thead>
           <tr>
             <th>Name</th>
+            <th>COMELEC position</th>
+            <th>Sort</th>
             <th>Position</th>
             <th>LGU</th>
             <th>Province</th>
@@ -108,6 +112,10 @@ export function ComelecMembersTable({
                       )}
                       <div>{displayName}</div>
                     </div>
+                  </td>
+                  <td className="text-neutral-600">{m.comelec_position ?? "—"}</td>
+                  <td className="text-neutral-600 tabular-nums">
+                    {m.sort_order == null ? "—" : m.sort_order}
                   </td>
                   <td className="text-neutral-600">{m.position ?? "—"}</td>
                   <td className="text-neutral-600">{m.lgu ?? "—"}</td>
@@ -157,7 +165,7 @@ export function ComelecMembersTable({
 
             return (
               <tr key={m.id} className="admin-table-edit-row">
-                <td colSpan={6}>
+                <td colSpan={8}>
                   <form action={updateComelecMember} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <input type="hidden" name="id" value={m.id} />
                     <input type="hidden" name="confcode" value={activeConfcode ?? ""} />
@@ -197,6 +205,24 @@ export function ComelecMembersTable({
                         defaultValue={m.name ?? ""}
                         className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
                         required
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">COMELEC position</span>
+                      <input
+                        name="comelec_position"
+                        defaultValue={m.comelec_position ?? ""}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs text-neutral-600">Sort order</span>
+                      <input
+                        name="sort_order"
+                        type="number"
+                        defaultValue={m.sort_order == null ? "" : String(m.sort_order)}
+                        className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+                        inputMode="numeric"
                       />
                     </label>
                     <label className="block">
@@ -245,7 +271,7 @@ export function ComelecMembersTable({
           })}
           {members.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-2 py-8 text-center text-sm text-neutral-500">
+              <td colSpan={8} className="px-2 py-8 text-center text-sm text-neutral-500">
                 No COMELEC members yet.
               </td>
             </tr>

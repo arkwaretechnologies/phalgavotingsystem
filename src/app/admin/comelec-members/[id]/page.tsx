@@ -14,6 +14,7 @@ type ComelecMember = {
   id: string;
   name: string | null;
   position: string | null;
+  comelec_position: string | null;
   lgu: string | null;
   province: string | null;
   confcode: string | null;
@@ -32,7 +33,7 @@ export default async function AdminComelecMemberProfilePage({
   const supabase = createSupabaseServiceRoleClient();
   const { data: member, error } = await supabase
     .from("comelec_members")
-    .select("id, name, position, lgu, province, confcode, photo_url, created_at")
+    .select("id, name, position, comelec_position, lgu, province, confcode, photo_url, created_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -46,6 +47,8 @@ export default async function AdminComelecMemberProfilePage({
 
   const typed = member as unknown as ComelecMember;
   const displayName = typed.name?.trim() || "—";
+  const comelecLabel = typed.comelec_position?.trim() || "COMELEC MEMBER";
+  const hasCustomComelecLabel = Boolean(typed.comelec_position?.trim());
 
   return (
     <main className="relative isolate min-h-dvh overflow-hidden bg-[#0a0820] text-white">
@@ -93,8 +96,8 @@ export default async function AdminComelecMemberProfilePage({
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <p className="px-8 py-2 w-[22rem] text-center text-2xl font-bold uppercase tracking-[0.18em] text-[#facc15] sm:w-[28rem] sm:text-3xl lg:w-[34rem] lg:text-4xl">
-                    COMELEC MEMBER
+                  <p className="px-8 py-2 w-[22rem] text-center text-2xl font-bold uppercase tracking-[0.18em] text-[#facc15] sm:w-[28rem] sm:text-3xl lg:w-[34rem] lg:text-4xl whitespace-pre-line">
+                    {comelecLabel}
                   </p>
                 </>
               ) : (
@@ -104,11 +107,17 @@ export default async function AdminComelecMemberProfilePage({
                       Republic of the Philippines
                     </p>
                     <p
-                      className={`${displayFont.className} mt-4 text-2xl font-black uppercase leading-tight tracking-wide text-white sm:text-3xl lg:text-4xl`}
+                      className={`${displayFont.className} mt-4 text-2xl font-black uppercase leading-tight tracking-wide text-white sm:text-3xl lg:text-4xl whitespace-pre-line`}
                     >
-                      COMELEC
-                      <br />
-                      Member
+                      {hasCustomComelecLabel ? (
+                        comelecLabel
+                      ) : (
+                        <>
+                          COMELEC
+                          <br />
+                          Member
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>

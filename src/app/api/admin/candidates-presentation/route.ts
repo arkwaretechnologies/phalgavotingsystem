@@ -31,7 +31,50 @@ function escapeHtml(s: unknown) {
     .replaceAll("'", "&#039;");
 }
 
-type GeoGroupLite = { id: number; code: string; name: string };
+type GeoGroupLite = { id: number; code: string; name: string; sort_order?: number | null };
+
+/** Presentation page order (one page per candidate). */
+const GEO_PRESENTATION_ORDER = [
+  "NORTHERN LUZON",
+  "SOUTHERN LUZON",
+  "VISAYAS",
+  "MINDANAO",
+] as const;
+
+function normalizeGeoLabel(s: string) {
+  return s.trim().toUpperCase().replace(/\s+/g, " ");
+}
+
+function geoPresentationRank(candidate: Candidate): number {
+  const geo = candidate.geo_group;
+  if (!geo) return GEO_PRESENTATION_ORDER.length + 1;
+
+  const name = normalizeGeoLabel(geo.name ?? "");
+  const code = normalizeGeoLabel((geo.code ?? "").replace(/_/g, " "));
+
+  const idx = GEO_PRESENTATION_ORDER.findIndex(
+    (label) =>
+      name === label ||
+      code === label ||
+      name.startsWith(label) ||
+      code.startsWith(label),
+  );
+  return idx >= 0 ? idx : GEO_PRESENTATION_ORDER.length;
+}
+
+function sortCandidatesForPresentation(list: Candidate[]): Candidate[] {
+  return [...list].sort((a, b) => {
+    const ga = geoPresentationRank(a);
+    const gb = geoPresentationRank(b);
+    if (ga !== gb) return ga - gb;
+    const sa = a.geo_group?.sort_order ?? 0;
+    const sb = b.geo_group?.sort_order ?? 0;
+    if (sa !== sb) return sa - sb;
+    return String(a.full_name).localeCompare(String(b.full_name), undefined, {
+      sensitivity: "base",
+    });
+  });
+}
 
 type Candidate = {
   id: string;
@@ -485,19 +528,19 @@ export async function GET() {
         geo_group:geo_groups (
           id,
           code,
-          name
+          name,
+          sort_order
         )
       `,
       )
       .eq("confcode", activeConfcode)
-      .eq("is_active", true)
-      .order("full_name", { ascending: true });
+      .eq("is_active", true);
 
     if (candErr) {
       throw candErr;
     }
 
-    const candidates = (rows ?? []) as unknown as Candidate[];
+    const candidates = sortCandidatesForPresentation((rows ?? []) as unknown as Candidate[]);
     if (candidates.length === 0) {
       return NextResponse.json(
         { error: "No active candidates to include in the presentation." },
@@ -561,14 +604,19 @@ export async function GET() {
       // image used to push setContent past `networkidle0`'s 60s timeout.
       Promise.all(
         candidates.map((c) =>
-          c.photo_url ? fetchImageAsDataUrl(String(c.photo_url)) : Promise.resolve(null),
+          c.photo_url
+            ? fetchImageAsDataUrl(String(c.photo_url), {
+                maxInlineBytes: 2 * 1024 * 1024,
+                supabaseTransformWidth: 900,
+              })
+            : Promise.resolve(null),
         ),
       ),
     ]);
 
     const candidatesInlined = candidates.map((c, i) => ({
       ...c,
-      photo_url: photoDataUrls[i] ?? null,
+      photo_url: photoDataUrls[i] ?? c.photo_url,
     }));
 
     const html = renderHtml({
@@ -584,7 +632,7 @@ export async function GET() {
       new Date(),
     )}.pdf`;
 
-    const pdf = await renderHtmlToLandscapePdfBuffer(html);
+    const pdf = await renderHtmlToLandscapePdfBuffer(html, { waitForImages: true });
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
