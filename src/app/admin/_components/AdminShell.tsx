@@ -114,6 +114,12 @@ const NAV_ITEMS = [
   { pageKey: "queueing" as const, href: "/admin/queueing", label: "Queueing", icon: "queue" as const },
   { pageKey: "voters" as const, href: "/admin/voters", label: "Voters", icon: "users" as const },
   { pageKey: "candidates" as const, href: "/admin/candidates", label: "Candidates", icon: "candidate" as const },
+  {
+    pageKey: "comelec_members" as const,
+    href: "/admin/comelec-members",
+    label: "COMELEC Members",
+    icon: "candidate" as const,
+  },
   { pageKey: "tablets" as const, href: "/admin/tablets", label: "Tablets", icon: "tablet" as const },
   { pageKey: "canvass" as const, href: "/admin/canvass", label: "Canvass", icon: "doc" as const },
   { pageKey: "reports" as const, href: "/admin/reports", label: "Reports", icon: "chart" as const },
