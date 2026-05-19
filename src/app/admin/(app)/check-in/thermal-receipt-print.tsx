@@ -12,32 +12,20 @@ function escapeHtml(s: string) {
     .replaceAll("'", "&#039;");
 }
 
-/** Thermal label: printer area 60×70 mm (width × height); content inset 0.05 in each side. */
-const LABEL_PAPER_MM = { w: 60, h: 70 } as const;
-const LABEL_SIDE_INSET = "0.05in";
-
-type ReceiptFormat = "60x70" | "80";
+const RECEIPT_WIDTH_MM = 80;
 
 function buildReceiptHtml(opts: {
-  format: ReceiptFormat;
   queue: string;
   token: string;
   voterId: string;
   qrDataUrl: string;
   qrCaption: string;
 }) {
-  const label = opts.format === "60x70";
-  const w = label ? LABEL_PAPER_MM.w : 80;
-  const title = label ? "CHECK-IN" : "CHECK-IN RECEIPT";
+  const w = RECEIPT_WIDTH_MM;
 
   // Thermal-friendly: keep it simple, high contrast, monospace-ish.
-  const pageRule = label
-    ? `@page { size: ${LABEL_PAPER_MM.w}mm ${LABEL_PAPER_MM.h}mm; margin: 0; }`
-    : `@page { size: ${w}mm auto; margin: 0; }`;
-
-  const bodyRule = label
-    ? `width: ${LABEL_PAPER_MM.w}mm; height: ${LABEL_PAPER_MM.h}mm; max-height: ${LABEL_PAPER_MM.h}mm; box-sizing: border-box; overflow: hidden; padding-left: ${LABEL_SIDE_INSET}; padding-right: ${LABEL_SIDE_INSET};`
-    : `width: ${w}mm;`;
+  const pageRule = `@page { size: ${w}mm auto; margin: 0; }`;
+  const bodyRule = `width: ${w}mm;`;
 
   return `<!doctype html>
 <html lang="en">
@@ -51,22 +39,22 @@ function buildReceiptHtml(opts: {
       body {
         ${bodyRule}
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: ${label ? "10px" : "12px"};
-        line-height: ${label ? "1.2" : "1.2"};
+        font-size: 12px;
+        line-height: 1.2;
       }
-      .pad { padding: ${label ? "2mm 0 2mm" : "2mm 2mm 3mm"}; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; }
+      .pad { padding: 2mm 2mm 3mm; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; }
       .center { text-align: center; }
       .bold { font-weight: 700; }
       .muted { color: #333; }
-      .hr { border-top: 1px dashed #000; margin: ${label ? "4px 0" : "6px 0"}; flex-shrink: 0; }
+      .hr { border-top: 1px dashed #000; margin: 6px 0; flex-shrink: 0; }
       .kv { text-align: center; flex-shrink: 0; }
-      .kv + .kv { margin-top: ${label ? "4px" : "6px"}; }
+      .kv + .kv { margin-top: 6px; }
       .kv-label { display: block; }
       .kv-value { display: block; margin-top: 2px; word-break: break-all; }
-      .big { font-size: ${label ? "16px" : "18px"}; letter-spacing: ${label ? "0.06em" : "0.08em"}; }
-      .qr { margin-top: ${label ? "10px" : "12px"}; text-align: center; }
-      .qr img { width: ${label ? "34mm" : "46mm"}; height: auto; image-rendering: pixelated; }
-      .qr-cap { margin-top: 6px; font-size: ${label ? "9px" : "10px"}; color: #222; text-align: center; }
+      .big { font-size: 18px; letter-spacing: 0.08em; }
+      .qr { margin-top: 12px; text-align: center; }
+      .qr img { width: 46mm; height: auto; image-rendering: pixelated; }
+      .qr-cap { margin-top: 6px; font-size: 10px; color: #222; text-align: center; }
       ${pageRule}
       @media print {
         body { ${bodyRule} }
@@ -75,7 +63,7 @@ function buildReceiptHtml(opts: {
   </head>
   <body>
     <div class="pad">
-      <div class="center bold">${escapeHtml(title)}</div>
+      <div class="center bold">CHECK-IN RECEIPT</div>
       <div class="hr"></div>
 
       <div class="kv">
@@ -187,42 +175,9 @@ export function ThermalReceiptPrintActions({
             const qr = await QRCode.toDataURL(voteLoginUrl, {
               errorCorrectionLevel: "M",
               margin: 1,
-              width: 260,
-            });
-            const html = buildReceiptHtml({
-              format: "60x70",
-              queue,
-              token,
-              voterId,
-              qrDataUrl: qr,
-              qrCaption: "/vote/login",
-            });
-            printHtmlInHiddenIframe(html);
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "Unable to generate QR for printing.");
-          } finally {
-            printingRef.current = false;
-          }
-        }}
-      >
-        Print Queue No (60×70 mm)
-      </button>
-      <button
-        type="button"
-        className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
-        onClick={async () => {
-          if (printingRef.current) return;
-          printingRef.current = true;
-          setError(null);
-          try {
-            const voteLoginUrl = `${window.location.origin}/vote/login`;
-            const qr = await QRCode.toDataURL(voteLoginUrl, {
-              errorCorrectionLevel: "M",
-              margin: 1,
               width: 320,
             });
             const html = buildReceiptHtml({
-              format: "80",
               queue,
               token,
               voterId,
@@ -237,7 +192,7 @@ export function ThermalReceiptPrintActions({
           }
         }}
       >
-        Print Queue No (80mm)
+        Print Queue No
       </button>
     </div>
   );
