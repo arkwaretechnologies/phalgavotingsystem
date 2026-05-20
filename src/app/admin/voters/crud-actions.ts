@@ -6,6 +6,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { parseVoterGeoArea } from "@/lib/voters/geo-area";
 
 async function requireAdminPassword(password: string) {
   const admin = await getAdminSession();
@@ -41,7 +42,7 @@ function buildVoterDraftParams(formData: FormData) {
     "lgu",
     "province",
     "province_league",
-    "psgc_code",
+    "geo_area",
     "email",
     "phone",
   ] as const;
@@ -60,6 +61,9 @@ export async function createVoter(formData: FormData) {
     const full_name = String(formData.get("full_name") ?? "").trim();
     if (!full_name) throw new Error("Full name is required");
 
+    const geo_area = parseVoterGeoArea(formData.get("geo_area"));
+    if (!geo_area) throw new Error("Geo area is required");
+
     const supabase = createSupabaseServiceRoleClient();
     const { error } = await supabase.from("voters").insert({
       full_name,
@@ -67,7 +71,7 @@ export async function createVoter(formData: FormData) {
       lgu: norm(formData.get("lgu")),
       province: norm(formData.get("province")),
       province_league: norm(formData.get("province_league")),
-      psgc_code: norm(formData.get("psgc_code")),
+      geo_area,
       email: norm(formData.get("email")),
       phone: norm(formData.get("phone")),
     });
@@ -99,6 +103,9 @@ export async function updateVoter(formData: FormData) {
     const full_name = String(formData.get("full_name") ?? "").trim();
     if (!full_name) throw new Error("Full name is required");
 
+    const geo_area = parseVoterGeoArea(formData.get("geo_area"));
+    if (!geo_area) throw new Error("Geo area is required");
+
     const supabase = createSupabaseServiceRoleClient();
     const { error } = await supabase
       .from("voters")
@@ -108,7 +115,7 @@ export async function updateVoter(formData: FormData) {
         lgu: norm(formData.get("lgu")),
         province: norm(formData.get("province")),
         province_league: norm(formData.get("province_league")),
-        psgc_code: norm(formData.get("psgc_code")),
+        geo_area,
         email: norm(formData.get("email")),
         phone: norm(formData.get("phone")),
       })

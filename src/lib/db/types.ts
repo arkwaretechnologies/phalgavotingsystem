@@ -11,7 +11,9 @@ export interface Voter {
   lgu: string | null;
   province: string | null;
   province_league: string | null;
-  psgc_code: string | null;
+  /** @deprecated legacy; prefer `geo_area`. */
+  psgc_code?: string | null;
+  geo_area: string | null;
   email: string | null;
   phone: string | null;
   is_verified: boolean | null;

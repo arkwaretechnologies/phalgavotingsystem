@@ -1,35 +1,11 @@
 import Link from "next/link";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { loadReportsOverviewModel } from "@/lib/admin/reports-overview";
 
 export default async function AdminReportsPage() {
-  const supabase = createSupabaseServiceRoleClient();
-  let totalVoters = 0;
-  let votedVoters = 0;
-
+  let model: Awaited<ReturnType<typeof loadReportsOverviewModel>>;
   try {
-    const { count, error } = await supabase
-      .from("voters")
-      .select("id", { count: "exact", head: true });
-    if (error) throw error;
-    totalVoters = Number(count ?? 0);
-
-    const submitted = await fetchAllRows<{ voter_id: string | null }>(
-      async (from, to) =>
-        await supabase
-          .from("ballots")
-          .select("voter_id")
-          .eq("is_submitted", true)
-          .order("created_at", { ascending: true })
-          .range(from, to),
-      { pageSize: 2000 },
-    );
-    votedVoters = new Set(
-      submitted
-        .map((r) => (r.voter_id ? String(r.voter_id) : ""))
-        .filter((x) => x.length > 0),
-    ).size;
+    model = await loadReportsOverviewModel();
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("reports overview load failed", e);
@@ -37,9 +13,19 @@ export default async function AdminReportsPage() {
     throw new Error(message);
   }
 
-  const inactiveVoters = Math.max(0, totalVoters - votedVoters);
-  const votedPct = totalVoters > 0 ? (votedVoters / totalVoters) * 100 : 0;
-  const inactivePct = totalVoters > 0 ? (inactiveVoters / totalVoters) * 100 : 0;
+  const {
+    totalVoters,
+    votedVoters,
+    inactiveVoters,
+    votedPct,
+    inactivePct,
+    geoTableRows,
+    confcode,
+    conferenceName,
+  } = model;
+
+  const confLabel =
+    confcode && conferenceName ? `${confcode} · ${conferenceName}` : confcode ?? null;
 
   return (
     <div className="space-y-6">
@@ -48,15 +34,33 @@ export default async function AdminReportsPage() {
         <p className="mt-2 text-sm text-neutral-600">
           Exportable reports for auditing and post-election documentation.
         </p>
+        {confLabel ? (
+          <p className="mt-2 text-xs text-neutral-500">
+            Active conference: <span className="font-mono text-neutral-700">{confLabel}</span>
+          </p>
+        ) : null}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href="/admin/reports/overview-print"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
+          >
+            Print overview
+          </a>
+          <a
+            href="/admin/reports/overview-pdf"
+            className="inline-flex items-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
+          >
+            Download overview PDF
+          </a>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-sm font-semibold">Voted vs Inactive</div>
-            <p className="mt-1 text-xs text-neutral-600">
-              Based on submitted ballots (<span className="font-mono">ballots.is_submitted = true</span>).
-            </p>
           </div>
           <div className="text-xs text-neutral-600">
             Total voters: <span className="font-mono">{totalVoters}</span>
@@ -95,6 +99,35 @@ export default async function AdminReportsPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
+        <div className="text-sm font-semibold">By geo area</div>
+        <p className="mt-1 text-xs text-neutral-600">
+          Voters are grouped by <span className="font-mono">voters.geo_area</span>. Inactive = no submitted ballot.
+        </p>
+        <div className="mt-4 overflow-x-auto rounded-xl border border-neutral-200/80">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                <th className="px-4 py-3">Geo area</th>
+                <th className="px-4 py-3 text-right">Voted</th>
+                <th className="px-4 py-3 text-right">Inactive</th>
+                <th className="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {geoTableRows.map((row) => (
+                <tr key={row.geo} className="border-b border-neutral-100 last:border-0">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{row.geo}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-neutral-800">{row.voted}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-neutral-800">{row.inactive}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-neutral-600">{row.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm">
         <div className="text-sm font-semibold">Available reports</div>
         <div className="mt-4 grid gap-3">
           <Link
@@ -129,4 +162,3 @@ export default async function AdminReportsPage() {
     </div>
   );
 }
-

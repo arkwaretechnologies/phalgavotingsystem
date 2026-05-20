@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireAdminSession } from "@/lib/admin/session";
 import { toPublicMessage } from "@/lib/errors/public-message";
+import { parseVoterGeoArea } from "@/lib/voters/geo-area";
 
 type CsvRow = Record<string, string | undefined>;
 
@@ -42,7 +43,7 @@ export async function importVotersCsv(formData: FormData) {
     lgu: string | null;
     province: string | null;
     province_league: string | null;
-    psgc_code: string | null;
+    geo_area: string;
     email: string | null;
     phone: string | null;
   }> = [];
@@ -55,19 +56,27 @@ export async function importVotersCsv(formData: FormData) {
       continue;
     }
 
+    const geo_area = parseVoterGeoArea(r.geo_area);
+    if (!geo_area) {
+      skipped += 1;
+      continue;
+    }
+
     toInsert.push({
       full_name,
       position: norm(r.position),
       lgu: norm(r.lgu),
       province: norm(r.province),
       province_league: norm(r.province_league),
-      psgc_code: norm(r.psgc_code),
+      geo_area,
       email: norm(r.email),
       phone: norm(r.phone),
     });
   }
 
-  if (toInsert.length === 0) throw new Error("No valid rows found (full_name is required).");
+  if (toInsert.length === 0) {
+    throw new Error("No valid rows found (full_name and a valid geo_area are required on each row).");
+  }
 
   const supabase = createSupabaseServiceRoleClient();
 

@@ -1,5 +1,7 @@
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { createVoter } from "@/app/admin/voters/crud-actions";
+import { isVoterGeoArea } from "@/lib/voters/geo-area";
+import { VoterGeoAreaSelect } from "../voter-geo-area-select";
 
 export default async function AdminNewVoterPage({
   searchParams,
@@ -20,7 +22,7 @@ export default async function AdminNewVoterPage({
     lgu: String(get("lgu") ?? ""),
     province: String(get("province") ?? ""),
     province_league: String(get("province_league") ?? ""),
-    psgc_code: String(get("psgc_code") ?? ""),
+    geo_area: String(get("geo_area") ?? ""),
     email: String(get("email") ?? ""),
     phone: String(get("phone") ?? ""),
   };
@@ -73,8 +75,10 @@ export default async function AdminNewVoterPage({
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-sm font-medium">PSGC code</span>
-              <input name="psgc_code" defaultValue={draft.psgc_code} className="rounded-md border px-3 py-2" />
+              <span className="text-sm font-medium">Geo area *</span>
+              <VoterGeoAreaSelect
+                defaultValue={isVoterGeoArea(draft.geo_area) ? draft.geo_area : ""}
+              />
             </label>
             <label className="grid gap-1">
               <span className="text-sm font-medium">Email</span>

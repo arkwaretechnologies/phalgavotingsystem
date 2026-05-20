@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { UrlToasts } from "@/app/_components/UrlToasts";
 import { deleteVoter, updateVoter } from "@/app/admin/voters/crud-actions";
+import { isVoterGeoArea } from "@/lib/voters/geo-area";
+import { VoterGeoAreaSelect } from "../voter-geo-area-select";
 
 export default async function AdminEditVoterPage({
   params,
@@ -22,21 +24,33 @@ export default async function AdminEditVoterPage({
   const supabase = createSupabaseServiceRoleClient();
   const { data: voter, error } = await supabase
     .from("voters")
-    .select("id, full_name, position, lgu, province, province_league, psgc_code, email, phone")
+    .select("id, full_name, position, lgu, province, province_league, geo_area, email, phone")
     .eq("id", id)
     .maybeSingle();
 
   if (error || !voter) notFound();
 
+  const voterRow = voter as {
+    id: string;
+    full_name: string;
+    position: string | null;
+    lgu: string | null;
+    province: string | null;
+    province_league: string | null;
+    geo_area: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+
   const draft = {
-    full_name: String(get("full_name") ?? voter.full_name ?? ""),
-    position: String(get("position") ?? voter.position ?? ""),
-    lgu: String(get("lgu") ?? voter.lgu ?? ""),
-    province: String(get("province") ?? voter.province ?? ""),
-    province_league: String(get("province_league") ?? voter.province_league ?? ""),
-    psgc_code: String(get("psgc_code") ?? voter.psgc_code ?? ""),
-    email: String(get("email") ?? voter.email ?? ""),
-    phone: String(get("phone") ?? voter.phone ?? ""),
+    full_name: String(get("full_name") ?? voterRow.full_name ?? ""),
+    position: String(get("position") ?? voterRow.position ?? ""),
+    lgu: String(get("lgu") ?? voterRow.lgu ?? ""),
+    province: String(get("province") ?? voterRow.province ?? ""),
+    province_league: String(get("province_league") ?? voterRow.province_league ?? ""),
+    geo_area: String(get("geo_area") ?? voterRow.geo_area ?? ""),
+    email: String(get("email") ?? voterRow.email ?? ""),
+    phone: String(get("phone") ?? voterRow.phone ?? ""),
   };
 
   return (
@@ -48,7 +62,7 @@ export default async function AdminEditVoterPage({
             <h1 className="text-xl font-semibold">Edit voter</h1>
             <p className="mt-2 text-sm text-neutral-600">Update or delete this voter. Requires your password.</p>
             <div className="mt-2 text-xs text-neutral-500">
-              ID <span className="font-mono">{String(voter.id)}</span>
+              ID <span className="font-mono">{String(voterRow.id)}</span>
             </div>
           </div>
           <a href="/admin/voters" className="rounded-md border px-3 py-2 text-sm hover:bg-neutral-50">
@@ -59,7 +73,7 @@ export default async function AdminEditVoterPage({
 
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <form action={updateVoter} className="grid gap-4">
-          <input type="hidden" name="id" value={String(voter.id)} />
+          <input type="hidden" name="id" value={String(voterRow.id)} />
           <label className="grid gap-1">
             <span className="text-sm font-medium">Full name *</span>
             <input
@@ -92,8 +106,10 @@ export default async function AdminEditVoterPage({
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-sm font-medium">PSGC code</span>
-              <input name="psgc_code" defaultValue={draft.psgc_code} className="rounded-md border px-3 py-2" />
+              <span className="text-sm font-medium">Geo area *</span>
+              <VoterGeoAreaSelect
+                defaultValue={isVoterGeoArea(draft.geo_area) ? draft.geo_area : ""}
+              />
             </label>
             <label className="grid gap-1">
               <span className="text-sm font-medium">Email</span>
@@ -131,7 +147,7 @@ export default async function AdminEditVoterPage({
           This cannot be undone. If the voter has related sessions/ballots, delete may fail due to database constraints.
         </p>
         <form action={deleteVoter} className="mt-4 grid gap-3 sm:grid-cols-[1fr_220px]">
-          <input type="hidden" name="id" value={String(voter.id)} />
+          <input type="hidden" name="id" value={String(voterRow.id)} />
           <input
             name="password"
             type="password"
