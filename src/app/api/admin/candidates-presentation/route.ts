@@ -6,7 +6,7 @@ import { sessionHasAdminPageAccess } from "@/lib/admin/path-access";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { fetchImageAsDataUrl } from "@/lib/pdf/fetch-image-data-url";
 import { renderHtmlToLandscapePdfBuffer } from "@/lib/pdf/render-html-to-pdf";
-import { toPublicMessage } from "@/lib/errors/public-message";
+import { presentationPdfPublicError } from "@/lib/pdf/presentation-pdf-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -525,11 +525,10 @@ export async function GET() {
         present_position,
         lgu_address,
         highest_educational_attainment,
-        geo_group:geo_groups (
+        geo_group:geo_groups!geo_group_id (
           id,
           code,
-          name,
-          sort_order
+          name
         )
       `,
       )
@@ -643,7 +642,9 @@ export async function GET() {
     });
   } catch (e) {
     console.error("candidates presentation pdf generation failed", e);
-    const { message } = toPublicMessage(e, "Unable to generate presentation PDF.");
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: presentationPdfPublicError(e, "Unable to generate presentation PDF.") },
+      { status: 500 },
+    );
   }
 }

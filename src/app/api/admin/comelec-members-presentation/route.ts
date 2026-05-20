@@ -6,7 +6,7 @@ import { sessionHasAdminPageAccess } from "@/lib/admin/path-access";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { fetchImageAsDataUrl } from "@/lib/pdf/fetch-image-data-url";
 import { renderHtmlToLandscapePdfBuffer } from "@/lib/pdf/render-html-to-pdf";
-import { toPublicMessage } from "@/lib/errors/public-message";
+import { presentationPdfPublicError } from "@/lib/pdf/presentation-pdf-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -385,6 +385,35 @@ function renderHtml(args: {
 </html>`;
 }
 
+async function loadComelecMembersForPresentation(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  activeConfcode: string,
+) {
+  const withMeta =
+    "id, name, position, comelec_position, sort_order, lgu, province, confcode, photo_url";
+  const base = "id, name, position, lgu, province, confcode, photo_url";
+
+  const full = await supabase.from("comelec_members").select(withMeta).eq("confcode", activeConfcode);
+  if (!full.error) return full;
+
+  const msg = full.error.message.toLowerCase();
+  if (!msg.includes("comelec_position") && !msg.includes("sort_order") && !msg.includes("column")) {
+    return full;
+  }
+
+  const legacy = await supabase.from("comelec_members").select(base).eq("confcode", activeConfcode);
+  if (legacy.error) return legacy;
+
+  return {
+    data: (legacy.data ?? []).map((row) => ({
+      ...row,
+      comelec_position: null as string | null,
+      sort_order: null as number | null,
+    })),
+    error: null,
+  };
+}
+
 export async function GET() {
   const session = await getAdminSession();
   if (!session) {
@@ -410,10 +439,10 @@ export async function GET() {
       return NextResponse.json({ error: "No active conference set." }, { status: 400 });
     }
 
-    const { data: rows, error: membersErr } = await supabase
-      .from("comelec_members")
-      .select("id, name, position, comelec_position, sort_order, lgu, province, confcode, photo_url")
-      .eq("confcode", activeConfcode);
+    const { data: rows, error: membersErr } = await loadComelecMembersForPresentation(
+      supabase,
+      activeConfcode,
+    );
 
     if (membersErr) throw membersErr;
 
@@ -478,7 +507,9 @@ export async function GET() {
     });
   } catch (e) {
     console.error("comelec members presentation pdf generation failed", e);
-    const { message } = toPublicMessage(e, "Unable to generate presentation PDF.");
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: presentationPdfPublicError(e, "Unable to generate presentation PDF.") },
+      { status: 500 },
+    );
   }
 }

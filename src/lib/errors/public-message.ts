@@ -29,7 +29,11 @@ export function toPublicMessage(err: unknown, fallback: string): PublicMessage {
   if (msg.includes("duplicate key") || msg.includes("already exists") || msg.includes("unique constraint")) {
     return { message: "That record already exists." };
   }
-  if (msg.includes("not found")) {
+  if (
+    msg.includes("pgrst116") ||
+    /\brecord not found\b/.test(msg) ||
+    (msg.includes("0 rows") && msg.includes("json"))
+  ) {
     return { message: "Record not found." };
   }
 
