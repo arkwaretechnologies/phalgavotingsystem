@@ -41,6 +41,7 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   allowedDevOrigins: ["untensing-heike-burdensome.ngrok-free.dev"],
   async headers() {
     return [

@@ -2,10 +2,9 @@ import "server-only";
 
 import { randomInt } from "node:crypto";
 import { Resend } from "resend";
-import puppeteer from "puppeteer";
 import { encryptPDF } from "@pdfsmaller/pdf-encrypt-lite";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
+import { launchPdfBrowser } from "@/lib/pdf/puppeteer-launch";
 
 const PDF_NAV_TIMEOUT_MS = 30_000;
 
@@ -174,9 +173,9 @@ function renderVoteReceiptHtml(opts: {
 }
 
 async function htmlToPdfBuffer(html: string): Promise<Buffer> {
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let browser: Awaited<ReturnType<typeof launchPdfBrowser>> | null = null;
   try {
-    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
+    browser = await launchPdfBrowser();
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(PDF_NAV_TIMEOUT_MS);
     page.setDefaultTimeout(PDF_NAV_TIMEOUT_MS);

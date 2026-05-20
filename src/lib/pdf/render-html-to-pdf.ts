@@ -1,7 +1,7 @@
 import "server-only";
 
-import puppeteer, { type Page } from "puppeteer";
-import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
+import type { Page } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/pdf/puppeteer-launch";
 
 export type LandscapePdfOptions = {
   width?: string;
@@ -49,9 +49,9 @@ export async function renderHtmlToLandscapePdfBuffer(
   const height = opts?.height ?? "210mm";
   const waitForImages = opts?.waitForImages ?? false;
 
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let browser: Awaited<ReturnType<typeof launchPdfBrowser>> | null = null;
   try {
-    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
+    browser = await launchPdfBrowser();
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(timeoutMs);
     page.setDefaultTimeout(timeoutMs);

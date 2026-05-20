@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
+import { launchPdfBrowser } from "@/lib/pdf/puppeteer-launch";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 export const runtime = "nodejs";
@@ -95,7 +94,7 @@ export async function GET() {
   const supabase = createSupabaseServiceRoleClient();
   const generatedAtIso = new Date().toISOString();
 
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let browser: Awaited<ReturnType<typeof launchPdfBrowser>> | null = null;
 
   try {
     const submitted = await fetchAllRows<SubmittedBallotRow>(
@@ -128,7 +127,7 @@ export async function GET() {
     const html = renderHtml(rows, generatedAtIso);
     const filename = `Voted_Voters_${tsSafe(new Date())}.pdf`;
 
-    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
+    browser = await launchPdfBrowser();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdf = await page.pdf({

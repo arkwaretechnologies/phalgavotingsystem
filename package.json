@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "npx puppeteer browsers install chrome"
+    "postinstall": "node scripts/postinstall-puppeteer-chrome.mjs"
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.19.0",
     "@pdfsmaller/pdf-encrypt-lite": "^1.0.2",
+    "@sparticuz/chromium": "^148.0.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.0",
     "@zxing/browser": "^0.1.5",
@@ -22,6 +23,7 @@
     "next": "16.2.4",
     "papaparse": "^5.5.3",
     "puppeteer": "^24.42.0",
+    "puppeteer-core": "^24.42.0",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",

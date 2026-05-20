@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
 import { getAdminSession } from "@/lib/admin/session";
-import { buildPuppeteerLaunchOptions } from "@/lib/pdf/puppeteer-launch";
+import { launchPdfBrowser } from "@/lib/pdf/puppeteer-launch";
 import { getAdminResultsPayload } from "@/lib/admin/results-tallies";
 import {
   buildCanvassReportModel,
@@ -46,9 +45,9 @@ export async function GET() {
   const now = new Date();
   const filename = `Canvass_${fileSafe(model.confcode)}_${tsSafe(now)}.pdf`;
 
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let browser: Awaited<ReturnType<typeof launchPdfBrowser>> | null = null;
   try {
-    browser = await puppeteer.launch(buildPuppeteerLaunchOptions());
+    browser = await launchPdfBrowser();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
