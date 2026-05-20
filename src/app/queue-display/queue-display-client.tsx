@@ -318,7 +318,13 @@ export default function QueueDisplayClient() {
     speakNowServing(nowServing);
   }, [nowServing, voiceOn]);
 
-  const vacantNow = tablets.filter((t) => t.status === "vacant");
+  const vacantNow = useMemo(
+    () =>
+      tablets
+        .filter((t) => t.status === "vacant")
+        .sort((a, b) => formatTabletLine(a).localeCompare(formatTabletLine(b), undefined, { sensitivity: "base" })),
+    [tablets],
+  );
 
   const liveWindowMsRemaining = useMemo(() => {
     if (!votingWindow) return null;
