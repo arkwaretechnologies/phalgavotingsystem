@@ -41,7 +41,15 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  serverExternalPackages: ["@sparticuz/chromium-min", "puppeteer-core"],
+  outputFileTracingExcludes: {
+    "/api/admin/candidates-presentation/route": ["node_modules/puppeteer/**"],
+    "/api/admin/comelec-members-presentation/route": ["node_modules/puppeteer/**"],
+    "/admin/canvass/pdf/route": ["node_modules/puppeteer/**"],
+    "/admin/reports/candidates/pdf/route": ["node_modules/puppeteer/**"],
+    "/admin/reports/voted-voters/pdf/route": ["node_modules/puppeteer/**"],
+    "/admin/reports/non-participating-voters/pdf/route": ["node_modules/puppeteer/**"],
+  },
   allowedDevOrigins: ["untensing-heike-burdensome.ngrok-free.dev"],
   async headers() {
     return [

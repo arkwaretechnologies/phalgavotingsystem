@@ -1,11 +1,11 @@
 {
   "functions": {
     "src/app/api/admin/candidates-presentation/route.ts": {
-      "memory": 3009,
+      "memory": 2048,
       "maxDuration": 300
     },
     "src/app/api/admin/comelec-members-presentation/route.ts": {
-      "memory": 3009,
+      "memory": 2048,
       "maxDuration": 300
     }
   }

@@ -66,18 +66,37 @@ export function buildPuppeteerLaunchOptions(extra?: LaunchOptions): LaunchOption
   };
 }
 
+/** Sparticuz release matching `@sparticuz/chromium-min` in package.json. */
+const CHROMIUM_RELEASE = "v148.0.0";
+
+function defaultChromiumPackUrl(): string {
+  const arch = process.arch === "arm64" ? "arm64" : "x64";
+  return `https://github.com/Sparticuz/chromium/releases/download/${CHROMIUM_RELEASE}/chromium-${CHROMIUM_RELEASE}-pack.${arch}.tar`;
+}
+
+function resolveChromiumPackUrl(): string {
+  return process.env.CHROMIUM_PACK_URL?.trim() || defaultChromiumPackUrl();
+}
+
+/**
+ * Uses `@sparticuz/chromium-min` (small npm package) and downloads the Chromium
+ * binary pack at runtime from GitHub releases — required for Vercel's ~250MB limit.
+ */
 async function launchWithServerlessChromium(): Promise<Browser> {
-  const chromium = (await import("@sparticuz/chromium")).default;
+  const chromium = (await import("@sparticuz/chromium-min")).default;
   const puppeteer = await import("puppeteer-core");
 
   chromium.setGraphicsMode = false;
+
+  const packUrl = resolveChromiumPackUrl();
+  const executablePath = await chromium.executablePath(packUrl);
 
   return puppeteer.default.launch({
     args: puppeteer.default.defaultArgs({
       args: chromium.args,
       headless: "shell",
     }),
-    executablePath: await chromium.executablePath(),
+    executablePath,
     headless: "shell",
   });
 }
