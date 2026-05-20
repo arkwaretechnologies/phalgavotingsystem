@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { UrlToasts } from "@/app/_components/UrlToasts";
+import { PasswordFieldWithReveal } from "@/app/admin/_components/PasswordFieldWithReveal";
 
 export default function AdminLoginPage() {
   return (
@@ -25,10 +26,9 @@ export default function AdminLoginPage() {
 
         <label className="block">
           <span className="text-sm font-medium text-neutral-800">Password</span>
-          <input
-            name="password"
-            type="password"
-            className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[var(--ph-brand-blue)] focus:ring-2 focus:ring-[var(--ph-brand-blue)]/25"
+          <PasswordFieldWithReveal
+            wrapperClassName="mt-1.5"
+            className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-neutral-900 shadow-sm outline-none transition focus:border-[var(--ph-brand-blue)] focus:ring-2 focus:ring-[var(--ph-brand-blue)]/25"
             required
             autoComplete="current-password"
           />

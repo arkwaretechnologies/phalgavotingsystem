@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  AdminResultsComelecMember,
   AdminResultsGeoGroup,
   AdminResultsPayload,
   AdminResultsTallyRow,
@@ -9,6 +10,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { toPublicMessage } from "@/lib/errors/public-message";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
+export type { AdminResultsComelecMember } from "@/lib/admin/results-tallies-types";
 export type { AdminResultsGeoGroup, AdminResultsPayload, AdminResultsTallyRow };
 
 type ServiceClient = ReturnType<typeof createSupabaseServiceRoleClient>;
@@ -124,6 +126,60 @@ async function fetchTalliesWithoutRpc(
   });
 }
 
+async function fetchComelecMembersForCanvass(
+  supabase: ServiceClient,
+  activeConfcode: string,
+): Promise<AdminResultsComelecMember[]> {
+  const sel = "id, name, position, comelec_position, sort_order";
+  const res = await supabase
+    .from("comelec_members")
+    .select(sel)
+    .eq("confcode", activeConfcode)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+
+  if (!res.error && res.data) {
+    return (res.data as Record<string, unknown>[]).map((r) => ({
+      id: String(r.id ?? ""),
+      name: r.name == null ? null : String(r.name),
+      position: r.position == null ? null : String(r.position),
+      comelec_position: r.comelec_position == null ? null : String(r.comelec_position),
+      sort_order: r.sort_order == null ? null : Number(r.sort_order),
+    }));
+  }
+
+  const msg = String((res.error as { message?: string } | null)?.message ?? "").toLowerCase();
+  if (
+    !msg.includes("comelec_position") &&
+    !msg.includes("sort_order") &&
+    !msg.includes("column")
+  ) {
+    // eslint-disable-next-line no-console
+    console.error("comelec members for canvass load failed", res.error);
+    return [];
+  }
+
+  const legacy = await supabase
+    .from("comelec_members")
+    .select("id, name, position, confcode")
+    .eq("confcode", activeConfcode)
+    .order("name", { ascending: true });
+
+  if (legacy.error) {
+    // eslint-disable-next-line no-console
+    console.error("comelec members legacy load failed", legacy.error);
+    return [];
+  }
+
+  return (legacy.data ?? []).map((r: Record<string, unknown>) => ({
+    id: String(r.id ?? ""),
+    name: r.name == null ? null : String(r.name),
+    position: r.position == null ? null : String(r.position),
+    comelec_position: null,
+    sort_order: null,
+  }));
+}
+
 function mapRpcRow(row: Record<string, unknown>): AdminResultsTallyRow {
   const gid = row.geo_group_id;
   return {
@@ -172,6 +228,7 @@ export async function getAdminResultsPayload(): Promise<AdminResultsPayload> {
       geoGroups: [],
       rows: [],
       fetchedAt,
+      comelecMembers: [],
     };
   }
 
@@ -180,6 +237,7 @@ export async function getAdminResultsPayload(): Promise<AdminResultsPayload> {
     { data: geoRows, error: geoErr },
     { count: voterRollCount, error: voterCountErr },
     { data: rpcRows, error: rpcErr },
+    comelecMembers,
   ] = await Promise.all([
     supabase
       .from("conference")
@@ -206,6 +264,7 @@ export async function getAdminResultsPayload(): Promise<AdminResultsPayload> {
     supabase.rpc("get_results_tallies_by_confcode", {
       p_confcode: activeConfcode,
     }),
+    fetchComelecMembersForCanvass(supabase, activeConfcode),
   ]);
 
   if (confErr || geoErr) {
@@ -252,5 +311,6 @@ export async function getAdminResultsPayload(): Promise<AdminResultsPayload> {
     geoGroups,
     rows,
     fetchedAt,
+    comelecMembers,
   };
 }

@@ -1,12 +1,25 @@
 import "server-only";
 
-import type { AdminResultsPayload, AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
+import type {
+  AdminResultsComelecMember,
+  AdminResultsPayload,
+  AdminResultsTallyRow,
+} from "@/lib/admin/results-tallies-types";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 
-export type CanvassSignatureBlock = {
+export type CanvassSignatoryRow = {
+  /** Printed above the signature line (name, role, optional LGU-style position). */
+  textLines: string[];
+};
+
+export type CanvassSignatureSection = {
   label: string;
-  lines: number;
+  /** `witness` uses a taller signature line per row. */
+  variant: "compact" | "witness";
+  rows: CanvassSignatoryRow[];
+  /** When true, section spans full width under the two-column grid. */
+  fullWidth?: boolean;
 };
 
 export type CanvassGeoSection = {
@@ -23,7 +36,7 @@ export type CanvassReportModel = {
   totalVotes: number;
   totalVoters: number;
   sections: CanvassGeoSection[];
-  signatures: CanvassSignatureBlock[];
+  signatureSections: CanvassSignatureSection[];
 };
 
 function sortRowsForReport(rows: AdminResultsTallyRow[], geoOrder: Map<number, number>) {
@@ -38,6 +51,81 @@ function sortRowsForReport(rows: AdminResultsTallyRow[], geoOrder: Map<number, n
     if (va !== vb) return vb - va;
     return a.full_name.localeCompare(b.full_name);
   });
+}
+
+function normComelecRole(s: string | null | undefined): string {
+  return String(s ?? "").trim().toUpperCase().replace(/\s+/g, " ");
+}
+
+function isSecretary(comelec_position: string | null): boolean {
+  return normComelecRole(comelec_position).includes("SECRETARY");
+}
+
+function isChairman(comelec_position: string | null): boolean {
+  const n = normComelecRole(comelec_position);
+  if (!n) return false;
+  if (n.includes("VICE") || n.includes("DEPUTY")) return false;
+  return (
+    n.includes("CHAIRMAN") ||
+    n.includes("CHAIRPERSON") ||
+    n.includes("CHAIR OF") ||
+    n.endsWith(" CHAIR") ||
+    n === "CHAIR"
+  );
+}
+
+function sortComelecMembers(a: AdminResultsComelecMember, b: AdminResultsComelecMember): number {
+  const sa = a.sort_order ?? 999_999;
+  const sb = b.sort_order ?? 999_999;
+  if (sa !== sb) return sa - sb;
+  return String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, { sensitivity: "base" });
+}
+
+/** Name plus COMELEC position line only (`comelec_position`; no separate `position` field). */
+function textLinesForSignatory(m: AdminResultsComelecMember): string[] {
+  const name = String(m.name ?? "").trim() || "—";
+  const role = String(m.comelec_position ?? "").trim() || "COMELEC MEMBER";
+  return [name, role];
+}
+
+function buildSignatureSections(members: AdminResultsComelecMember[]): CanvassSignatureSection[] {
+  const sorted = [...members].sort(sortComelecMembers);
+
+  const secretary = sorted.find((m) => isSecretary(m.comelec_position)) ?? null;
+  const chairman = sorted.find((m) => isChairman(m.comelec_position)) ?? null;
+
+  const used = new Set<string>();
+  if (secretary) used.add(secretary.id);
+  if (chairman) used.add(chairman.id);
+
+  const witnesses = sorted.filter((m) => !used.has(m.id));
+
+  const witnessRows: CanvassSignatoryRow[] = witnesses.map((m) => ({
+    textLines: textLinesForSignatory(m),
+  }));
+  while (witnessRows.length < 3) {
+    witnessRows.push({ textLines: [] });
+  }
+  const witnessRowsCapped = witnessRows.slice(0, 12);
+
+  return [
+    {
+      label: "Prepared by",
+      variant: "compact",
+      rows: [{ textLines: secretary ? textLinesForSignatory(secretary) : [] }],
+    },
+    {
+      label: "Reviewed by",
+      variant: "compact",
+      rows: [{ textLines: chairman ? textLinesForSignatory(chairman) : [] }],
+    },
+    {
+      label: "Witnesses",
+      variant: "witness",
+      fullWidth: true,
+      rows: witnessRowsCapped,
+    },
+  ];
 }
 
 function escapeHtml(s: string) {
@@ -110,11 +198,7 @@ export function buildCanvassReportModel(payload: AdminResultsPayload): CanvassRe
     totalVotes,
     totalVoters: payload.totalVoters ?? 0,
     sections,
-    signatures: [
-      { label: "Prepared by", lines: 1 },
-      { label: "Reviewed by", lines: 1 },
-      { label: "Witnesses", lines: 7 },
-    ],
+    signatureSections: buildSignatureSections(payload.comelecMembers ?? []),
   };
 }
 
@@ -158,9 +242,26 @@ export function renderCanvassReportHtml(
     .subtotal { margin-top: 6px; font-size: 12px; color: #444; }
     .signatures { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .sig { border: 1px solid #ddd; border-radius: 12px; padding: 12px; }
-    .sigLabel { font-size: 12px; color: #555; margin-bottom: 10px; }
-    .line { border-bottom: 1px solid #111; height: 18px; margin-top: 10px; }
-    .line.witness { height: 40px; margin-top: 12px; }
+    .sigWide { grid-column: 1 / -1; }
+    .sigWitness .sigLabel { margin-bottom: 50px; }
+    .witnessStack {
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+    }
+    .sigWide .witnessStack .sigRow { margin-top: 0; }
+    .witnessStack .sigPrefill { margin-bottom: 6px; }
+    .witnessStack .line.witness { margin-top: 6px; height: 28px; }
+    .sigLabel { font-size: 12px; color: #555; margin-bottom: 8px; font-weight: 600; }
+    .sigCompact .sigPrefill { text-align: center; }
+    .sigCompact .sigPrefill > div { text-align: center; }
+    .sigRow { margin-top: 12px; }
+    .sigRow:first-of-type { margin-top: 0; }
+    .sigPrefill { font-size: 11px; color: #333; line-height: 1.4; margin-bottom: 6px; min-height: 14px; }
+    .sigPrefill.sigPrefillEmpty { color: #ccc; }
+    .sigPrefill strong { font-weight: 600; color: #111; }
+    .line { border-bottom: 1px solid #111; height: 16px; margin-top: 4px; }
+    .line.witness { height: 34px; margin-top: 6px; }
     .footerNote { margin-top: 18px; font-size: 11px; color: #666; }
     @page { margin: 14mm; }
     @media print {
@@ -201,14 +302,30 @@ export function renderCanvassReportHtml(
     })
     .join("");
 
-  const sigHtml = model.signatures
-    .map((s) => {
-      const isWitness = s.label.trim().toLowerCase() === "witnesses";
-      const lineClass = isWitness ? "line witness" : "line";
-      const lines = Array.from({ length: s.lines })
-        .map(() => `<div class="${lineClass}"></div>`)
+  const sigHtml = model.signatureSections
+    .map((sec) => {
+      const wideClass = sec.fullWidth ? " sigWide" : "";
+      const rowsHtml = sec.rows
+        .map((row) => {
+          const lineClass = sec.variant === "witness" ? "line witness" : "line";
+          const prefill =
+            row.textLines.length > 0
+              ? `<div class="sigPrefill">${row.textLines
+                  .map((line, i) =>
+                    i === 0
+                      ? `<div><strong>${escapeHtml(line)}</strong></div>`
+                      : `<div>${escapeHtml(line)}</div>`,
+                  )
+                  .join("")}</div>`
+              : `<div class="sigPrefill sigPrefillEmpty">&nbsp;</div>`;
+          return `<div class="sigRow">${prefill}<div class="${lineClass}"></div></div>`;
+        })
         .join("");
-      return `<div class="sig"><div class="sigLabel">${escapeHtml(s.label)}</div>${lines}</div>`;
+      const witnessBody =
+        sec.variant === "witness" ? `<div class="witnessStack">${rowsHtml}</div>` : rowsHtml;
+      const compactClass = sec.variant === "compact" ? " sigCompact" : "";
+      const witnessClass = sec.variant === "witness" ? " sigWitness" : "";
+      return `<div class="sig${wideClass}${compactClass}${witnessClass}"><div class="sigLabel">${escapeHtml(sec.label)}</div>${witnessBody}</div>`;
     })
     .join("");
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import type { DotLottie } from "@lottiefiles/dotlottie-web";
 import { verifyFinalTallyForCanvass } from "./final-tally-actions";
+import { PasswordFieldWithReveal } from "@/app/admin/_components/PasswordFieldWithReveal";
 
 const UNLOCK_LOTTIE_SRC =
   "https://lottie.host/64524799-06de-497b-a8b5-824771be4c4f/i4ZNkIQazS.lottie";
@@ -243,12 +244,11 @@ export function CanvassUnlockPreview({
               </label>
               <label className="block">
                 <span className="text-xs font-medium text-neutral-700">Password</span>
-                <input
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
+                <PasswordFieldWithReveal
+                  wrapperClassName="mt-1"
+                  className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
                   required
-                  className="mt-1 w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                  autoComplete="current-password"
                 />
               </label>
               {formError ? (

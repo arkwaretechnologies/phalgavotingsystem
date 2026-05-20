@@ -15,6 +15,15 @@ export type AdminResultsGeoGroup = {
   sort_order: number | null;
 };
 
+/** COMELEC roster row for canvass report signatories (active conference). */
+export type AdminResultsComelecMember = {
+  id: string;
+  name: string | null;
+  position: string | null;
+  comelec_position: string | null;
+  sort_order: number | null;
+};
+
 export type AdminResultsPayload = {
   activeConfcode: string | null;
   conferenceName: string | null;
@@ -23,4 +32,6 @@ export type AdminResultsPayload = {
   geoGroups: AdminResultsGeoGroup[];
   rows: AdminResultsTallyRow[];
   fetchedAt: string;
+  /** Used for canvass PDF/preview signature blocks; empty when none or load failed. */
+  comelecMembers: AdminResultsComelecMember[];
 };
