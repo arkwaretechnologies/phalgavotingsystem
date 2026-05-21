@@ -522,7 +522,9 @@ export function DashboardCharts({ initial }: { initial: DashboardSnapshot }) {
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-neutral-900">Sessions by status</h3>
           <p className="mt-1 text-xs text-neutral-600">
-            Queue, active booths, and completed sessions
+            {data.activeConfcode
+              ? `Queue and active booths; finished uses submitted ballots for ${data.activeConfcode} (same as turnout).`
+              : "Queue, active booths, and completed sessions"}
           </p>
           <div className="mt-4">
             <HorizontalBars items={sessionItems} colors={SESSION_COLORS} />

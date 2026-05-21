@@ -235,14 +235,22 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       ? votedRes.count
       : 0;
 
-  const sessionStatusCounts = sessionStatuses.map((status, i) => ({
-    status,
-    label: SESSION_LABELS[status] ?? status,
-    count:
+  const sessionStatusCounts = sessionStatuses.map((status, i) => {
+    let count =
       !sessionResults[i].error && typeof sessionResults[i].count === "number"
         ? sessionResults[i].count!
-        : 0,
-  }));
+        : 0;
+    // Match voter turnout: count submitted ballots for the active confcode, not all
+    // historical `voting_sessions.status = voted` rows (may include prior runs).
+    if (status === "voted" && activeConfcode != null) {
+      count = votedVoters;
+    }
+    const label =
+      status === "voted" && activeConfcode != null
+        ? `Finished (${activeConfcode})`
+        : (SESSION_LABELS[status] ?? status);
+    return { status, label, count };
+  });
 
   const tabletStatusCounts = tabletStatuses.map((status, i) => ({
     status,
