@@ -11,7 +11,8 @@ import { useUrlToast } from "@/lib/toast/url-toast";
 const VOTE_LOGIN_URL_TOAST_ERROR_MESSAGES: Record<string, string> = {
   notqueued:
     "This voter is not waiting in the queue. Ask Comelec staff if you need a new queue number.",
-  voting: "Voter already voting.",
+  voting:
+    "Another voting session is already in progress. Ask Comelec staff if you need help.",
   invalid: "Invalid queue number or 6-digit ballot code.",
   closed: "Voting is currently closed.",
   used: "Voter already casted vote.",

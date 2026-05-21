@@ -46,6 +46,7 @@ export async function GET(request: Request) {
   }
 
   if (reason === "invalid") {
+    if (sessionId) await revertVotingSessionToQueuedIfVoting(sessionId);
     await clearVotingSessionCookie();
     return NextResponse.redirect(login);
   }
