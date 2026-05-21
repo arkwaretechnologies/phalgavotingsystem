@@ -3,6 +3,25 @@ export const MANILA_TZ = "Asia/Manila";
 
 const DT_LOCAL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
+/** Human-readable date/time in PHT for reports and printed PDFs. */
+export function formatUtcIsoInManila(iso: string | null | undefined): string {
+  if (iso == null) return "—";
+  const s = String(iso).trim();
+  if (!s) return "—";
+  const d = new Date(s);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return `${d.toLocaleString("en-PH", {
+    timeZone: MANILA_TZ,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  })} PHT`;
+}
+
 /**
  * Format a UTC instant for `<input type="datetime-local">`, showing wall time in Manila.
  */

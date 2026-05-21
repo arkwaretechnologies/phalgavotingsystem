@@ -5,6 +5,7 @@ import type {
   AdminResultsPayload,
   AdminResultsTallyRow,
 } from "@/lib/admin/results-tallies-types";
+import { formatUtcIsoInManila } from "@/lib/datetime/manila";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 
@@ -208,6 +209,7 @@ export function renderCanvassReportHtml(
 ): string {
   const title = `Canvass Report — ${model.confcode}`;
   const headerSub = model.conferenceName ? `${model.confcode} · ${model.conferenceName}` : model.confcode;
+  const generatedAtManila = formatUtcIsoInManila(model.generatedAt);
 
   const css = `
     :root { color-scheme: light; }
@@ -350,7 +352,7 @@ export function renderCanvassReportHtml(
             <div class="sub">${escapeHtml(headerSub)}</div>
           </div>
           <div class="meta">
-            Generated: ${escapeHtml(new Date(model.generatedAt).toLocaleString())}<br/>
+            Generated: ${escapeHtml(generatedAtManila)}<br/>
             Total votes recorded: <b>${escapeHtml(String(model.totalVotes))}</b><br/>
             Voter roll: <b>${escapeHtml(String(model.totalVoters))}</b>
           </div>
@@ -359,7 +361,7 @@ export function renderCanvassReportHtml(
         <div class="card">
           <div class="stats">
             <div class="stat"><b>Conference:</b> ${escapeHtml(headerSub)}</div>
-            <div class="stat"><b>Timestamp:</b> ${escapeHtml(new Date(model.generatedAt).toLocaleString())}</div>
+            <div class="stat"><b>Timestamp:</b> ${escapeHtml(generatedAtManila)}</div>
           </div>
         </div>
 
