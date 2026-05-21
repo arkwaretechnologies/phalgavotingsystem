@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AdminResultsPayload, AdminResultsTallyRow } from "@/lib/admin/results-tallies-types";
 
 type GeoSection = {
@@ -140,10 +140,13 @@ function buildGeoSections(payload: AdminResultsPayload): GeoSection[] {
     .sort((a, b) => a.sortKey - b.sortKey || a.title.localeCompare(b.title));
 }
 
+const GEO_FILTER_ALL = "all";
+
 export function LiveTalliesBoard() {
   const [payload, setPayload] = useState<AdminResultsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [geoFilter, setGeoFilter] = useState<string>(GEO_FILTER_ALL);
 
   const load = useCallback(async () => {
     setError(null);
@@ -190,7 +193,24 @@ export function LiveTalliesBoard() {
   }, []);
 
   const sections = useMemo(() => (payload ? buildGeoSections(payload) : []), [payload]);
-  const gridRows = useMemo(() => liveTallyGridRows(sections.length), [sections.length]);
+
+  useEffect(() => {
+    if (geoFilter === GEO_FILTER_ALL) return;
+    if (!sections.some((s) => s.key === geoFilter)) {
+      setGeoFilter(GEO_FILTER_ALL);
+    }
+  }, [sections, geoFilter]);
+
+  const visibleSections = useMemo(() => {
+    if (geoFilter === GEO_FILTER_ALL) return sections;
+    return sections.filter((s) => s.key === geoFilter);
+  }, [sections, geoFilter]);
+
+  const gridCols =
+    visibleSections.length > 0 && visibleSections.length < LIVE_TALLY_GRID_COLS
+      ? visibleSections.length
+      : LIVE_TALLY_GRID_COLS;
+  const gridRows = useMemo(() => liveTallyGridRows(visibleSections.length), [visibleSections.length]);
 
   if (error) {
     return (
@@ -278,21 +298,55 @@ export function LiveTalliesBoard() {
         </div>
       </header>
 
+      {sections.length > 0 ? (
+        <div
+          className="mt-2 flex shrink-0 flex-wrap items-center gap-1.5 sm:gap-2"
+          role="group"
+          aria-label="Filter by geo area"
+        >
+          <GeoFilterButton
+            active={geoFilter === GEO_FILTER_ALL}
+            onClick={() => setGeoFilter(GEO_FILTER_ALL)}
+          >
+            All
+          </GeoFilterButton>
+          {sections.map((section) => (
+            <GeoFilterButton
+              key={section.key}
+              active={geoFilter === section.key}
+              onClick={() => setGeoFilter(section.key)}
+            >
+              {section.title}
+            </GeoFilterButton>
+          ))}
+        </div>
+      ) : null}
+
       <main
         className="mt-2 min-h-0 flex-1 gap-2 sm:gap-3"
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${LIVE_TALLY_GRID_COLS}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
           gridAutoFlow: "row",
         }}
       >
         {sections.length === 0 ? (
-          <p className="col-span-4 self-center text-center text-sm text-slate-400">
+          <p
+            className="self-center text-center text-sm text-slate-400"
+            style={{ gridColumn: `1 / -1` }}
+          >
             No candidates to display for this conference.
           </p>
+        ) : visibleSections.length === 0 ? (
+          <p
+            className="self-center text-center text-sm text-slate-400"
+            style={{ gridColumn: `1 / -1` }}
+          >
+            No results for this geo area.
+          </p>
         ) : (
-          sections.map((section) => (
+          visibleSections.map((section) => (
             <GeoTallyCard
               key={section.key}
               section={section}
@@ -302,6 +356,31 @@ export function LiveTalliesBoard() {
         )}
       </main>
     </div>
+  );
+}
+
+function GeoFilterButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:py-2 sm:text-sm",
+        active
+          ? "bg-[var(--ph-flag-yellow)] text-[var(--ph-flag-blue-deep)] shadow-md shadow-[var(--ph-flag-yellow)]/25"
+          : "bg-white/10 text-slate-200 ring-1 ring-white/15 hover:bg-white/15",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -325,7 +404,7 @@ function CandidateRow({
   totalVoters: number;
 }) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3 sm:gap-3.5">
+    <div className="flex items-start gap-2 sm:gap-3 sm:gap-3.5">
       <span
         className="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] px-1.5 text-sm font-bold tabular-nums text-zinc-200 ring-1 ring-white/10 sm:h-10 sm:min-w-10 sm:text-base"
         aria-label={`Rank ${rank}`}
@@ -345,7 +424,9 @@ function CandidateRow({
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-xs font-medium text-white sm:text-sm">{r.full_name}</div>
+        <div className="break-words text-xs font-medium leading-snug text-white sm:text-sm">
+          {r.full_name}
+        </div>
         <div className="mt-0.5 flex items-center gap-2">
           <span className="text-base font-bold tabular-nums text-[var(--ph-flag-yellow)] sm:text-lg">{r.vote_count}</span>
           <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-800 sm:h-2">
